@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useChallengeStatus } from '@/hooks/useChallengeResponse'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -19,15 +19,23 @@ export function AttackWaitingScreen({ territoryId, defenderName, onCancel }) {
     const navigate = useNavigate()
     const { status, territory } = useChallengeStatus(territoryId)
 
+    // Guard: Only treat 'idle' as decline if we've seen 'requesting' first
+    const hasSeenRequesting = useRef(false)
+
     useEffect(() => {
         if (!status) return
+
+        // Mark when we've seen the requesting status
+        if (status === 'requesting') {
+            hasSeenRequesting.current = true
+        }
 
         if (status === 'accepted') {
             toast.success('Challenge accepted! Starting game...')
             // Navigate to game host screen
             navigate(`/game/${territoryId}`)
-        } else if (status === 'idle') {
-            // Challenge was declined - territory reset to idle means declined
+        } else if (status === 'idle' && hasSeenRequesting.current) {
+            // Only treat as decline if we previously saw 'requesting'
             toast.error('Challenge was declined. Your followers have been refunded.')
             navigate('/dashboard')
         }
