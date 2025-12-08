@@ -21,16 +21,27 @@ export function useChallengeResponse(myTeamId) {
         )
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            console.log('[useChallengeResponse] Snapshot received:', {
+                empty: snapshot.empty,
+                size: snapshot.size,
+                myTeamId
+            })
+
             if (!snapshot.empty) {
                 // Get the first challenge (assume one at a time for now)
                 const doc = snapshot.docs[0]
-                setIncomingChallenge({
+                const challengeData = {
                     id: doc.id,
                     ...doc.data()
-                })
+                }
+                console.log('[useChallengeResponse] Incoming challenge:', challengeData)
+                setIncomingChallenge(challengeData)
             } else {
+                console.log('[useChallengeResponse] No incoming challenges')
                 setIncomingChallenge(null)
             }
+        }, (error) => {
+            console.error('[useChallengeResponse] Query error:', error)
         })
 
         return () => unsubscribe()

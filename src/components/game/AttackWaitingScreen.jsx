@@ -23,19 +23,33 @@ export function AttackWaitingScreen({ territoryId, defenderName, onCancel }) {
     const hasSeenRequesting = useRef(false)
 
     useEffect(() => {
+        // Debug logging
+        console.log('[AttackWaitingScreen] Status update:', {
+            status,
+            territoryId,
+            hasSeenRequesting: hasSeenRequesting.current
+        })
+
         if (!status) return
 
         // Mark when we've seen the requesting status
         if (status === 'requesting') {
             hasSeenRequesting.current = true
+            console.log('[AttackWaitingScreen] Confirmed requesting status')
+        }
+
+        // Only react to status changes if we've confirmed the request was made
+        if (!hasSeenRequesting.current) {
+            console.log('[AttackWaitingScreen] Ignoring status - waiting for requesting confirmation')
+            return
         }
 
         if (status === 'accepted') {
+            console.log('[AttackWaitingScreen] Challenge accepted! Navigating...')
             toast.success('Challenge accepted! Starting game...')
-            // Navigate to game host screen
             navigate(`/game/${territoryId}`)
-        } else if (status === 'idle' && hasSeenRequesting.current) {
-            // Only treat as decline if we previously saw 'requesting'
+        } else if (status === 'idle') {
+            console.log('[AttackWaitingScreen] Challenge declined. Navigating to dashboard...')
             toast.error('Challenge was declined. Your followers have been refunded.')
             navigate('/dashboard')
         }
