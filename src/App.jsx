@@ -9,6 +9,7 @@ import Dashboard from '@/pages/Dashboard'
 import Attack from '@/pages/Attack'
 import WorldTour from '@/pages/WorldTour'
 import WaitingPage from '@/pages/WaitingPage'
+import GamePage from '@/pages/GamePage'
 import HQ from '@/pages/HQ'
 import Admin from '@/pages/Admin'
 
@@ -81,6 +82,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
               <WaitingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/game/:territoryId"
+          element={
+            <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
+              <GamePage />
             </ProtectedRoute>
           }
         />

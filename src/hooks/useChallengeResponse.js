@@ -20,29 +20,36 @@ export function useChallengeResponse(myTeamId) {
             where('challenge_status', '==', 'requesting')
         )
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            console.log('[useChallengeResponse] Snapshot received:', {
-                empty: snapshot.empty,
-                size: snapshot.size,
-                myTeamId
-            })
+        const unsubscribe = onSnapshot(
+            q,
+            { includeMetadataChanges: true },  // Force real-time updates
+            (snapshot) => {
+                const fromCache = snapshot.metadata.fromCache
+                console.log('[useChallengeResponse] Snapshot received:', {
+                    empty: snapshot.empty,
+                    size: snapshot.size,
+                    myTeamId,
+                    fromCache
+                })
 
-            if (!snapshot.empty) {
-                // Get the first challenge (assume one at a time for now)
-                const doc = snapshot.docs[0]
-                const challengeData = {
-                    id: doc.id,
-                    ...doc.data()
+                if (!snapshot.empty) {
+                    // Get the first challenge (assume one at a time for now)
+                    const doc = snapshot.docs[0]
+                    const challengeData = {
+                        id: doc.id,
+                        ...doc.data()
+                    }
+                    console.log('[useChallengeResponse] Incoming challenge:', challengeData)
+                    setIncomingChallenge(challengeData)
+                } else {
+                    console.log('[useChallengeResponse] No incoming challenges')
+                    setIncomingChallenge(null)
                 }
-                console.log('[useChallengeResponse] Incoming challenge:', challengeData)
-                setIncomingChallenge(challengeData)
-            } else {
-                console.log('[useChallengeResponse] No incoming challenges')
-                setIncomingChallenge(null)
+            },
+            (error) => {
+                console.error('[useChallengeResponse] Query error:', error)
             }
-        }, (error) => {
-            console.error('[useChallengeResponse] Query error:', error)
-        })
+        )
 
         return () => unsubscribe()
     }, [myTeamId])
