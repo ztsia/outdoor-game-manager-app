@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,6 +11,7 @@ import { toast } from 'sonner'
 
 function LoginForm() {
   const [accessCode, setAccessCode] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const { login } = useAuth()
 
   const handleSubmit = async (e) => {
@@ -32,14 +34,26 @@ function LoginForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="accessCode">Access Code</Label>
-            <Input
-              id="accessCode"
-              type="password"
-              placeholder="Enter your secret code"
-              value={accessCode}
-              onChange={(e) => setAccessCode(e.target.value)}
-              autoComplete="off"
-            />
+            <div className="relative">
+              <Input
+                id="accessCode"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your secret code"
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value)}
+                autoComplete="off"
+                className="pr-10"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
           </div>
           <Button type="submit" className="w-full">
             Login
@@ -49,6 +63,7 @@ function LoginForm() {
     </Card>
   )
 }
+
 
 function Dashboard() {
   const { user, role, teamId, logout } = useAuth()
@@ -67,6 +82,9 @@ function Dashboard() {
         <p className="text-center text-sm text-muted-foreground">
           Firebase User ID: <code className="text-xs">{user?.uid?.slice(0, 8)}...</code>
         </p>
+        <div className="rounded-lg bg-primary p-4 text-primary-foreground text-center font-bold">
+          Team Color Verification
+        </div>
         <Button variant="outline" className="w-full" onClick={logout}>
           Logout
         </Button>

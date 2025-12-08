@@ -2,17 +2,18 @@ import { createContext, useContext, useState, useEffect } from 'react'
 import { signInAnonymously, onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth } from '@/firebase'
 
-// Secret codes mapped to roles and team IDs
+// Secret codes mapped to roles, team IDs, and themes
 const AUTH_CODES = {
-    'HQ_SECRET': { role: 'HQ', teamId: null },
-    'ADMIN_SECRET': { role: 'ADMIN', teamId: null },
-    'TEAM_A_SECRET': { role: 'MANAGER', teamId: 'team_a' },
-    'TEAM_B_SECRET': { role: 'MANAGER', teamId: 'team_b' },
-    'TEAM_C_SECRET': { role: 'MANAGER', teamId: 'team_c' },
-    'TEAM_D_SECRET': { role: 'MANAGER', teamId: 'team_d' },
-    'TEAM_E_SECRET': { role: 'MANAGER', teamId: 'team_e' },
-    'TEAM_F_SECRET': { role: 'MANAGER', teamId: 'team_f' },
+    'HQ_SECRET': { role: 'HQ', teamId: null, theme: null },
+    'ADMIN_SECRET': { role: 'ADMIN', teamId: null, theme: null },
+    'RED_MANAGER_SECRET': { role: 'MANAGER', teamId: 'team_red', theme: 'theme-red' },
+    'ORANGE_MANAGER_SECRET': { role: 'MANAGER', teamId: 'team_orange', theme: 'theme-orange' },
+    'YELLOW_MANAGER_SECRET': { role: 'MANAGER', teamId: 'team_yellow', theme: 'theme-yellow' },
+    'GREEN_MANAGER_SECRET': { role: 'MANAGER', teamId: 'team_green', theme: 'theme-green' },
+    'BLUE_MANAGER_SECRET': { role: 'MANAGER', teamId: 'team_blue', theme: 'theme-blue' },
+    'PURPLE_MANAGER_SECRET': { role: 'MANAGER', teamId: 'team_purple', theme: 'theme-purple' },
 }
+
 
 const AuthContext = createContext(null)
 
@@ -28,6 +29,7 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null)
     const [role, setRole] = useState(null)
     const [teamId, setTeamId] = useState(null)
+    const [theme, setTheme] = useState(null)
     const [loading, setLoading] = useState(true)
 
     // Restore session from localStorage on mount
@@ -35,17 +37,20 @@ export function AuthProvider({ children }) {
         const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
             if (firebaseUser) {
                 setUser(firebaseUser)
-                // Restore role/teamId from localStorage
+                // Restore role/teamId/theme from localStorage
                 const storedRole = localStorage.getItem('outdoor_game_role')
                 const storedTeamId = localStorage.getItem('outdoor_game_teamId')
+                const storedTheme = localStorage.getItem('outdoor_game_theme')
                 if (storedRole) {
                     setRole(storedRole)
                     setTeamId(storedTeamId)
+                    setTheme(storedTheme)
                 }
             } else {
                 setUser(null)
                 setRole(null)
                 setTeamId(null)
+                setTheme(null)
             }
             setLoading(false)
         })
@@ -53,8 +58,19 @@ export function AuthProvider({ children }) {
         return () => unsubscribe()
     }, [])
 
+    // Apply theme class to document root
+    useEffect(() => {
+        const root = document.documentElement
+        // Remove all theme classes first
+        root.classList.remove('theme-red', 'theme-orange', 'theme-yellow', 'theme-green', 'theme-blue', 'theme-purple')
+        // Apply new theme if set
+        if (theme) {
+            root.classList.add(theme)
+        }
+    }, [theme])
+
     const login = async (accessCode) => {
-        const authData = AUTH_CODES[accessCode]
+        const authData = AUTH_CODES[accessCode.trim().toUpperCase()]
         if (!authData) {
             throw new Error('Invalid access code')
         }
@@ -62,16 +78,22 @@ export function AuthProvider({ children }) {
         try {
             const userCredential = await signInAnonymously(auth)
 
-            // Persist role/teamId to localStorage
+            // Persist role/teamId/theme to localStorage
             localStorage.setItem('outdoor_game_role', authData.role)
             if (authData.teamId) {
                 localStorage.setItem('outdoor_game_teamId', authData.teamId)
             } else {
                 localStorage.removeItem('outdoor_game_teamId')
             }
+            if (authData.theme) {
+                localStorage.setItem('outdoor_game_theme', authData.theme)
+            } else {
+                localStorage.removeItem('outdoor_game_theme')
+            }
 
             setRole(authData.role)
             setTeamId(authData.teamId)
+            setTheme(authData.theme)
 
             console.log(`Logged in as ${authData.role}${authData.teamId ? ` for ${authData.teamId}` : ''}`)
 
@@ -87,9 +109,11 @@ export function AuthProvider({ children }) {
             await signOut(auth)
             localStorage.removeItem('outdoor_game_role')
             localStorage.removeItem('outdoor_game_teamId')
+            localStorage.removeItem('outdoor_game_theme')
             setUser(null)
             setRole(null)
             setTeamId(null)
+            setTheme(null)
         } catch (error) {
             console.error('Logout failed:', error)
             throw error
@@ -100,6 +124,7 @@ export function AuthProvider({ children }) {
         user,
         role,
         teamId,
+        theme,
         loading,
         login,
         logout,

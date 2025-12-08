@@ -121,3 +121,40 @@
     font-family: 'Inter', system-ui, sans-serif;
   }
 }
+
+/* Team Theme Classes - Global Scope for Specificity */
+.theme-red {
+  --primary: oklch(0.577 0.245 27.325);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.577 0.245 27.325);
+}
+
+.theme-orange {
+  --primary: oklch(0.705 0.213 47.604);
+  --primary-foreground: oklch(0.21 0.006 285.885);
+  --ring: oklch(0.705 0.213 47.604);
+}
+
+.theme-yellow {
+  --primary: oklch(0.828 0.189 84.429);
+  --primary-foreground: oklch(0.21 0.006 285.885);
+  --ring: oklch(0.828 0.189 84.429);
+}
+
+.theme-green {
+  --primary: oklch(0.696 0.17 162.48);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.696 0.17 162.48);
+}
+
+.theme-blue {
+  --primary: oklch(0.488 0.243 264.376);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.488 0.243 264.376);
+}
+
+.theme-purple {
+  --primary: oklch(0.627 0.265 303.9);
+  --primary-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.627 0.265 303.9);
+}
