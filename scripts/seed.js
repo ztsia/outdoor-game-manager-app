@@ -142,7 +142,8 @@ const territories = {
         location_image_url: "",
         owner_id: "team_red",
         stars: 1,
-        under_attack: false,
+        challenge_status: 'idle',  // 'idle' | 'requesting' | 'accepted'
+        under_attack: false,  // Legacy, kept for compatibility
         cooldown_ends_at: null,
         current_attacker_id: null,
         bet_amount: 0,
@@ -170,6 +171,7 @@ const territories = {
         location_image_url: "",
         owner_id: "team_blue",
         stars: 2,
+        challenge_status: 'idle',
         under_attack: false,
         cooldown_ends_at: Date.now() + (15 * 60 * 1000), // 15 minutes from now
         current_attacker_id: null,
@@ -198,7 +200,8 @@ const territories = {
         location_image_url: "",
         owner_id: "team_red",
         stars: 1,
-        under_attack: true, // TEST: Battle in progress
+        challenge_status: 'idle',
+        under_attack: false,
         cooldown_ends_at: null,
         current_attacker_id: null,
         bet_amount: 0,
@@ -226,6 +229,7 @@ const territories = {
         location_image_url: "",
         owner_id: "team_green",
         stars: 3,
+        challenge_status: 'idle',
         under_attack: false,
         cooldown_ends_at: null,
         current_attacker_id: null,
@@ -254,6 +258,7 @@ const territories = {
         location_image_url: "",
         owner_id: "team_blue",
         stars: 1,
+        challenge_status: 'idle',
         under_attack: false,
         cooldown_ends_at: null,
         current_attacker_id: null,

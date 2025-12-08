@@ -67,8 +67,8 @@ export function useAttackTransaction() {
                 const team = teamSnap.data()
 
                 // Validate territory is still available
-                if (territory.under_attack) {
-                    throw new Error('Territory is already under attack')
+                if (territory.challenge_status !== 'idle') {
+                    throw new Error('Territory is already under challenge')
                 }
 
                 // Validate team has enough funds
@@ -87,7 +87,7 @@ export function useAttackTransaction() {
                 })
 
                 transaction.update(territoryRef, {
-                    under_attack: true,
+                    challenge_status: 'requesting',
                     current_attacker_id: teamId,
                     bet_amount: cost
                 })

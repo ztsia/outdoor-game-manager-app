@@ -11,6 +11,9 @@ import WorldTour from '@/pages/WorldTour'
 import HQ from '@/pages/HQ'
 import Admin from '@/pages/Admin'
 
+// Global Components
+import { DefenderNotification } from '@/components/game/DefenderNotification'
+
 // Role-based redirect component for root route
 function RoleRedirect() {
   const { isAuthenticated, role, loading } = useAuth()
@@ -96,6 +99,7 @@ function App() {
         {/* Catch all - redirect to home */}
         <Route path="*" element={<RoleRedirect />} />
       </Routes>
+      <DefenderNotification />
       <Toaster position="top-center" richColors />
     </BrowserRouter>
   )

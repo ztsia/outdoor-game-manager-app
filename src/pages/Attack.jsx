@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Swords, Shield, Clock, Home, Star, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Swords, Shield, Clock, Home, Star, AlertCircle, Loader2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useGameData } from '@/hooks/useGameData'
 import { useTeamData } from '@/hooks/useTeamData'
@@ -17,6 +17,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
+import { AttackWaitingScreen } from '@/components/game/AttackWaitingScreen'
 
 // Territory status calculation
 function getTerritoryStatus(territory, myTeamId, defendingTeams) {
@@ -31,12 +32,13 @@ function getTerritoryStatus(territory, myTeamId, defendingTeams) {
         }
     }
 
-    // Currently under attack
-    if (territory.under_attack) {
+    // Currently under challenge or attack
+    if (territory.challenge_status !== 'idle') {
+        const statusText = territory.challenge_status === 'requesting' ? 'AWAITING RESPONSE' : 'BATTLE IN PROGRESS'
         return {
             disabled: true,
             reason: 'battle',
-            badge: { icon: Swords, text: 'BATTLE IN PROGRESS', variant: 'destructive' }
+            badge: { icon: Swords, text: statusText, variant: 'destructive' }
         }
     }
 
@@ -91,6 +93,7 @@ export default function Attack() {
     // Modal state
     const [selectedTerritory, setSelectedTerritory] = useState(null)
     const [modalOpen, setModalOpen] = useState(false)
+    const [waitingTerritory, setWaitingTerritory] = useState(null)  // For waiting screen
 
     const loading = territoriesLoading || teamLoading
 
@@ -108,8 +111,9 @@ export default function Attack() {
         const result = await initiateAttack(selectedTerritory.id, teamId, cost)
 
         if (result.success) {
-            toast.success(`Battle started at ${selectedTerritory.name}!`)
+            toast.success(`Challenge sent to ${selectedTerritory.name}!`)
             setModalOpen(false)
+            setWaitingTerritory(selectedTerritory)  // Show waiting screen
             setSelectedTerritory(null)
         } else {
             toast.error(result.error || 'Failed to initiate attack')
@@ -132,6 +136,17 @@ export default function Attack() {
     const sortedTerritories = [...territories].sort((a, b) =>
         a.name.localeCompare(b.name)
     )
+
+    // Show waiting screen if waiting for defender response
+    if (waitingTerritory) {
+        return (
+            <AttackWaitingScreen
+                territoryId={waitingTerritory.id}
+                defenderName={waitingTerritory.owner_id?.replace('team_', '').toUpperCase()}
+                onCancel={() => setWaitingTerritory(null)}
+            />
+        )
+    }
 
     return (
         <div className="min-h-screen bg-background pb-4">
