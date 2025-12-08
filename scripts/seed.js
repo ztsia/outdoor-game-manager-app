@@ -171,7 +171,7 @@ const territories = {
         owner_id: "team_blue",
         stars: 2,
         under_attack: false,
-        cooldown_ends_at: null,
+        cooldown_ends_at: Date.now() + (15 * 60 * 1000), // 15 minutes from now
         current_attacker_id: null,
         bet_amount: 0,
         game_info: {
@@ -198,7 +198,7 @@ const territories = {
         location_image_url: "",
         owner_id: "team_red",
         stars: 1,
-        under_attack: false,
+        under_attack: true, // TEST: Battle in progress
         cooldown_ends_at: null,
         current_attacker_id: null,
         bet_amount: 0,
