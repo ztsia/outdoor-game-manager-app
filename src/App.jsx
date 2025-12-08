@@ -8,6 +8,7 @@ import Login from '@/pages/Login'
 import Dashboard from '@/pages/Dashboard'
 import Attack from '@/pages/Attack'
 import WorldTour from '@/pages/WorldTour'
+import WaitingPage from '@/pages/WaitingPage'
 import HQ from '@/pages/HQ'
 import Admin from '@/pages/Admin'
 
@@ -72,6 +73,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
               <WorldTour />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/waiting/:territoryId"
+          element={
+            <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
+              <WaitingPage />
             </ProtectedRoute>
           }
         />

@@ -17,7 +17,6 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { AttackWaitingScreen } from '@/components/game/AttackWaitingScreen'
 
 // Territory status calculation
 function getTerritoryStatus(territory, myTeamId, defendingTeams) {
@@ -93,7 +92,6 @@ export default function Attack() {
     // Modal state
     const [selectedTerritory, setSelectedTerritory] = useState(null)
     const [modalOpen, setModalOpen] = useState(false)
-    const [waitingTerritory, setWaitingTerritory] = useState(null)  // For waiting screen
 
     const loading = territoriesLoading || teamLoading
 
@@ -113,8 +111,8 @@ export default function Attack() {
         if (result.success) {
             toast.success(`Challenge sent to ${selectedTerritory.name}!`)
             setModalOpen(false)
-            setWaitingTerritory(selectedTerritory)  // Show waiting screen
-            setSelectedTerritory(null)
+            // Navigate to waiting page - uses URL params instead of local state
+            navigate(`/waiting/${selectedTerritory.id}`)
         } else {
             toast.error(result.error || 'Failed to initiate attack')
         }
@@ -136,17 +134,6 @@ export default function Attack() {
     const sortedTerritories = [...territories].sort((a, b) =>
         a.name.localeCompare(b.name)
     )
-
-    // Show waiting screen if waiting for defender response
-    if (waitingTerritory) {
-        return (
-            <AttackWaitingScreen
-                territoryId={waitingTerritory.id}
-                defenderName={waitingTerritory.owner_id?.replace('team_', '').toUpperCase()}
-                onCancel={() => setWaitingTerritory(null)}
-            />
-        )
-    }
 
     return (
         <div className="min-h-screen bg-background pb-4">
