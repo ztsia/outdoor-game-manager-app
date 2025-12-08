@@ -1,0 +1,19 @@
+{
+    "indexes": [
+        {
+            "collectionGroup": "territories",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "owner_id",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "challenge_status",
+                    "order": "ASCENDING"
+                }
+            ]
+        }
+    ],
+    "fieldOverrides": []
+}

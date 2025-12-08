@@ -173,7 +173,7 @@ const territories = {
         stars: 2,
         challenge_status: 'idle',
         under_attack: false,
-        cooldown_ends_at: Date.now() + (15 * 60 * 1000), // 15 minutes from now
+        cooldown_ends_at: null,
         current_attacker_id: null,
         bet_amount: 0,
         game_info: {
