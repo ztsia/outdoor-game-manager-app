@@ -17,11 +17,18 @@ export default function WaitingPage() {
 
     // Guard: Only treat 'idle' as decline if we've seen 'requesting' first
     const hasSeenRequesting = useRef(false)
+    const hasNavigated = useRef(false)  // Prevent multiple navigation calls
 
     console.log('[WaitingPage] Mounted with territoryId:', territoryId)
     console.log('[WaitingPage] Current status:', status)
 
     useEffect(() => {
+        // Skip if already navigating to prevent double-navigation
+        if (hasNavigated.current) {
+            console.log('[WaitingPage] Already navigating, skipping...')
+            return
+        }
+
         console.log('[WaitingPage] Status update:', {
             status,
             territoryId,
@@ -43,10 +50,12 @@ export default function WaitingPage() {
         }
 
         if (status === 'accepted') {
+            hasNavigated.current = true  // Mark as navigating
             console.log('[WaitingPage] Challenge accepted! Navigating to game...')
             toast.success('Challenge accepted! Starting game...')
             navigate(`/game/${territoryId}`, { replace: true })
         } else if (status === 'idle') {
+            hasNavigated.current = true  // Mark as navigating
             console.log('[WaitingPage] Challenge declined. Navigating to dashboard...')
             toast.error('Challenge was declined. Your followers have been refunded.')
             navigate('/dashboard', { replace: true })
