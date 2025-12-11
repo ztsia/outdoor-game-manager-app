@@ -149,12 +149,12 @@ const territories = {
         bet_amount: 0,
         game_info: {
             title: "Football Brawl",
-            description_md: "## Rules\nFirst to score 2 goals wins!",
+            description_md: "## Rules\n\nFirst to score 2 goals wins!\n\n### Gameplay\n1. Each team takes turns shooting\n2. No hands allowed\n3. Standard football rules apply",
             win_condition: "First to 2 goals.",
-            home_advantage: "Defender starts with ball.",
+            home_advantage: "Defender starts with ball possession.",
             has_timer: true,
             timer_duration_seconds: 150,
-            timer_type: "countdown",
+            timer_mode: "shared",  // 'shared' | 'split'
             has_scoreboard: true,
             score_unit: "Goals"
         },
@@ -162,7 +162,13 @@ const territories = {
             attacker_score: 0,
             defender_score: 0,
             timer_started_at: null,
-            is_paused: false
+            is_paused: false,
+            game_started: false,
+            // Split timer fields
+            attacker_elapsed_seconds: 0,
+            defender_elapsed_seconds: 0,
+            attacker_timer_started_at: null,
+            defender_timer_started_at: null
         }
     },
     t_02: {
@@ -178,12 +184,12 @@ const territories = {
         bet_amount: 0,
         game_info: {
             title: "Dance Battle",
-            description_md: "## Rules\nBest of 3 dance rounds!",
+            description_md: "## Rules\n\nBest of 3 dance rounds!\n\n### Judging\n- Style: 40%\n- Technique: 30%\n- Creativity: 30%",
             win_condition: "Best of 3 rounds.",
             home_advantage: "Defender picks first song.",
             has_timer: false,
             timer_duration_seconds: 0,
-            timer_type: "none",
+            timer_mode: "shared",
             has_scoreboard: true,
             score_unit: "Rounds"
         },
@@ -191,7 +197,12 @@ const territories = {
             attacker_score: 0,
             defender_score: 0,
             timer_started_at: null,
-            is_paused: false
+            is_paused: false,
+            game_started: false,
+            attacker_elapsed_seconds: 0,
+            defender_elapsed_seconds: 0,
+            attacker_timer_started_at: null,
+            defender_timer_started_at: null
         }
     },
     t_03: {
@@ -207,12 +218,12 @@ const territories = {
         bet_amount: 0,
         game_info: {
             title: "Trivia Challenge",
-            description_md: "## Rules\nAnswer 5 questions correctly to win!",
+            description_md: "## Rules\n\nAnswer 5 questions correctly to win!\n\n### Categories\n- History\n- Science\n- Pop Culture",
             win_condition: "First to 5 correct answers.",
             home_advantage: "Defender gets 1 free pass.",
             has_timer: true,
             timer_duration_seconds: 30,
-            timer_type: "per_question",
+            timer_mode: "shared",
             has_scoreboard: true,
             score_unit: "Points"
         },
@@ -220,7 +231,12 @@ const territories = {
             attacker_score: 0,
             defender_score: 0,
             timer_started_at: null,
-            is_paused: false
+            is_paused: false,
+            game_started: false,
+            attacker_elapsed_seconds: 0,
+            defender_elapsed_seconds: 0,
+            attacker_timer_started_at: null,
+            defender_timer_started_at: null
         }
     },
     t_04: {
@@ -235,21 +251,26 @@ const territories = {
         current_attacker_id: null,
         bet_amount: 0,
         game_info: {
-            title: "Capture the Flag",
-            description_md: "## Rules\nCapture the enemy flag and return to base!",
-            win_condition: "First to capture flag.",
-            home_advantage: "Defender knows hiding spots.",
+            title: "Hot Zone",
+            description_md: "## Rules\n\nHold the flag in the hot zone!\n\n### Scoring\n- First to accumulate 100 seconds in the zone wins\n- Only one team can be in the zone at a time",
+            win_condition: "First to 100 seconds in zone.",
+            home_advantage: "Defender knows zone boundaries.",
             has_timer: true,
-            timer_duration_seconds: 300,
-            timer_type: "countdown",
+            timer_duration_seconds: 100,
+            timer_mode: "split",
             has_scoreboard: false,
-            score_unit: "Captures"
+            score_unit: "Seconds"
         },
         live_state: {
             attacker_score: 0,
             defender_score: 0,
             timer_started_at: null,
-            is_paused: false
+            is_paused: false,
+            game_started: false,
+            attacker_elapsed_seconds: 0,
+            defender_elapsed_seconds: 0,
+            attacker_timer_started_at: null,
+            defender_timer_started_at: null
         }
     },
     t_05: {
@@ -265,12 +286,12 @@ const territories = {
         bet_amount: 0,
         game_info: {
             title: "Word Puzzle",
-            description_md: "## Rules\nSolve the word puzzle the fastest!",
+            description_md: "## Rules\n\nSolve the word puzzle the fastest!\n\n### Tips\n- Look for prefixes and suffixes\n- Common letters: E, T, A, O",
             win_condition: "First to solve puzzle.",
             home_advantage: "Defender gets hint.",
             has_timer: true,
             timer_duration_seconds: 120,
-            timer_type: "countdown",
+            timer_mode: "shared",
             has_scoreboard: false,
             score_unit: "Puzzles"
         },
@@ -278,7 +299,12 @@ const territories = {
             attacker_score: 0,
             defender_score: 0,
             timer_started_at: null,
-            is_paused: false
+            is_paused: false,
+            game_started: false,
+            attacker_elapsed_seconds: 0,
+            defender_elapsed_seconds: 0,
+            attacker_timer_started_at: null,
+            defender_timer_started_at: null
         }
     }
 }
