@@ -62,11 +62,6 @@ export default function WaitingPage() {
         }
     }, [status, territoryId, navigate])
 
-    const handleCancel = () => {
-        // TODO: Implement cancel logic (reset territory status, refund)
-        navigate('/attack', { replace: true })
-    }
-
     const defenderName = territory?.owner_id?.replace('team_', '').toUpperCase() || 'Defender'
 
     return (
@@ -93,14 +88,9 @@ export default function WaitingPage() {
                         </div>
                     )}
 
-                    <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={handleCancel}
-                    >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Go Back
-                    </Button>
+                    <p className="text-center text-xs text-muted-foreground">
+                        You cannot leave until the defender responds.
+                    </p>
                 </CardContent>
             </Card>
         </div>

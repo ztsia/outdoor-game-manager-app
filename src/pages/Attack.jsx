@@ -95,6 +95,20 @@ export default function Attack() {
 
     const loading = territoriesLoading || teamLoading
 
+    // Check if user already has a pending outgoing challenge
+    const activeOutgoingChallenge = territories.find(t =>
+        t.current_attacker_id === teamId &&
+        t.challenge_status === 'requesting'
+    )
+
+    // Redirect to waiting page if user has pending challenge
+    useEffect(() => {
+        if (activeOutgoingChallenge) {
+            console.log('[Attack] User has pending challenge, redirecting to waiting page...')
+            navigate(`/waiting/${activeOutgoingChallenge.id}`, { replace: true })
+        }
+    }, [activeOutgoingChallenge, navigate])
+
     // Handle territory selection
     const handleSelectTerritory = (territory) => {
         setSelectedTerritory(territory)
