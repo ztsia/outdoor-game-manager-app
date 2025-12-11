@@ -6,12 +6,12 @@ import { auth } from '@/firebase'
 const AUTH_CODES = {
     'HQ_SECRET': { role: 'HQ', teamId: null, theme: null },
     'ADMIN_SECRET': { role: 'ADMIN', teamId: null, theme: null },
-    'RED_MANAGER_SECRET': { role: 'MANAGER', teamId: 'team_red', theme: 'theme-red' },
-    'ORANGE_MANAGER_SECRET': { role: 'MANAGER', teamId: 'team_orange', theme: 'theme-orange' },
-    'YELLOW_MANAGER_SECRET': { role: 'MANAGER', teamId: 'team_yellow', theme: 'theme-yellow' },
-    'GREEN_MANAGER_SECRET': { role: 'MANAGER', teamId: 'team_green', theme: 'theme-green' },
-    'BLUE_MANAGER_SECRET': { role: 'MANAGER', teamId: 'team_blue', theme: 'theme-blue' },
-    'PURPLE_MANAGER_SECRET': { role: 'MANAGER', teamId: 'team_purple', theme: 'theme-purple' },
+    'RED_SECRET': { role: 'MANAGER', teamId: 'team_red', theme: 'theme-red' },
+    'ORANGE_SECRET': { role: 'MANAGER', teamId: 'team_orange', theme: 'theme-orange' },
+    'YELLOW_SECRET': { role: 'MANAGER', teamId: 'team_yellow', theme: 'theme-yellow' },
+    'GREEN_SECRET': { role: 'MANAGER', teamId: 'team_green', theme: 'theme-green' },
+    'BLUE_SECRET': { role: 'MANAGER', teamId: 'team_blue', theme: 'theme-blue' },
+    'PURPLE_SECRET': { role: 'MANAGER', teamId: 'team_purple', theme: 'theme-purple' },
 }
 
 
