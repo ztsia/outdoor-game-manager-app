@@ -1,7 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { doc, onSnapshot } from 'firebase/firestore'
-import { db } from '@/firebase'
+import { subscribeToTerritory } from '@/services/gameService'
 import { useAuth } from '@/contexts/AuthProvider'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -24,12 +23,14 @@ export default function GamePage() {
     useEffect(() => {
         if (!territoryId) return
 
-        const unsubscribe = onSnapshot(
-            doc(db, 'territories', territoryId),
-            (snapshot) => {
-                if (snapshot.exists()) {
-                    setTerritory({ id: snapshot.id, ...snapshot.data() })
-                }
+        const unsubscribe = subscribeToTerritory(
+            territoryId,
+            (territoryData) => {
+                setTerritory(territoryData)
+                setLoading(false)
+            },
+            (err) => {
+                console.error('[GamePage] Error:', err)
                 setLoading(false)
             }
         )

@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { collection, onSnapshot } from 'firebase/firestore'
-import { db } from '@/firebase'
+import { subscribeToAllTerritories } from '@/services/gameService'
 
 /**
  * Custom hook to fetch real-time game data (all territories)
@@ -13,19 +12,13 @@ export function useGameData() {
     const [error, setError] = useState(null)
 
     useEffect(() => {
-        // Subscribe to all territories
-        const unsubscribe = onSnapshot(
-            collection(db, 'territories'),
-            (snapshot) => {
-                const territoriesData = snapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data()
-                }))
+        // Subscribe to all territories via service
+        const unsubscribe = subscribeToAllTerritories(
+            (territoriesData) => {
                 setTerritories(territoriesData)
                 setLoading(false)
             },
             (err) => {
-                console.error('Error fetching territories:', err)
                 setError(err)
                 setLoading(false)
             }

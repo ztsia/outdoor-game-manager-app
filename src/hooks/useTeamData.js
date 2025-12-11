@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { doc, onSnapshot, collection, query, where, updateDoc } from 'firebase/firestore'
-import { db } from '@/firebase'
+import { subscribeToTeam, subscribeToTeamTerritories, updateTeamName as updateTeamNameService } from '@/services/teamService'
 
 /**
  * Custom hook to fetch real-time team data and owned territories
@@ -19,41 +18,26 @@ export function useTeamData(teamId) {
             return
         }
 
-        // Subscribe to team document
-        const teamRef = doc(db, 'teams', teamId)
-        const unsubTeam = onSnapshot(
-            teamRef,
-            (snapshot) => {
-                if (snapshot.exists()) {
-                    setTeam({ id: snapshot.id, ...snapshot.data() })
-                } else {
-                    setTeam(null)
-                }
+        // Subscribe to team document via service
+        const unsubTeam = subscribeToTeam(
+            teamId,
+            (teamData) => {
+                setTeam(teamData)
                 setLoading(false)
             },
             (err) => {
-                console.error('Error fetching team:', err)
                 setError(err)
                 setLoading(false)
             }
         )
 
-        // Subscribe to owned territories
-        const territoriesQuery = query(
-            collection(db, 'territories'),
-            where('owner_id', '==', teamId)
-        )
-        const unsubTerritories = onSnapshot(
-            territoriesQuery,
-            (snapshot) => {
-                const territoriesData = snapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data()
-                }))
+        // Subscribe to owned territories via service
+        const unsubTerritories = subscribeToTeamTerritories(
+            teamId,
+            (territoriesData) => {
                 setTerritories(territoriesData)
             },
             (err) => {
-                console.error('Error fetching territories:', err)
                 setError(err)
             }
         )
@@ -68,8 +52,7 @@ export function useTeamData(teamId) {
     // Function to update team name
     const updateTeamName = async (newName) => {
         if (!teamId) return
-        const teamRef = doc(db, 'teams', teamId)
-        await updateDoc(teamRef, { name: newName })
+        await updateTeamNameService(teamId, newName)
     }
 
     return { team, territories, loading, error, updateTeamName }

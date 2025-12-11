@@ -1,6 +1,10 @@
-import { doc, runTransaction, onSnapshot, query, collection, where } from 'firebase/firestore'
-import { db } from '@/firebase'
 import { useState, useEffect } from 'react'
+import {
+    subscribeToIncomingChallenges,
+    acceptChallenge as acceptChallengeService,
+    declineChallenge as declineChallengeService
+} from '@/services/challengeService'
+import { subscribeToTerritory } from '@/services/gameService'
 
 /**
  * Hook for listening to and responding to challenge requests
@@ -14,37 +18,15 @@ export function useChallengeResponse(myTeamId) {
     useEffect(() => {
         if (!myTeamId) return
 
-        const q = query(
-            collection(db, 'territories'),
-            where('owner_id', '==', myTeamId),
-            where('challenge_status', '==', 'requesting')
-        )
-
-        const unsubscribe = onSnapshot(
-            q,
-            { includeMetadataChanges: true },  // Force real-time updates
-            (snapshot) => {
-                const fromCache = snapshot.metadata.fromCache
-                console.log('[useChallengeResponse] Snapshot received:', {
-                    empty: snapshot.empty,
-                    size: snapshot.size,
-                    myTeamId,
-                    fromCache
-                })
-
-                if (!snapshot.empty) {
-                    // Get the first challenge (assume one at a time for now)
-                    const doc = snapshot.docs[0]
-                    const challengeData = {
-                        id: doc.id,
-                        ...doc.data()
-                    }
+        const unsubscribe = subscribeToIncomingChallenges(
+            myTeamId,
+            (challengeData) => {
+                if (challengeData) {
                     console.log('[useChallengeResponse] Incoming challenge:', challengeData)
-                    setIncomingChallenge(challengeData)
                 } else {
                     console.log('[useChallengeResponse] No incoming challenges')
-                    setIncomingChallenge(null)
                 }
+                setIncomingChallenge(challengeData)
             },
             (error) => {
                 console.error('[useChallengeResponse] Query error:', error)
@@ -60,32 +42,9 @@ export function useChallengeResponse(myTeamId) {
      */
     const acceptChallenge = async (territoryId) => {
         setLoading(true)
-        try {
-            const territoryRef = doc(db, 'territories', territoryId)
-
-            await runTransaction(db, async (transaction) => {
-                const territorySnap = await transaction.get(territoryRef)
-                if (!territorySnap.exists()) {
-                    throw new Error('Territory not found')
-                }
-
-                const territory = territorySnap.data()
-                if (territory.challenge_status !== 'requesting') {
-                    throw new Error('Challenge is no longer active')
-                }
-
-                transaction.update(territoryRef, {
-                    challenge_status: 'accepted',
-                    under_attack: true  // Legacy compatibility
-                })
-            })
-
-            setLoading(false)
-            return { success: true }
-        } catch (err) {
-            setLoading(false)
-            return { success: false, error: err.message }
-        }
+        const result = await acceptChallengeService(territoryId)
+        setLoading(false)
+        return result
     }
 
     /**
@@ -94,50 +53,9 @@ export function useChallengeResponse(myTeamId) {
      */
     const declineChallenge = async (territoryId) => {
         setLoading(true)
-        try {
-            const territoryRef = doc(db, 'territories', territoryId)
-
-            await runTransaction(db, async (transaction) => {
-                const territorySnap = await transaction.get(territoryRef)
-                if (!territorySnap.exists()) {
-                    throw new Error('Territory not found')
-                }
-
-                const territory = territorySnap.data()
-                if (territory.challenge_status !== 'requesting') {
-                    throw new Error('Challenge is no longer active')
-                }
-
-                const attackerId = territory.current_attacker_id
-                const betAmount = territory.bet_amount || 0
-
-                // Refund the attacker
-                if (attackerId && betAmount > 0) {
-                    const attackerRef = doc(db, 'teams', attackerId)
-                    const attackerSnap = await transaction.get(attackerRef)
-
-                    if (attackerSnap.exists()) {
-                        const attacker = attackerSnap.data()
-                        transaction.update(attackerRef, {
-                            followers: attacker.followers + betAmount
-                        })
-                    }
-                }
-
-                // Reset territory state
-                transaction.update(territoryRef, {
-                    challenge_status: 'idle',
-                    current_attacker_id: null,
-                    bet_amount: 0
-                })
-            })
-
-            setLoading(false)
-            return { success: true }
-        } catch (err) {
-            setLoading(false)
-            return { success: false, error: err.message }
-        }
+        const result = await declineChallengeService(territoryId)
+        setLoading(false)
+        return result
     }
 
     return {
@@ -159,13 +77,12 @@ export function useChallengeStatus(territoryId) {
     useEffect(() => {
         if (!territoryId) return
 
-        const unsubscribe = onSnapshot(
-            doc(db, 'territories', territoryId),
-            (snapshot) => {
-                if (snapshot.exists()) {
-                    const data = snapshot.data()
-                    setStatus(data.challenge_status)
-                    setTerritory({ id: snapshot.id, ...data })
+        const unsubscribe = subscribeToTerritory(
+            territoryId,
+            (territoryData) => {
+                if (territoryData) {
+                    setStatus(territoryData.challenge_status)
+                    setTerritory(territoryData)
                 }
             }
         )
