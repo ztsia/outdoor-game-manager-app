@@ -6,6 +6,7 @@ import { useGameData } from '@/hooks/useGameData'
 import { useTeamData } from '@/hooks/useTeamData'
 import { useAllTeams } from '@/hooks/useAllTeams'
 import { useAttackTransaction } from '@/hooks/useAttackTransaction'
+import { getGameRules } from '@/services/challengeService'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -20,10 +21,8 @@ import {
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 
-// Territory status calculation
-function getTerritoryStatus(territory, myTeamId, defendingTeams) {
-    const now = Date.now()
-
+// Territory status calculation with real-time support
+function getTerritoryStatus(territory, myTeamId, defendingTeams, now, challengeTimeout) {
     // Own territory - can't attack yourself
     if (territory.owner_id === myTeamId) {
         return {
@@ -35,7 +34,24 @@ function getTerritoryStatus(territory, myTeamId, defendingTeams) {
 
     // Currently under challenge or attack
     if (territory.challenge_status !== 'idle') {
-        const statusText = territory.challenge_status === 'requesting' ? 'AWAITING RESPONSE' : 'BATTLE IN PROGRESS'
+        let statusText = territory.challenge_status === 'requesting' ? 'AWAITING RESPONSE' : 'BATTLE IN PROGRESS'
+
+        // Add countdown for requesting status
+        if (territory.challenge_status === 'requesting' && territory.challenged_at) {
+            const challengedAt = territory.challenged_at.toDate?.() || new Date(territory.challenged_at)
+            const expiresAt = new Date(challengedAt.getTime() + challengeTimeout * 1000)
+            const remainingMs = expiresAt - now
+
+            if (remainingMs > 0) {
+                const remainingSecs = Math.ceil(remainingMs / 1000)
+                const mins = Math.floor(remainingSecs / 60)
+                const secs = remainingSecs % 60
+                statusText = `AWAITING (${mins}:${secs.toString().padStart(2, '0')})`
+            } else {
+                statusText = 'TIMED OUT'
+            }
+        }
+
         return {
             disabled: true,
             reason: 'battle',
@@ -44,13 +60,20 @@ function getTerritoryStatus(territory, myTeamId, defendingTeams) {
     }
 
     // On cooldown
-    if (territory.cooldown_ends_at && territory.cooldown_ends_at > now) {
-        const remainingMs = territory.cooldown_ends_at - now
-        const remainingMinutes = Math.ceil(remainingMs / 60000)
-        return {
-            disabled: true,
-            reason: 'cooldown',
-            badge: { icon: Clock, text: `COOLDOWN (${remainingMinutes}m)`, variant: 'outline' }
+    if (territory.cooldown_ends_at) {
+        const cooldownEnd = territory.cooldown_ends_at.toDate?.() || territory.cooldown_ends_at
+        const cooldownEndMs = typeof cooldownEnd === 'number' ? cooldownEnd : cooldownEnd.getTime()
+
+        if (cooldownEndMs > now) {
+            const remainingMs = cooldownEndMs - now
+            const remainingSecs = Math.ceil(remainingMs / 1000)
+            const mins = Math.floor(remainingSecs / 60)
+            const secs = remainingSecs % 60
+            return {
+                disabled: true,
+                reason: 'cooldown',
+                badge: { icon: Clock, text: `COOLDOWN (${mins}:${secs.toString().padStart(2, '0')})`, variant: 'outline' }
+            }
         }
     }
 
@@ -87,7 +110,26 @@ export default function Attack() {
     const [selectedTerritory, setSelectedTerritory] = useState(null)
     const [modalOpen, setModalOpen] = useState(false)
 
+    // Real-time ticker state - use lazy initializer to avoid purity issues
+    const [now, setNow] = useState(() => Date.now())
+    const [challengeTimeout, setChallengeTimeout] = useState(120)
+
     const loading = territoriesLoading || teamLoading || teamsLoading
+
+    // Fetch game rules for timeout duration
+    useEffect(() => {
+        getGameRules().then(rules => {
+            setChallengeTimeout(rules.challengeTimeoutSeconds || 120)
+        })
+    }, [])
+
+    // Local ticker - updates every second for real-time countdowns
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setNow(Date.now())
+        }, 1000)
+        return () => clearInterval(interval)
+    }, [])
 
     // Check if user already has a pending outgoing challenge
     const activeOutgoingChallenge = territories.find(t =>
@@ -167,7 +209,7 @@ export default function Attack() {
             {/* Territory List */}
             <div className="p-4 space-y-3">
                 {sortedTerritories.map((territory) => {
-                    const status = getTerritoryStatus(territory, teamId, defendingTeams)
+                    const status = getTerritoryStatus(territory, teamId, defendingTeams, now, challengeTimeout)
                     const ownerTeam = teamsMap[territory.owner_id]
 
                     return (
