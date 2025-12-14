@@ -1,10 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useEffect, useState, useRef } from 'react'
-import { subscribeToTerritory } from '@/services/gameService'
+import { subscribeToTerritory, getTeam } from '@/services/gameService'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useGameHost } from '@/hooks/useGameHost'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { TeamChip } from '@/components/ui/TeamChip'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
     Dialog,
@@ -59,6 +59,24 @@ export default function GamePage() {
 
         return () => unsubscribe()
     }, [territoryId])
+
+    // Fetch team data for attacker and defender
+    const [attackerTeam, setAttackerTeam] = useState(null)
+    const [defenderTeam, setDefenderTeam] = useState(null)
+
+    useEffect(() => {
+        if (!territory) return
+
+        const fetchTeams = async () => {
+            const [attacker, defender] = await Promise.all([
+                getTeam(territory.current_attacker_id),
+                getTeam(territory.owner_id)
+            ])
+            setAttackerTeam(attacker)
+            setDefenderTeam(defender)
+        }
+        fetchTeams()
+    }, [territory?.current_attacker_id, territory?.owner_id])
 
     // Voting state from territory
     const liveState = territory?.live_state || {}
@@ -210,30 +228,23 @@ export default function GamePage() {
                 <h1 className="text-xl font-bold">{gameInfo.title || territory.name}</h1>
                 <p className="text-sm text-muted-foreground mb-3">{territory.name}</p>
 
-                {/* Status Banner */}
-                {isBattleMode ? (
-                    <Badge
-                        className={`w-full justify-center py-2 text-sm ${isAttacker
-                            ? 'bg-red-500 hover:bg-red-500'
-                            : isDefender
-                                ? 'bg-blue-500 hover:bg-blue-500'
-                                : 'bg-gray-500 hover:bg-gray-500'
-                            }`}
-                    >
-                        {isAttacker && <Swords className="mr-2 h-4 w-4" />}
-                        {isDefender && <Shield className="mr-2 h-4 w-4" />}
-                        {isAttacker
-                            ? `⚔️ ATTACKING ${territory.name}`
-                            : isDefender
-                                ? `🛡️ DEFENDING ${territory.name}`
-                                : '👁️ SPECTATING'
-                        }
-                    </Badge>
+                {/* Battle Header */}
+                {isBattleMode && attackerTeam && defenderTeam ? (
+                    <div className="flex items-center justify-center gap-3">
+                        <div className="flex flex-col items-center">
+                            <TeamChip name={attackerTeam.name} color={attackerTeam.color} className="text-sm px-3 py-1" />
+                            <span className="text-xs text-muted-foreground mt-1">Attacker</span>
+                        </div>
+                        <span className="text-lg font-bold text-muted-foreground">VS</span>
+                        <div className="flex flex-col items-center">
+                            <TeamChip name={defenderTeam.name} color={defenderTeam.color} className="text-sm px-3 py-1" />
+                            <span className="text-xs text-muted-foreground mt-1">Defender</span>
+                        </div>
+                    </div>
+                ) : isBattleMode ? (
+                    <p className="text-center text-sm text-muted-foreground">Loading teams...</p>
                 ) : (
-                    <Badge variant="secondary" className="w-full justify-center py-2 text-sm">
-                        <MapPin className="mr-2 h-4 w-4" />
-                        📍 YOUR TERRITORY
-                    </Badge>
+                    <p className="text-center text-sm text-muted-foreground">📍 Your Territory</p>
                 )}
             </div>
 
@@ -241,7 +252,7 @@ export default function GamePage() {
             <div className="flex-1">
                 {isViewMode ? (
                     // View Mode - Rules only
-                    <RulesTab gameInfo={gameInfo} />
+                    <RulesTab gameInfo={gameInfo} defenderColor={defenderTeam?.color} />
                 ) : (
                     // Battle Mode - All tabs
                     <Tabs defaultValue="rules" className="w-full">
@@ -271,7 +282,7 @@ export default function GamePage() {
                         </TabsList>
 
                         <TabsContent value="rules" className="mt-0">
-                            <RulesTab gameInfo={gameInfo} />
+                            <RulesTab gameInfo={gameInfo} defenderColor={defenderTeam?.color} />
                         </TabsContent>
 
                         {gameStarted && gameInfo.has_scoreboard && (

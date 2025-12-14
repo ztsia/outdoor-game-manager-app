@@ -50,3 +50,21 @@ export function subscribeToTerritory(territoryId, callback, onError) {
         }
     )
 }
+
+/**
+ * Get team data by ID
+ * @param {string} teamId - Team document ID (e.g., 'team_red')
+ * @returns {Promise<Object|null>} Team data or null if not found
+ */
+export async function getTeam(teamId) {
+    if (!teamId) return null
+
+    const { getDoc } = await import('firebase/firestore')
+    const teamDoc = await getDoc(doc(db, 'teams', teamId))
+
+    if (teamDoc.exists()) {
+        return { id: teamDoc.id, ...teamDoc.data() }
+    }
+    return null
+}
+

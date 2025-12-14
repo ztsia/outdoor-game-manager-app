@@ -29,6 +29,7 @@ const systemConfig = {
     game_rules: {
         star_value: 10000,
         battle_cooldown_minutes: 15,
+        challenge_timeout_seconds: 120, // 2 minutes for defender to respond
         rank_thresholds: {
             rising_star: { followers: 100000, stars: 3, territories: 3 },
             legend: { followers: 1000000, stars: 10, fan_fav: 1 }

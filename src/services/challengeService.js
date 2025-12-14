@@ -1,28 +1,53 @@
 /**
  * Challenge Service - Centralized Firestore operations for attack/challenge logic
  */
-import { doc, getDoc, runTransaction, collection, query, where, onSnapshot } from 'firebase/firestore'
+import { doc, getDoc, getDocs, runTransaction, collection, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 /**
  * Fetch global game rules from system_config
- * @returns {Promise<{starValue: number}>}
+ * @returns {Promise<{starValue: number, challengeTimeoutSeconds: number}>}
  */
 export async function getGameRules() {
     try {
         const configDoc = await getDoc(doc(db, 'system_config', 'game_rules'))
         if (configDoc.exists()) {
-            return { starValue: configDoc.data().star_value || 10000 }
+            const data = configDoc.data()
+            return {
+                starValue: data.star_value || 10000,
+                challengeTimeoutSeconds: data.challenge_timeout_seconds || 120
+            }
         }
-        return { starValue: 10000 }
+        return { starValue: 10000, challengeTimeoutSeconds: 120 }
     } catch (err) {
         console.error('[challengeService] Error fetching game rules:', err)
-        return { starValue: 10000 }
+        return { starValue: 10000, challengeTimeoutSeconds: 120 }
+    }
+}
+
+/**
+ * Check if a team is currently under attack on any of their territories
+ * @param {string} teamId - Team to check
+ * @returns {Promise<boolean>}
+ */
+export async function isTeamUnderAttack(teamId) {
+    try {
+        const q = query(
+            collection(db, 'territories'),
+            where('owner_id', '==', teamId),
+            where('challenge_status', '==', 'requesting')
+        )
+        const snapshot = await getDocs(q)
+        return !snapshot.empty
+    } catch (err) {
+        console.error('[challengeService] Error checking attack status:', err)
+        return false
     }
 }
 
 /**
  * Initiate an attack on a territory using a Firestore transaction
+ * Includes race condition prevention: checks if attacker is under attack
  * @param {string} territoryId - Territory to attack
  * @param {string} teamId - Attacking team ID
  * @param {number} cost - Calculated cost
@@ -30,6 +55,12 @@ export async function getGameRules() {
  */
 export async function initiateAttack(territoryId, teamId, cost) {
     try {
+        // Pre-check: Is the attacker currently under attack?
+        const underAttack = await isTeamUnderAttack(teamId)
+        if (underAttack) {
+            return { success: false, error: 'You cannot attack while your territory is under challenge!' }
+        }
+
         await runTransaction(db, async (transaction) => {
             const territoryRef = doc(db, 'territories', territoryId)
             const teamRef = doc(db, 'teams', teamId)
@@ -57,6 +88,14 @@ export async function initiateAttack(territoryId, teamId, cost) {
                 throw new Error('Cannot attack your own territory')
             }
 
+            // Check cooldown
+            if (territory.cooldown_ends_at) {
+                const cooldownEnd = territory.cooldown_ends_at.toDate?.() || new Date(territory.cooldown_ends_at)
+                if (cooldownEnd > new Date()) {
+                    throw new Error('Territory is on cooldown')
+                }
+            }
+
             transaction.update(teamRef, {
                 followers: team.followers - cost
             })
@@ -64,7 +103,8 @@ export async function initiateAttack(territoryId, teamId, cost) {
             transaction.update(territoryRef, {
                 challenge_status: 'requesting',
                 current_attacker_id: teamId,
-                bet_amount: cost
+                bet_amount: cost,
+                challenged_at: serverTimestamp()
             })
         })
 
@@ -187,7 +227,8 @@ export async function declineChallenge(territoryId) {
             transaction.update(territoryRef, {
                 challenge_status: 'idle',
                 current_attacker_id: null,
-                bet_amount: 0
+                bet_amount: 0,
+                challenged_at: null
             })
         })
 
@@ -195,4 +236,15 @@ export async function declineChallenge(territoryId) {
     } catch (err) {
         return { success: false, error: err.message }
     }
+}
+
+/**
+ * Cancel a challenge (used by attacker on timeout or manual cancel)
+ * Same as decline but from attacker's perspective
+ * @param {string} territoryId
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function cancelChallenge(territoryId) {
+    // Reuse declineChallenge logic - same effect
+    return declineChallenge(territoryId)
 }
