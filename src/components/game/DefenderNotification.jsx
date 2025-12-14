@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useChallengeResponse } from '@/hooks/useChallengeResponse'
+import { useTeamData } from '@/hooks/useTeamData'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { TeamChip } from '@/components/ui/TeamChip'
 import { AlertTriangle, Shield, Swords, X, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -18,6 +20,9 @@ export function DefenderNotification() {
     const navigate = useNavigate()
     const location = useLocation()
     const { incomingChallenge, acceptChallenge, declineChallenge, loading } = useChallengeResponse(teamId)
+
+    // Fetch attacker team data for the chip
+    const { team: attackerTeam } = useTeamData(incomingChallenge?.current_attacker_id)
 
     // State for dismissing banner temporarily
     const [bannerDismissed, setBannerDismissed] = useState(false)
@@ -57,7 +62,6 @@ export function DefenderNotification() {
         setShowModal(false)
     }
 
-    const attackerName = incomingChallenge.current_attacker_id?.replace('team_', '').toUpperCase() || 'Unknown'
     const territoryName = incomingChallenge.name || 'Unknown Territory'
 
     // Show Modal when idle/dashboard OR when user clicks VIEW
@@ -72,8 +76,11 @@ export function DefenderNotification() {
                         <DialogTitle className="text-xl">
                             ⚔️ INCOMING ATTACK!
                         </DialogTitle>
-                        <DialogDescription className="text-base">
-                            Team <Badge variant="destructive">{attackerName}</Badge> is challenging your territory!
+                        <DialogDescription className="text-base flex items-center justify-center gap-2">
+                            <TeamChip
+                                name={attackerTeam?.name}
+                                color={attackerTeam?.color}
+                            /> is challenging your territory!
                         </DialogDescription>
                     </DialogHeader>
 

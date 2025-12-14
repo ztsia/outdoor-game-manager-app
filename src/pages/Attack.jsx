@@ -4,10 +4,12 @@ import { ArrowLeft, Swords, Shield, Clock, Home, Star, AlertCircle, Loader2 } fr
 import { useAuth } from '@/contexts/AuthProvider'
 import { useGameData } from '@/hooks/useGameData'
 import { useTeamData } from '@/hooks/useTeamData'
+import { useAllTeams } from '@/hooks/useAllTeams'
 import { useAttackTransaction } from '@/hooks/useAttackTransaction'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { TeamChip } from '@/components/ui/TeamChip'
 import {
     Dialog,
     DialogContent,
@@ -65,15 +67,6 @@ function getTerritoryStatus(territory, myTeamId, defendingTeams) {
     return { disabled: false, reason: null, badge: null }
 }
 
-// Team color mapping
-const teamColors = {
-    team_red: 'bg-red-500',
-    team_orange: 'bg-orange-500',
-    team_yellow: 'bg-yellow-500',
-    team_green: 'bg-green-500',
-    team_blue: 'bg-blue-500',
-    team_purple: 'bg-purple-500'
-}
 
 // Format number with K/M suffix
 function formatNumber(num) {
@@ -86,6 +79,7 @@ export default function Attack() {
     const { teamId } = useAuth()
     const { territories, defendingTeams, loading: territoriesLoading } = useGameData()
     const { team, loading: teamLoading } = useTeamData(teamId)
+    const { teamsMap, loading: teamsLoading } = useAllTeams()
     const { starValue, calculateCost, initiateAttack, loading: attackLoading } = useAttackTransaction()
     const navigate = useNavigate()
 
@@ -93,7 +87,7 @@ export default function Attack() {
     const [selectedTerritory, setSelectedTerritory] = useState(null)
     const [modalOpen, setModalOpen] = useState(false)
 
-    const loading = territoriesLoading || teamLoading
+    const loading = territoriesLoading || teamLoading || teamsLoading
 
     // Check if user already has a pending outgoing challenge
     const activeOutgoingChallenge = territories.find(t =>
@@ -174,7 +168,7 @@ export default function Attack() {
             <div className="p-4 space-y-3">
                 {sortedTerritories.map((territory) => {
                     const status = getTerritoryStatus(territory, teamId, defendingTeams)
-                    const ownerColor = teamColors[territory.owner_id] || 'bg-gray-500'
+                    const ownerTeam = teamsMap[territory.owner_id]
 
                     return (
                         <Card
@@ -200,11 +194,11 @@ export default function Attack() {
                                         </div>
 
                                         {/* Owner Badge */}
-                                        <div className="mt-1 flex items-center gap-2">
-                                            <div className={`h-3 w-3 rounded-full ${ownerColor}`} />
-                                            <span className="text-sm text-muted-foreground">
-                                                {territory.owner_id?.replace('team_', '').toUpperCase() || 'Unknown'}
-                                            </span>
+                                        <div className="mt-1">
+                                            <TeamChip
+                                                name={ownerTeam?.name}
+                                                color={ownerTeam?.color}
+                                            />
                                         </div>
 
                                         {/* Game Title */}
@@ -242,8 +236,11 @@ export default function Attack() {
                             <Swords className="h-5 w-5" />
                             Challenge {selectedTerritory?.name}
                         </DialogTitle>
-                        <DialogDescription>
-                            Owned by {selectedTerritory?.owner_id?.replace('team_', '').toUpperCase()}
+                        <DialogDescription className="flex items-center gap-2">
+                            Owned by <TeamChip
+                                name={teamsMap[selectedTerritory?.owner_id]?.name}
+                                color={teamsMap[selectedTerritory?.owner_id]?.color}
+                            />
                         </DialogDescription>
                     </DialogHeader>
 

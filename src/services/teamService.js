@@ -67,3 +67,26 @@ export async function updateTeamName(teamId, newName) {
     const teamRef = doc(db, 'teams', teamId)
     await updateDoc(teamRef, { name: newName })
 }
+
+/**
+ * Subscribe to all teams in real-time
+ * @param {Function} callback - Called with array of team objects
+ * @param {Function} onError - Called on error
+ * @returns {Function} Unsubscribe function
+ */
+export function subscribeToAllTeams(callback, onError) {
+    return onSnapshot(
+        collection(db, 'teams'),
+        (snapshot) => {
+            const teams = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data()
+            }))
+            callback(teams)
+        },
+        (err) => {
+            console.error('[teamService] Error fetching all teams:', err)
+            if (onError) onError(err)
+        }
+    )
+}
