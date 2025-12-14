@@ -1,32 +1,13 @@
-import { doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore'
+import { doc, updateDoc, getDoc, runTransaction, Timestamp, increment } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'sonner'
 
 /**
  * useGameHost - Hook for real-time game state management
- * Provides methods for score updates, timer controls, and game lifecycle
+ * Provides methods for score updates, timer controls, voting, and game resolution
  */
 export function useGameHost(territoryId) {
     const territoryRef = doc(db, 'territories', territoryId)
-
-    /**
-     * Update score for attacker or defender
-     * @param {'attacker' | 'defender'} role 
-     * @param {number} delta - Amount to add (or subtract if negative)
-     */
-    const updateScore = async (role, delta) => {
-        try {
-            const field = role === 'attacker' ? 'live_state.attacker_score' : 'live_state.defender_score'
-
-            // Use FieldValue.increment would be better, but for simplicity:
-            await updateDoc(territoryRef, {
-                [field]: delta // Note: This sets the value, not increments
-            })
-        } catch (err) {
-            console.error('[useGameHost] Failed to update score:', err)
-            toast.error('Failed to update score')
-        }
-    }
 
     /**
      * Increment score by 1
@@ -34,10 +15,6 @@ export function useGameHost(territoryId) {
     const incrementScore = async (role) => {
         try {
             const field = role === 'attacker' ? 'live_state.attacker_score' : 'live_state.defender_score'
-            // We need to read current value and increment
-            // For real-time safety, this should use a transaction
-            // For now, we'll use the increment approach
-            const { increment } = await import('firebase/firestore')
             await updateDoc(territoryRef, {
                 [field]: increment(1)
             })
@@ -52,7 +29,6 @@ export function useGameHost(territoryId) {
      */
     const decrementScore = async (role) => {
         try {
-            const { increment } = await import('firebase/firestore')
             const field = role === 'attacker' ? 'live_state.attacker_score' : 'live_state.defender_score'
             await updateDoc(territoryRef, {
                 [field]: increment(-1)
@@ -127,7 +103,6 @@ export function useGameHost(territoryId) {
 
     /**
      * Start split timer for a specific role
-     * @param {'attacker' | 'defender'} role
      */
     const startSplitTimer = async (role) => {
         try {
@@ -147,9 +122,6 @@ export function useGameHost(territoryId) {
 
     /**
      * Pause split timer for a specific role
-     * This calculates elapsed time and stores it, then clears the started_at
-     * @param {'attacker' | 'defender'} role
-     * @param {number} currentElapsed - Current calculated elapsed seconds
      */
     const pauseSplitTimer = async (role, currentElapsed) => {
         try {
@@ -171,52 +143,170 @@ export function useGameHost(territoryId) {
         }
     }
 
+    // ==================== VOTING SYSTEM ====================
+
     /**
-     * End the game and resolve battle
-     * @param {'attacker' | 'defender'} winner
+     * Request to end the game (opens modal for both players)
      */
-    const endGame = async (winner) => {
+    const requestEndGame = async (requesterId) => {
         try {
-            // TODO: Implement full battle resolution logic
-            // - Transfer ownership if attacker won
-            // - Apply cooldown
-            // - Transfer/refund bet
+            await updateDoc(territoryRef, {
+                'live_state.end_game_requested_at': Timestamp.now(),
+                'live_state.end_game_requester_id': requesterId,
+                'live_state.attacker_vote': null,
+                'live_state.defender_vote': null,
+                'live_state.vote_mismatch': false
+            })
+            console.log('[useGameHost] End game requested by:', requesterId)
+        } catch (err) {
+            console.error('[useGameHost] Failed to request end game:', err)
+            toast.error('Failed to request end game')
+        }
+    }
+
+    /**
+     * Submit vote for winner
+     * @param {'attacker' | 'defender'} voterRole - Who is voting
+     * @param {'attacker' | 'defender'} selection - Who they think won
+     */
+    const submitVote = async (voterRole, selection) => {
+        try {
+            const voteField = voterRole === 'attacker'
+                ? 'live_state.attacker_vote'
+                : 'live_state.defender_vote'
 
             await updateDoc(territoryRef, {
-                'challenge_status': 'idle',
-                'under_attack': false,
-                'live_state.game_started': false,
-                'live_state.attacker_score': 0,
-                'live_state.defender_score': 0,
-                'live_state.timer_started_at': null,
-                'live_state.is_paused': false,
-                'live_state.attacker_elapsed_seconds': 0,
-                'live_state.defender_elapsed_seconds': 0,
-                'live_state.attacker_timer_started_at': null,
-                'live_state.defender_timer_started_at': null,
-                'current_attacker_id': null,
-                'bet_amount': 0,
-                'cooldown_ends_at': Date.now() + (15 * 60 * 1000) // 15 min cooldown
+                [voteField]: selection,
+                'live_state.vote_mismatch': false // Reset mismatch on new vote
+            })
+            console.log(`[useGameHost] ${voterRole} voted for ${selection}`)
+        } catch (err) {
+            console.error('[useGameHost] Failed to submit vote:', err)
+            toast.error('Failed to submit vote')
+        }
+    }
+
+    /**
+     * Set vote mismatch flag
+     */
+    const setVoteMismatch = async () => {
+        try {
+            await updateDoc(territoryRef, {
+                'live_state.vote_mismatch': true,
+                'live_state.attacker_vote': null,
+                'live_state.defender_vote': null
+            })
+        } catch (err) {
+            console.error('[useGameHost] Failed to set vote mismatch:', err)
+        }
+    }
+
+    /**
+     * Resolve game after consensus
+     * @param {'attacker' | 'defender'} winner
+     * @param {Object} territory - Current territory data for reference
+     */
+    const resolveGame = async (winner, territory) => {
+        try {
+            const attackerId = territory.current_attacker_id
+            const defenderId = territory.owner_id
+            const betAmount = territory.bet_amount || 0
+
+            // Get system config for cooldown duration
+            const configDoc = await getDoc(doc(db, 'system_config', 'game_rules'))
+            const cooldownMinutes = configDoc.exists()
+                ? configDoc.data().battle_cooldown_minutes || 15
+                : 15
+
+            await runTransaction(db, async (transaction) => {
+                // Read current team data
+                const attackerRef = doc(db, 'teams', attackerId)
+                const defenderRef = doc(db, 'teams', defenderId)
+                const attackerDoc = await transaction.get(attackerRef)
+                const defenderDoc = await transaction.get(defenderRef)
+
+                if (!attackerDoc.exists() || !defenderDoc.exists()) {
+                    throw new Error('Team data not found')
+                }
+
+                const attackerData = attackerDoc.data()
+                const defenderData = defenderDoc.data()
+
+                if (winner === 'attacker') {
+                    // Attacker wins: gets back bet, gains territory (+1 star)
+                    transaction.update(attackerRef, {
+                        followers: (attackerData.followers || 0) + betAmount,
+                        territory_count: (attackerData.territory_count || 0) + 1
+                    })
+                    transaction.update(defenderRef, {
+                        territory_count: Math.max(0, (defenderData.territory_count || 1) - 1)
+                    })
+                    transaction.update(territoryRef, {
+                        owner_id: attackerId,
+                        stars: increment(1)
+                    })
+                } else {
+                    // Defender wins: keeps territory (+1 star), wins attacker's bet
+                    transaction.update(defenderRef, {
+                        followers: (defenderData.followers || 0) + betAmount
+                    })
+                    transaction.update(territoryRef, {
+                        stars: increment(1)
+                    })
+                    // Attacker already lost bet when initiating
+                }
+
+                // Reset territory state
+                const cooldownEnd = new Date(Date.now() + cooldownMinutes * 60 * 1000)
+                transaction.update(territoryRef, {
+                    challenge_status: 'idle',
+                    under_attack: false,
+                    current_attacker_id: null,
+                    bet_amount: 0,
+                    cooldown_ends_at: Timestamp.fromDate(cooldownEnd),
+                    'live_state.game_started': false,
+                    'live_state.attacker_score': 0,
+                    'live_state.defender_score': 0,
+                    'live_state.timer_started_at': null,
+                    'live_state.is_paused': false,
+                    'live_state.attacker_elapsed_seconds': 0,
+                    'live_state.defender_elapsed_seconds': 0,
+                    'live_state.attacker_timer_started_at': null,
+                    'live_state.defender_timer_started_at': null,
+                    'live_state.end_game_requested_at': null,
+                    'live_state.end_game_requester_id': null,
+                    'live_state.attacker_vote': null,
+                    'live_state.defender_vote': null,
+                    'live_state.vote_mismatch': false
+                })
             })
 
-            toast.success(`${winner.toUpperCase()} WON! Battle resolved.`)
-            console.log('[useGameHost] Game ended, winner:', winner)
+            console.log('[useGameHost] Game resolved, winner:', winner)
+            return true
         } catch (err) {
-            console.error('[useGameHost] Failed to end game:', err)
-            toast.error('Failed to end game')
+            console.error('[useGameHost] Failed to resolve game:', err)
+            toast.error('Failed to resolve game')
+            return false
         }
     }
 
     return {
-        updateScore,
+        // Score
         incrementScore,
         decrementScore,
+        // Game lifecycle
         startGame,
+        // Shared timer
         startSharedTimer,
         pauseSharedTimer,
         resetSharedTimer,
+        // Split timer
         startSplitTimer,
         pauseSplitTimer,
-        endGame
+        // Voting
+        requestEndGame,
+        submitVote,
+        setVoteMismatch,
+        resolveGame
     }
 }

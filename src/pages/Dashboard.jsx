@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Pencil, Star, Trophy, Swords, Globe, LogOut } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useTeamData } from '@/hooks/useTeamData'
@@ -18,14 +18,26 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
+import { GameResultModal } from '@/components/dashboard/GameResultModal'
 
 export default function Dashboard() {
     const { teamId, logout } = useAuth()
     const { team, territories, loading, updateTeamName } = useTeamData(teamId)
     const navigate = useNavigate()
+    const location = useLocation()
 
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [newTeamName, setNewTeamName] = useState('')
+    const [gameResult, setGameResult] = useState(null)
+
+    // Check for game result from navigation state
+    useEffect(() => {
+        if (location.state?.gameResult) {
+            setGameResult(location.state.gameResult)
+            // Clear the state to prevent showing again on refresh
+            window.history.replaceState({}, document.title)
+        }
+    }, [location.state])
 
     // Handle team name update
     const handleUpdateName = async () => {
@@ -188,7 +200,8 @@ export default function Dashboard() {
                                 {territories.map((territory) => (
                                     <div
                                         key={territory.id}
-                                        className="flex items-center justify-between rounded-lg border p-3"
+                                        className="flex items-center justify-between rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                                        onClick={() => navigate(`/game/${territory.id}`)}
                                     >
                                         <span className="font-medium">{territory.name}</span>
                                         <div className="flex items-center gap-1 text-yellow-500">
@@ -227,6 +240,14 @@ export default function Dashboard() {
                     </Button>
                 </div>
             </div>
+
+            {/* Game Result Modal */}
+            {gameResult && (
+                <GameResultModal
+                    result={gameResult}
+                    onClose={() => setGameResult(null)}
+                />
+            )}
         </div>
     )
 }

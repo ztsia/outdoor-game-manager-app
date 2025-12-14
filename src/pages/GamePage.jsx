@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { subscribeToTerritory } from '@/services/gameService'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useGameHost } from '@/hooks/useGameHost'
@@ -14,7 +14,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
-import { Swords, Shield, ArrowLeft, Loader2, MapPin, Play, Square, Trophy } from 'lucide-react'
+import { Swords, Shield, ArrowLeft, Loader2, MapPin, Play, Square, Trophy, AlertCircle } from 'lucide-react'
 
 // Tab components
 import { RulesTab } from '@/components/game/RulesTab'
@@ -24,15 +24,18 @@ import { TimerTab } from '@/components/game/TimerTab'
 /**
  * GamePage - Game Host Mode (Distributed View)
  * Supports Battle Mode (active game) and View Mode (territory info)
+ * Now includes cooperative voting for game ending
  */
 export default function GamePage() {
     const { territoryId } = useParams()
     const navigate = useNavigate()
-    const { teamId, role: userRole } = useAuth()
+    const { teamId } = useAuth()
     const [territory, setTerritory] = useState(null)
     const [loading, setLoading] = useState(true)
-    const [confirmEndOpen, setConfirmEndOpen] = useState(false)
     const [victoryWinner, setVictoryWinner] = useState(null)
+
+    // Track if we've resolved to prevent double resolution
+    const hasResolved = useRef(false)
 
     // Game host controls
     const gameHost = useGameHost(territoryId)
@@ -57,6 +60,91 @@ export default function GamePage() {
         return () => unsubscribe()
     }, [territoryId])
 
+    // Voting state from territory
+    const liveState = territory?.live_state || {}
+    const endGameRequested = !!liveState.end_game_requested_at
+    const attackerVote = liveState.attacker_vote
+    const defenderVote = liveState.defender_vote
+    const voteMismatch = liveState.vote_mismatch
+
+    // Role detection
+    const isAttacker = territory?.current_attacker_id === teamId
+    const isDefender = territory?.owner_id === teamId
+    const role = isAttacker ? 'attacker' : isDefender ? 'defender' : 'spectator'
+
+    // My vote
+    const myVote = isAttacker ? attackerVote : isDefender ? defenderVote : null
+    const opponentVote = isAttacker ? defenderVote : isDefender ? attackerVote : null
+
+    // Check for consensus and resolve
+    useEffect(() => {
+        if (!endGameRequested || !territory || hasResolved.current) return
+
+        // Both voted
+        if (attackerVote && defenderVote) {
+            if (attackerVote === defenderVote) {
+                // CONSENSUS - Resolve the game
+                const winner = attackerVote
+                hasResolved.current = true
+
+                console.log('[GamePage] Consensus reached! Winner:', winner)
+
+                // Calculate result data for dashboard
+                const betAmount = territory.bet_amount || 0
+                const isWinner =
+                    (winner === 'attacker' && isAttacker) ||
+                    (winner === 'defender' && isDefender)
+
+                const resultData = {
+                    winner,
+                    isWinner,
+                    territoryName: territory.name,
+                    territoryId: territory.id || territoryId,
+                    stars: (territory.stars || 1) + 1, // +1 star to winner
+                    betAmount,
+                    attackerName: territory.current_attacker_id?.replace('team_', '').toUpperCase(),
+                    defenderName: territory.owner_id?.replace('team_', '').toUpperCase(),
+                    // What you gained/lost
+                    outcome: isWinner ? 'victory' : 'defeat',
+                    followersChange: isWinner
+                        ? betAmount // Winner gets bet (refund for attacker, winnings for defender)
+                        : isAttacker
+                            ? 0 // Attacker already lost bet when initiating
+                            : 0 // Defender keeps territory but gets 0 extra
+                }
+
+                // Resolve the game (only one client will succeed due to Firestore)
+                gameHost.resolveGame(winner, territory).then(() => {
+                    navigate('/dashboard', {
+                        replace: true,
+                        state: { gameResult: resultData }
+                    })
+                })
+            } else {
+                // MISMATCH - Set flag to show error
+                console.log('[GamePage] Vote mismatch:', attackerVote, 'vs', defenderVote)
+                gameHost.setVoteMismatch()
+            }
+        }
+    }, [attackerVote, defenderVote, endGameRequested, territory, gameHost, navigate, isAttacker, isDefender, territoryId])
+
+    // Handle "End Game" button press
+    const handleRequestEndGame = () => {
+        gameHost.requestEndGame(teamId)
+    }
+
+    // Handle vote submission
+    const handleVote = (selection) => {
+        gameHost.submitVote(role, selection)
+    }
+
+    // Handle victory from timer
+    const handleVictory = (winner) => {
+        if (!victoryWinner) {
+            setVictoryWinner(winner)
+        }
+    }
+
     if (loading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-background">
@@ -77,32 +165,17 @@ export default function GamePage() {
     const isBattleMode = territory.challenge_status === 'accepted'
     const isViewMode = !isBattleMode
 
-    // Role detection
-    const isAttacker = territory.current_attacker_id === teamId
-    const isDefender = territory.owner_id === teamId
-    const role = isAttacker ? 'attacker' : isDefender ? 'defender' : 'spectator'
-
     // Game state
-    const gameStarted = territory.live_state?.game_started || false
+    const gameStarted = liveState.game_started || false
     const gameInfo = territory.game_info || {}
 
     // Names
     const attackerName = territory.current_attacker_id?.replace('team_', '').toUpperCase() || 'ATTACKER'
     const defenderName = territory.owner_id?.replace('team_', '').toUpperCase() || 'DEFENDER'
 
-    // Handle victory
-    const handleVictory = (winner) => {
-        if (!victoryWinner) {
-            setVictoryWinner(winner)
-        }
-    }
-
-    // Handle end game confirmation
-    const handleEndGame = (winner) => {
-        setConfirmEndOpen(false)
-        gameHost.endGame(winner)
-        navigate('/dashboard', { replace: true })
-    }
+    // Determine voting modal state
+    const showVotingModal = endGameRequested && !hasResolved.current
+    const isWaitingForOpponent = myVote && !opponentVote && !voteMismatch
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
@@ -141,10 +214,10 @@ export default function GamePage() {
                 {isBattleMode ? (
                     <Badge
                         className={`w-full justify-center py-2 text-sm ${isAttacker
-                                ? 'bg-red-500 hover:bg-red-500'
-                                : isDefender
-                                    ? 'bg-blue-500 hover:bg-blue-500'
-                                    : 'bg-gray-500 hover:bg-gray-500'
+                            ? 'bg-red-500 hover:bg-red-500'
+                            : isDefender
+                                ? 'bg-blue-500 hover:bg-blue-500'
+                                : 'bg-gray-500 hover:bg-gray-500'
                             }`}
                     >
                         {isAttacker && <Swords className="mr-2 h-4 w-4" />}
@@ -256,45 +329,61 @@ export default function GamePage() {
                             <Button
                                 variant="destructive"
                                 className="w-full"
-                                onClick={() => setConfirmEndOpen(true)}
+                                onClick={handleRequestEndGame}
+                                disabled={endGameRequested}
                             >
                                 <Square className="mr-2 h-4 w-4" />
-                                End Game
+                                {endGameRequested ? 'Voting in Progress...' : 'End Game'}
                             </Button>
                         )}
                     </>
                 )}
             </div>
 
-            {/* End Game Confirmation Dialog */}
-            <Dialog open={confirmEndOpen} onOpenChange={setConfirmEndOpen}>
-                <DialogContent>
+            {/* Voting Modal */}
+            <Dialog open={showVotingModal} onOpenChange={() => { }}>
+                <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
                     <DialogHeader>
                         <DialogTitle>End Game - Who Won?</DialogTitle>
                         <DialogDescription>
-                            Select the winner to resolve the battle. This action cannot be undone.
+                            {voteMismatch ? (
+                                <span className="text-destructive flex items-center gap-2">
+                                    <AlertCircle className="h-4 w-4" />
+                                    You and your opponent selected different winners. Please try again.
+                                </span>
+                            ) : isWaitingForOpponent ? (
+                                <span className="flex items-center gap-2">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Waiting for opponent to vote...
+                                </span>
+                            ) : (
+                                'Both players must agree on the winner.'
+                            )}
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter className="flex-col gap-2 sm:flex-row">
-                        <Button
-                            className="flex-1 bg-red-500 hover:bg-red-600"
-                            onClick={() => handleEndGame('attacker')}
-                        >
-                            <Swords className="mr-2 h-4 w-4" />
-                            {attackerName} WON
-                        </Button>
-                        <Button
-                            className="flex-1 bg-blue-500 hover:bg-blue-600"
-                            onClick={() => handleEndGame('defender')}
-                        >
-                            <Shield className="mr-2 h-4 w-4" />
-                            {defenderName} WON
-                        </Button>
-                    </DialogFooter>
+
+                    {(!myVote || voteMismatch) && (
+                        <DialogFooter className="flex-col gap-2 sm:flex-row">
+                            <Button
+                                className={`flex-1 ${myVote === 'attacker' ? 'ring-2 ring-offset-2' : ''} bg-red-500 hover:bg-red-600`}
+                                onClick={() => handleVote('attacker')}
+                            >
+                                <Swords className="mr-2 h-4 w-4" />
+                                {attackerName} WON
+                            </Button>
+                            <Button
+                                className={`flex-1 ${myVote === 'defender' ? 'ring-2 ring-offset-2' : ''} bg-blue-500 hover:bg-blue-600`}
+                                onClick={() => handleVote('defender')}
+                            >
+                                <Shield className="mr-2 h-4 w-4" />
+                                {defenderName} WON
+                            </Button>
+                        </DialogFooter>
+                    )}
                 </DialogContent>
             </Dialog>
 
-            {/* Victory Modal */}
+            {/* Victory Modal (from timer) */}
             <Dialog open={!!victoryWinner} onOpenChange={() => setVictoryWinner(null)}>
                 <DialogContent className="text-center">
                     <DialogHeader>

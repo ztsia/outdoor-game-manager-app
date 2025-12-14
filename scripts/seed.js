@@ -168,7 +168,13 @@ const territories = {
             attacker_elapsed_seconds: 0,
             defender_elapsed_seconds: 0,
             attacker_timer_started_at: null,
-            defender_timer_started_at: null
+            defender_timer_started_at: null,
+            // Voting fields
+            end_game_requested_at: null,
+            end_game_requester_id: null,
+            attacker_vote: null,
+            defender_vote: null,
+            vote_mismatch: false
         }
     },
     t_02: {
@@ -202,7 +208,12 @@ const territories = {
             attacker_elapsed_seconds: 0,
             defender_elapsed_seconds: 0,
             attacker_timer_started_at: null,
-            defender_timer_started_at: null
+            defender_timer_started_at: null,
+            end_game_requested_at: null,
+            end_game_requester_id: null,
+            attacker_vote: null,
+            defender_vote: null,
+            vote_mismatch: false
         }
     },
     t_03: {
@@ -236,7 +247,12 @@ const territories = {
             attacker_elapsed_seconds: 0,
             defender_elapsed_seconds: 0,
             attacker_timer_started_at: null,
-            defender_timer_started_at: null
+            defender_timer_started_at: null,
+            end_game_requested_at: null,
+            end_game_requester_id: null,
+            attacker_vote: null,
+            defender_vote: null,
+            vote_mismatch: false
         }
     },
     t_04: {
@@ -270,7 +286,12 @@ const territories = {
             attacker_elapsed_seconds: 0,
             defender_elapsed_seconds: 0,
             attacker_timer_started_at: null,
-            defender_timer_started_at: null
+            defender_timer_started_at: null,
+            end_game_requested_at: null,
+            end_game_requester_id: null,
+            attacker_vote: null,
+            defender_vote: null,
+            vote_mismatch: false
         }
     },
     t_05: {
@@ -304,7 +325,12 @@ const territories = {
             attacker_elapsed_seconds: 0,
             defender_elapsed_seconds: 0,
             attacker_timer_started_at: null,
-            defender_timer_started_at: null
+            defender_timer_started_at: null,
+            end_game_requested_at: null,
+            end_game_requester_id: null,
+            attacker_vote: null,
+            defender_vote: null,
+            vote_mismatch: false
         }
     }
 }
