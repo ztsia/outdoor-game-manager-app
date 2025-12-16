@@ -212,13 +212,27 @@ export function useGameHost(territoryId) {
             const defenderId = territory.owner_id
             const betAmount = territory.bet_amount || 0
 
-            // Get system config for cooldown duration
+            // Get system config for cooldown and max stars
             const configDoc = await getDoc(doc(db, 'system_config', 'game_rules'))
-            const cooldownMinutes = configDoc.exists()
-                ? configDoc.data().battle_cooldown_minutes || 15
-                : 15
+            const config = configDoc.exists() ? configDoc.data() : {}
+            const cooldownMinutes = config.battle_cooldown_minutes || 15
+            const maxStars = config.max_territory_stars || 3
 
-            await runTransaction(db, async (transaction) => {
+            const resolved = await runTransaction(db, async (transaction) => {
+                // Read territory document FIRST to check if already resolved
+                const territoryDoc = await transaction.get(territoryRef)
+                if (!territoryDoc.exists()) {
+                    throw new Error('Territory not found')
+                }
+
+                const currentTerritoryData = territoryDoc.data()
+
+                // Race condition guard: if already idle, another client resolved first
+                if (currentTerritoryData.challenge_status !== 'accepted') {
+                    console.log('[useGameHost] Already resolved by another client, skipping')
+                    return false // Signal that we didn't resolve
+                }
+
                 // Read current team data
                 const attackerRef = doc(db, 'teams', attackerId)
                 const defenderRef = doc(db, 'teams', defenderId)
@@ -232,8 +246,12 @@ export function useGameHost(territoryId) {
                 const attackerData = attackerDoc.data()
                 const defenderData = defenderDoc.data()
 
+                // Check if we can add stars
+                const currentStars = currentTerritoryData.stars || 1
+                const canAddStar = currentStars < maxStars
+
                 if (winner === 'attacker') {
-                    // Attacker wins: gets back bet, gains territory (+1 star)
+                    // Attacker wins: gets back bet, gains territory
                     transaction.update(attackerRef, {
                         followers: (attackerData.followers || 0) + betAmount,
                         territory_count: (attackerData.territory_count || 0) + 1
@@ -241,18 +259,23 @@ export function useGameHost(territoryId) {
                     transaction.update(defenderRef, {
                         territory_count: Math.max(0, (defenderData.territory_count || 1) - 1)
                     })
-                    transaction.update(territoryRef, {
-                        owner_id: attackerId,
-                        stars: increment(1)
-                    })
+                    // Update territory owner and optionally add star
+                    const territoryUpdate = { owner_id: attackerId }
+                    if (canAddStar) {
+                        territoryUpdate.stars = increment(1)
+                    }
+                    transaction.update(territoryRef, territoryUpdate)
                 } else {
-                    // Defender wins: keeps territory (+1 star), wins attacker's bet
+                    // Defender wins: keeps territory, wins attacker's bet
                     transaction.update(defenderRef, {
                         followers: (defenderData.followers || 0) + betAmount
                     })
-                    transaction.update(territoryRef, {
-                        stars: increment(1)
-                    })
+                    // Optionally add star
+                    if (canAddStar) {
+                        transaction.update(territoryRef, {
+                            stars: increment(1)
+                        })
+                    }
                     // Attacker already lost bet when initiating
                 }
 
@@ -279,10 +302,14 @@ export function useGameHost(territoryId) {
                     'live_state.defender_vote': null,
                     'live_state.vote_mismatch': false
                 })
+
+                return true // Signal successful resolution
             })
 
-            console.log('[useGameHost] Game resolved, winner:', winner)
-            return true
+            if (resolved) {
+                console.log('[useGameHost] Game resolved, winner:', winner)
+            }
+            return resolved
         } catch (err) {
             console.error('[useGameHost] Failed to resolve game:', err)
             toast.error('Failed to resolve game')

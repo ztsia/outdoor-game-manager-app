@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
 import { useAuth } from '@/contexts/AuthProvider'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -15,6 +15,17 @@ import Admin from '@/pages/Admin'
 
 // Global Components
 import { DefenderNotification } from '@/components/game/DefenderNotification'
+
+// Root Layout - wraps all routes with global components
+function RootLayout() {
+  return (
+    <>
+      <Outlet />
+      <DefenderNotification />
+      <Toaster position="top-center" richColors />
+    </>
+  )
+}
 
 // Role-based redirect component for root route
 function RoleRedirect() {
@@ -42,85 +53,87 @@ function RoleRedirect() {
   return <Navigate to={roleHomeMap[role] || '/login'} replace />
 }
 
+// Create router with Data Router API
+const router = createBrowserRouter([
+  {
+    element: <RootLayout />,
+    children: [
+      // Root redirect
+      { path: '/', element: <RoleRedirect /> },
+
+      // Public route
+      { path: '/login', element: <Login /> },
+
+      // Manager routes
+      {
+        path: '/dashboard',
+        element: (
+          <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
+            <Dashboard />
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: '/attack',
+        element: (
+          <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
+            <Attack />
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: '/world-tour',
+        element: (
+          <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
+            <WorldTour />
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: '/waiting/:territoryId',
+        element: (
+          <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
+            <WaitingPage />
+          </ProtectedRoute>
+        )
+      },
+      {
+        path: '/game/:territoryId',
+        element: (
+          <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
+            <GamePage />
+          </ProtectedRoute>
+        )
+      },
+
+      // HQ route
+      {
+        path: '/hq',
+        element: (
+          <ProtectedRoute allowedRoles={['HQ', 'ADMIN']}>
+            <HQ />
+          </ProtectedRoute>
+        )
+      },
+
+      // Admin route
+      {
+        path: '/admin',
+        element: (
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <Admin />
+          </ProtectedRoute>
+        )
+      },
+
+      // Catch all - redirect to home
+      { path: '*', element: <RoleRedirect /> }
+    ]
+  }
+])
+
 function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        {/* Root redirect */}
-        <Route path="/" element={<RoleRedirect />} />
-
-        {/* Public route */}
-        <Route path="/login" element={<Login />} />
-
-        {/* Manager routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/attack"
-          element={
-            <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
-              <Attack />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/world-tour"
-          element={
-            <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
-              <WorldTour />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/waiting/:territoryId"
-          element={
-            <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
-              <WaitingPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/game/:territoryId"
-          element={
-            <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
-              <GamePage />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* HQ route */}
-        <Route
-          path="/hq"
-          element={
-            <ProtectedRoute allowedRoles={['HQ', 'ADMIN']}>
-              <HQ />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Admin route */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
-              <Admin />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Catch all - redirect to home */}
-        <Route path="*" element={<RoleRedirect />} />
-      </Routes>
-      <DefenderNotification />
-      <Toaster position="top-center" richColors />
-    </BrowserRouter>
-  )
+  return <RouterProvider router={router} />
 }
 
 export default App

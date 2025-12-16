@@ -1,5 +1,5 @@
-import { useParams, useNavigate } from 'react-router-dom'
-import { useEffect, useState, useRef } from 'react'
+import { useParams, useNavigate, useBlocker } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { subscribeToTerritory, getTeam } from '@/services/gameService'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useGameHost } from '@/hooks/useGameHost'
@@ -15,11 +15,23 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog'
 import { Swords, Shield, ArrowLeft, Loader2, MapPin, Play, Square, Trophy, AlertCircle } from 'lucide-react'
+import { toast } from 'sonner'
 
 // Tab components
 import { RulesTab } from '@/components/game/RulesTab'
 import { ScoreboardTab } from '@/components/game/ScoreboardTab'
 import { TimerTab } from '@/components/game/TimerTab'
+
+// Helper function for text contrast on colored backgrounds
+function getContrastTextColor(hexColor) {
+    if (!hexColor) return '#FFFFFF'
+    const hex = hexColor.replace('#', '')
+    const r = parseInt(hex.substring(0, 2), 16)
+    const g = parseInt(hex.substring(2, 4), 16)
+    const b = parseInt(hex.substring(4, 6), 16)
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    return luminance > 0.5 ? '#000000' : '#FFFFFF'
+}
 
 /**
  * GamePage - Game Host Mode (Distributed View)
@@ -35,12 +47,41 @@ export default function GamePage() {
     const [victoryWinner, setVictoryWinner] = useState(null)
 
     // Track if we've resolved to prevent double resolution
-    const hasResolved = useRef(false)
+    const [hasResolved, setHasResolved] = useState(false)
 
     // Game host controls
     const gameHost = useGameHost(territoryId)
 
     console.log('[GamePage] Mounted with territoryId:', territoryId)
+
+    // Block navigation when game is active (battle mode)
+    const shouldBlock = territory?.challenge_status === 'accepted'
+
+    const blocker = useBlocker(
+        ({ currentLocation, nextLocation }) =>
+            shouldBlock && currentLocation.pathname !== nextLocation.pathname
+    )
+
+    // Handle blocker - show toast and reset
+    useEffect(() => {
+        if (blocker.state === 'blocked') {
+            toast.error('Cannot exit active game')
+            blocker.reset()
+        }
+    }, [blocker])
+
+    // Warn on tab close/refresh during active game
+    useEffect(() => {
+        if (!shouldBlock) return
+
+        const handleBeforeUnload = (e) => {
+            e.preventDefault()
+            e.returnValue = ''
+        }
+
+        window.addEventListener('beforeunload', handleBeforeUnload)
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    }, [shouldBlock])
 
     useEffect(() => {
         if (!territoryId) return
@@ -96,14 +137,15 @@ export default function GamePage() {
 
     // Check for consensus and resolve
     useEffect(() => {
-        if (!endGameRequested || !territory || hasResolved.current) return
+        if (!endGameRequested || !territory || hasResolved) return
 
         // Both voted
         if (attackerVote && defenderVote) {
             if (attackerVote === defenderVote) {
                 // CONSENSUS - Resolve the game
                 const winner = attackerVote
-                hasResolved.current = true
+                // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: guarded by hasResolved check
+                setHasResolved(true)
 
                 console.log('[GamePage] Consensus reached! Winner:', winner)
 
@@ -192,7 +234,7 @@ export default function GamePage() {
     const defenderName = territory.owner_id?.replace('team_', '').toUpperCase() || 'DEFENDER'
 
     // Determine voting modal state
-    const showVotingModal = endGameRequested && !hasResolved.current
+    const showVotingModal = endGameRequested && !hasResolved
     const isWaitingForOpponent = myVote && !opponentVote && !voteMismatch
 
     return (
@@ -212,15 +254,17 @@ export default function GamePage() {
                     </div>
                 )}
 
-                {/* Back Button Overlay */}
-                <Button
-                    variant="secondary"
-                    size="icon"
-                    className="absolute top-3 left-3"
-                    onClick={() => navigate('/dashboard')}
-                >
-                    <ArrowLeft className="h-5 w-5" />
-                </Button>
+                {/* Back Button Overlay - hidden in battle mode */}
+                {!isBattleMode && (
+                    <Button
+                        variant="secondary"
+                        size="icon"
+                        className="absolute top-3 left-3"
+                        onClick={() => navigate('/dashboard')}
+                    >
+                        <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                )}
             </div>
 
             {/* Title & Status Banner */}
@@ -376,14 +420,22 @@ export default function GamePage() {
                     {(!myVote || voteMismatch) && (
                         <DialogFooter className="flex-col gap-2 sm:flex-row">
                             <Button
-                                className={`flex-1 ${myVote === 'attacker' ? 'ring-2 ring-offset-2' : ''} bg-red-500 hover:bg-red-600`}
+                                className={`flex-1 ${myVote === 'attacker' ? 'ring-2 ring-offset-2' : ''}`}
+                                style={{
+                                    backgroundColor: attackerTeam?.color || '#EF4444',
+                                    color: getContrastTextColor(attackerTeam?.color)
+                                }}
                                 onClick={() => handleVote('attacker')}
                             >
                                 <Swords className="mr-2 h-4 w-4" />
                                 {attackerName} WON
                             </Button>
                             <Button
-                                className={`flex-1 ${myVote === 'defender' ? 'ring-2 ring-offset-2' : ''} bg-blue-500 hover:bg-blue-600`}
+                                className={`flex-1 ${myVote === 'defender' ? 'ring-2 ring-offset-2' : ''}`}
+                                style={{
+                                    backgroundColor: defenderTeam?.color || '#3B82F6',
+                                    color: getContrastTextColor(defenderTeam?.color)
+                                }}
                                 onClick={() => handleVote('defender')}
                             >
                                 <Shield className="mr-2 h-4 w-4" />

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useBlocker } from 'react-router-dom'
 import { useChallengeStatus } from '@/hooks/useChallengeResponse'
 import { getGameRules, cancelChallenge } from '@/services/challengeService'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -25,6 +25,35 @@ export default function WaitingPage() {
 
     console.log('[WaitingPage] Mounted with territoryId:', territoryId)
     console.log('[WaitingPage] Current status:', status)
+
+    // Block navigation while waiting for response
+    const shouldBlock = status === 'requesting'
+
+    const blocker = useBlocker(
+        ({ currentLocation, nextLocation }) =>
+            shouldBlock && currentLocation.pathname !== nextLocation.pathname
+    )
+
+    // Handle blocker - show toast and reset
+    useEffect(() => {
+        if (blocker.state === 'blocked') {
+            toast.error('Cannot leave while waiting for response')
+            blocker.reset()
+        }
+    }, [blocker])
+
+    // Warn on tab close/refresh
+    useEffect(() => {
+        if (!shouldBlock) return
+
+        const handleBeforeUnload = (e) => {
+            e.preventDefault()
+            e.returnValue = ''
+        }
+
+        window.addEventListener('beforeunload', handleBeforeUnload)
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    }, [shouldBlock])
 
     // Fetch game rules for timeout duration
     useEffect(() => {
