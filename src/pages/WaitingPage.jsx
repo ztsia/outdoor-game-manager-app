@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useBlocker } from 'react-router-dom'
 import { useChallengeStatus } from '@/hooks/useChallengeResponse'
 import { getGameRules, cancelChallenge } from '@/services/challengeService'
+import { getTeam as getTeamData } from '@/services/gameService'
+import { TeamChip } from '@/components/ui/TeamChip'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Loader2, Clock, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -14,6 +16,7 @@ export default function WaitingPage() {
     const navigate = useNavigate()
     const { territoryId } = useParams()
     const { status, territory } = useChallengeStatus(territoryId)
+    const [defenderTeam, setDefenderTeam] = useState(null)
 
     const [timeRemaining, setTimeRemaining] = useState(null)
     const [timeoutSeconds, setTimeoutSeconds] = useState(120)
@@ -23,15 +26,19 @@ export default function WaitingPage() {
     const hasNavigated = useRef(false)
     const timerRef = useRef(null)
 
+    // Use Ref for exiting state to allow immediate updates without re-renders (fixes blocker race condition)
+    const isExiting = useRef(false)
+
     console.log('[WaitingPage] Mounted with territoryId:', territoryId)
     console.log('[WaitingPage] Current status:', status)
 
-    // Block navigation while waiting for response
-    const shouldBlock = status === 'requesting'
-
+    // Block navigation while waiting for response (unless we are programmatically exiting)
+    // Note: We check the ref inside the blocker callback
     const blocker = useBlocker(
-        ({ currentLocation, nextLocation }) =>
-            shouldBlock && currentLocation.pathname !== nextLocation.pathname
+        ({ currentLocation, nextLocation }) => {
+            const shouldBlock = status === 'requesting' && !isExiting.current
+            return shouldBlock && currentLocation.pathname !== nextLocation.pathname
+        }
     )
 
     // Handle blocker - show toast and reset
@@ -44,16 +51,26 @@ export default function WaitingPage() {
 
     // Warn on tab close/refresh
     useEffect(() => {
-        if (!shouldBlock) return
+        // If we're already exiting, don't warn
+        if (isExiting.current) return
+        if (status !== 'requesting') return
 
         const handleBeforeUnload = (e) => {
+            if (isExiting.current) return
             e.preventDefault()
             e.returnValue = ''
         }
 
         window.addEventListener('beforeunload', handleBeforeUnload)
         return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-    }, [shouldBlock])
+    }, [status])
+
+    // Fetch team data
+    useEffect(() => {
+        if (territory?.owner_id) {
+            getTeamData(territory.owner_id).then(setDefenderTeam)
+        }
+    }, [territory?.owner_id])
 
     // Fetch game rules for timeout duration
     useEffect(() => {
@@ -80,6 +97,7 @@ export default function WaitingPage() {
             if (remaining <= 0 && !hasNavigated.current) {
                 // Time expired - cancel the challenge
                 hasNavigated.current = true
+                isExiting.current = true // Allow navigation immediately
                 console.log('[WaitingPage] Timeout! Canceling challenge...')
                 cancelChallenge(territoryId).then(() => {
                     toast.error('Challenge expired. Your followers have been refunded.')
@@ -111,18 +129,18 @@ export default function WaitingPage() {
 
         if (status === 'accepted') {
             hasNavigated.current = true
+            isExiting.current = true // Allow navigation
             if (timerRef.current) clearInterval(timerRef.current)
             toast.success('Challenge accepted! Starting game...')
             navigate(`/game/${territoryId}`, { replace: true })
         } else if (status === 'idle') {
             hasNavigated.current = true
+            isExiting.current = true // Allow navigation
             if (timerRef.current) clearInterval(timerRef.current)
             toast.error('Challenge was declined. Your followers have been refunded.')
             navigate('/dashboard', { replace: true })
         }
     }, [status, territoryId, navigate])
-
-    const defenderName = territory?.owner_id?.replace('team_', '').toUpperCase() || 'Defender'
 
     const formatTime = (seconds) => {
         if (seconds === null) return '--:--'
@@ -142,7 +160,13 @@ export default function WaitingPage() {
                     </div>
                     <CardTitle className="text-xl">Awaiting Response</CardTitle>
                     <CardDescription>
-                        Waiting for <span className="font-semibold text-foreground">{defenderName}</span> to accept your challenge...
+                        Waiting for
+                        <TeamChip
+                            name={defenderTeam?.name || 'Defender'}
+                            color={defenderTeam?.color}
+                            className="align-middle mx-1"
+                        />
+                        to accept your challenge...
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
