@@ -277,12 +277,18 @@ export default function GamePage() {
                     <div className="flex items-center justify-center gap-3">
                         <div className="flex flex-col items-center">
                             <TeamChip name={attackerTeam.name} color={attackerTeam.color} className="text-sm px-3 py-1" />
-                            <span className="text-xs text-muted-foreground mt-1">Attacker</span>
+                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                                <Swords className="h-3 w-3" />
+                                <span>Attacker</span>
+                            </div>
                         </div>
                         <span className="text-lg font-bold text-muted-foreground">VS</span>
                         <div className="flex flex-col items-center">
                             <TeamChip name={defenderTeam.name} color={defenderTeam.color} className="text-sm px-3 py-1" />
-                            <span className="text-xs text-muted-foreground mt-1">Defender</span>
+                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                                <Shield className="h-3 w-3" />
+                                <span>Defender</span>
+                            </div>
                         </div>
                     </div>
                 ) : isBattleMode ? (
