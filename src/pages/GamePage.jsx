@@ -166,8 +166,9 @@ export default function GamePage() {
                     (winner === 'defender' && isDefender)
 
                 const currentStars = territory.stars || 1
-                const starsAdded = currentStars < MAX_STARS
-                const newStars = starsAdded ? currentStars + 1 : currentStars
+                const canAddStar = currentStars < MAX_STARS
+                const starsAdded = isWinner && canAddStar
+                const newStars = canAddStar ? currentStars + 1 : currentStars
 
                 const resultData = {
                     winner,
@@ -377,7 +378,7 @@ export default function GamePage() {
                 ) : (
                     // Battle Mode - All tabs
                     <Tabs defaultValue="rules" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 mx-4 my-2">
+                        <TabsList className="flex w-auto mx-4 my-2">
                             <TabsTrigger value="rules">
                                 Rules
                             </TabsTrigger>
