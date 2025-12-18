@@ -6,22 +6,30 @@ import { db } from '@/firebase'
 
 /**
  * Fetch global game rules from system_config
- * @returns {Promise<{starValue: number, challengeTimeoutSeconds: number}>}
+ * @returns {Promise<{starCosts: Object, challengeTimeoutSeconds: number}>}
  */
 export async function getGameRules() {
+    // Default tiered costs
+    const defaultStarCosts = {
+        0: 10000,
+        1: 50000,
+        2: 100000,
+        3: 500000
+    }
+
     try {
         const configDoc = await getDoc(doc(db, 'system_config', 'game_rules'))
         if (configDoc.exists()) {
             const data = configDoc.data()
             return {
-                starValue: data.star_value || 10000,
+                starCosts: data.star_costs || defaultStarCosts,
                 challengeTimeoutSeconds: data.challenge_timeout_seconds || 120
             }
         }
-        return { starValue: 10000, challengeTimeoutSeconds: 120 }
+        return { starCosts: defaultStarCosts, challengeTimeoutSeconds: 120 }
     } catch (err) {
         console.error('[challengeService] Error fetching game rules:', err)
-        return { starValue: 10000, challengeTimeoutSeconds: 120 }
+        return { starCosts: defaultStarCosts, challengeTimeoutSeconds: 120 }
     }
 }
 

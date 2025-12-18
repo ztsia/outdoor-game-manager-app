@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Swords, Shield, Clock, Home, Star, AlertCircle, Loader2 } from 'lucide-react'
+import { ArrowLeft, Swords, Shield, Clock, Home, Star, AlertCircle, Loader2, HelpCircle } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useGameData } from '@/hooks/useGameData'
 import { useTeamData } from '@/hooks/useTeamData'
@@ -103,7 +103,7 @@ export default function Attack() {
     const { territories, defendingTeams, loading: territoriesLoading } = useGameData()
     const { team, loading: teamLoading } = useTeamData(teamId)
     const { teamsMap, loading: teamsLoading } = useAllTeams()
-    const { starValue, calculateCost, initiateAttack, loading: attackLoading } = useAttackTransaction()
+    const { starCosts, calculateCost, initiateAttack, loading: attackLoading } = useAttackTransaction()
     const navigate = useNavigate()
 
     // Modal state
@@ -287,12 +287,26 @@ export default function Attack() {
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
-                        {/* Cost Calculation */}
+                        {/* Cost Display with Tooltip */}
                         <div className="rounded-lg bg-muted p-4 space-y-2">
-                            <div className="flex justify-between text-sm">
-                                <span>Battle Cost:</span>
-                                <span className="font-mono">
-                                    {selectedTerritory?.stars} ⭐ × {formatNumber(starValue)} = <strong>{formatNumber(attackCost)}</strong>
+                            <div className="flex justify-between items-center text-sm">
+                                <div className="flex items-center gap-1">
+                                    <span>Battle Cost:</span>
+                                    <div className="relative group">
+                                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-48 p-3 rounded-lg bg-popover border shadow-lg text-xs">
+                                            <p className="font-semibold mb-2">Cost by Star Level:</p>
+                                            <div className="space-y-1">
+                                                <div className="flex justify-between"><span>0 ⭐</span><span>{formatNumber(starCosts[0] || 10000)}</span></div>
+                                                <div className="flex justify-between"><span>1 ⭐</span><span>{formatNumber(starCosts[1] || 50000)}</span></div>
+                                                <div className="flex justify-between"><span>2 ⭐</span><span>{formatNumber(starCosts[2] || 100000)}</span></div>
+                                                <div className="flex justify-between"><span>3 ⭐</span><span>{formatNumber(starCosts[3] || 500000)}</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span className="font-mono font-bold text-lg">
+                                    {formatNumber(attackCost)} followers
                                 </span>
                             </div>
                             <div className="flex justify-between text-sm">

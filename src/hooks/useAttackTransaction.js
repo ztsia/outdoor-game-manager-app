@@ -1,31 +1,46 @@
 import { useState, useEffect } from 'react'
 import { getGameRules, initiateAttack as initiateAttackService } from '@/services/challengeService'
 
+// Default tiered costs (fallback)
+const DEFAULT_STAR_COSTS = {
+    0: 10000,
+    1: 50000,
+    2: 100000,
+    3: 500000
+}
+
 /**
  * Hook for handling attack transactions
- * Performs atomic operations to ensure consistency
+ * Uses tiered pricing based on territory star count
  */
 export function useAttackTransaction() {
-    const [starValue, setStarValue] = useState(10000) // Default
+    const [starCosts, setStarCosts] = useState(DEFAULT_STAR_COSTS)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
 
-    // Fetch global star value from system_config
+    // Fetch star costs from system_config
     useEffect(() => {
         async function fetchConfig() {
             const rules = await getGameRules()
-            setStarValue(rules.starValue)
+            setStarCosts(rules.starCosts || DEFAULT_STAR_COSTS)
         }
         fetchConfig()
     }, [])
 
     /**
-     * Calculate attack cost based on territory stars
+     * Calculate attack cost based on territory stars using tiered pricing
      * @param {number} stars - Number of stars on territory
      * @returns {number} Total cost
      */
     const calculateCost = (stars) => {
-        return stars * starValue
+        // Lookup in costs map, fallback to highest tier if not found
+        const cost = starCosts[stars]
+        if (cost !== undefined) {
+            return cost
+        }
+        // Fallback: use highest available tier
+        const maxStars = Math.max(...Object.keys(starCosts).map(Number))
+        return starCosts[maxStars] || 500000
     }
 
     /**
@@ -50,7 +65,7 @@ export function useAttackTransaction() {
     }
 
     return {
-        starValue,
+        starCosts,
         calculateCost,
         initiateAttack,
         loading,

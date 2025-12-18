@@ -27,15 +27,21 @@ const auth = getAuth(app)
 // System Config
 const systemConfig = {
     game_rules: {
-        star_value: 10000,
         battle_cooldown_minutes: 15,
         challenge_timeout_seconds: 120, // 2 minutes for defender to respond
         max_territory_stars: 3, // Maximum stars a territory can have
-        // Rank thresholds - teams must meet ALL conditions (using score)
+        // Tiered attack costs based on territory star count
+        star_costs: {
+            0: 10000,    // 10k followers
+            1: 50000,    // 50k followers
+            2: 100000,   // 100k followers
+            3: 500000    // 500k followers
+        },
+        // Rank thresholds - teams must meet ALL conditions (AND logic)
         rank_thresholds: {
-            rookie: { min_score: 10000 },        // 10k followers equivalent
-            rising_star: { min_score: 100000 },  // 100k followers + 3 stars
-            legend: { min_score: 1000000, min_fan_favourites: 1 }  // 1M + 10 stars + 1 fan fav
+            rookie: { min_followers: 10000, min_stars: 0 },
+            rising_star: { min_followers: 100000, min_stars: 3 },
+            legend: { min_followers: 1000000, min_stars: 10, min_fan_favourites: 1 }
         },
         // Weights for calculating total score
         rank_weights: {
@@ -52,7 +58,7 @@ const teams = {
     team_red: {
         name: "Team Red",
         color: "#EF4444",
-        followers: 30000,
+        followers: 100000,  // 100k followers + 3 stars = Rising Star
         rank: "Rookie",
         territory_count: 2,
         fan_favourites: [],
@@ -88,7 +94,7 @@ const teams = {
     team_blue: {
         name: "Team Blue",
         color: "#3B82F6",
-        followers: 35000,
+        followers: 1000000,  // 1M followers + 10 stars + 1 fan_fav = Legend
         rank: "Rookie",
         territory_count: 2,
         fan_favourites: ["game_japan"],
@@ -97,10 +103,10 @@ const teams = {
     team_purple: {
         name: "Team Purple",
         color: "#A855F7",
-        followers: 27000,
+        followers: 1500000,  // 1.5M followers + 10 stars + 1 fan_fav = Legend (highest score = Living Icon)
         rank: "Rookie",
         territory_count: 1,
-        fan_favourites: [],
+        fan_favourites: ["game_usa"],
         avatar_url: ""
     }
 }
@@ -152,7 +158,7 @@ const territories = {
         name: "Vocal Room",
         location_image_url: "",
         owner_id: "team_red",
-        stars: 1,
+        stars: 2,  // Team Red: 2 + 1 = 3 stars total
         challenge_status: 'idle',  // 'idle' | 'requesting' | 'accepted'
         under_attack: false,  // Legacy, kept for compatibility
         cooldown_ends_at: null,
@@ -193,7 +199,7 @@ const territories = {
         name: "Dance Studio",
         location_image_url: "",
         owner_id: "team_blue",
-        stars: 2,
+        stars: 2,  // Team Blue: 2 + 3 + 3 + 2 = 10 stars total
         challenge_status: 'idle',
         under_attack: false,
         cooldown_ends_at: null,
@@ -310,7 +316,7 @@ const territories = {
         name: "Library",
         location_image_url: "",
         owner_id: "team_blue",
-        stars: 1,
+        stars: 3,  // Team Blue needs more territories for 10 stars
         challenge_status: 'idle',
         under_attack: false,
         cooldown_ends_at: null,
@@ -326,6 +332,241 @@ const territories = {
             timer_mode: "shared",
             has_scoreboard: false,
             score_unit: "Puzzles"
+        },
+        live_state: {
+            attacker_score: 0,
+            defender_score: 0,
+            timer_started_at: null,
+            is_paused: false,
+            game_started: false,
+            attacker_elapsed_seconds: 0,
+            defender_elapsed_seconds: 0,
+            attacker_timer_started_at: null,
+            defender_timer_started_at: null,
+            end_game_requested_at: null,
+            end_game_requester_id: null,
+            attacker_vote: null,
+            defender_vote: null,
+            vote_mismatch: false
+        }
+    },
+    t_06: {
+        location_id: "loc_01",  // Reusing location for simplicity
+        name: "Game Room",
+        location_image_url: "",
+        owner_id: "team_blue",
+        stars: 3,  // Team Blue: 2 + 3 + 3 = 8 stars so far
+        challenge_status: 'idle',
+        under_attack: false,
+        cooldown_ends_at: null,
+        current_attacker_id: null,
+        bet_amount: 0,
+        game_info: {
+            title: "Board Game Marathon",
+            description_md: "## Rules\\n\\nWin 2 out of 3 board games!",
+            win_condition: "Best of 3 games.",
+            home_advantage: "Defender picks first game.",
+            has_timer: false,
+            timer_duration_seconds: 0,
+            timer_mode: "shared",
+            has_scoreboard: true,
+            score_unit: "Games"
+        },
+        live_state: {
+            attacker_score: 0,
+            defender_score: 0,
+            timer_started_at: null,
+            is_paused: false,
+            game_started: false,
+            attacker_elapsed_seconds: 0,
+            defender_elapsed_seconds: 0,
+            attacker_timer_started_at: null,
+            defender_timer_started_at: null,
+            end_game_requested_at: null,
+            end_game_requester_id: null,
+            attacker_vote: null,
+            defender_vote: null,
+            vote_mismatch: false
+        }
+    },
+    t_07: {
+        location_id: "loc_02",  // Reusing location
+        name: "Art Studio",
+        location_image_url: "",
+        owner_id: "team_blue",
+        stars: 2,  // Team Blue: 2 + 3 + 3 + 2 = 10 stars total!
+        challenge_status: 'idle',
+        under_attack: false,
+        cooldown_ends_at: null,
+        current_attacker_id: null,
+        bet_amount: 0,
+        game_info: {
+            title: "Speed Drawing",
+            description_md: "## Rules\\n\\nDraw the prompt the fastest!",
+            win_condition: "First to 3 correct drawings.",
+            home_advantage: "Defender picks first prompt.",
+            has_timer: true,
+            timer_duration_seconds: 60,
+            timer_mode: "shared",
+            has_scoreboard: true,
+            score_unit: "Drawings"
+        },
+        live_state: {
+            attacker_score: 0,
+            defender_score: 0,
+            timer_started_at: null,
+            is_paused: false,
+            game_started: false,
+            attacker_elapsed_seconds: 0,
+            defender_elapsed_seconds: 0,
+            attacker_timer_started_at: null,
+            defender_timer_started_at: null,
+            end_game_requested_at: null,
+            end_game_requester_id: null,
+            attacker_vote: null,
+            defender_vote: null,
+            vote_mismatch: false
+        }
+    },
+    // Team Purple territories for Living Icon (needs 10 stars total)
+    t_08: {
+        location_id: "loc_03",
+        name: "Music Hall",
+        location_image_url: "",
+        owner_id: "team_purple",
+        stars: 3,
+        challenge_status: 'idle',
+        under_attack: false,
+        cooldown_ends_at: null,
+        current_attacker_id: null,
+        bet_amount: 0,
+        game_info: {
+            title: "Karaoke Battle",
+            description_md: "## Rules\\n\\nBest singer wins!",
+            win_condition: "Best of 3 songs.",
+            home_advantage: "Defender picks first song.",
+            has_timer: false,
+            timer_duration_seconds: 0,
+            timer_mode: "shared",
+            has_scoreboard: true,
+            score_unit: "Songs"
+        },
+        live_state: {
+            attacker_score: 0,
+            defender_score: 0,
+            timer_started_at: null,
+            is_paused: false,
+            game_started: false,
+            attacker_elapsed_seconds: 0,
+            defender_elapsed_seconds: 0,
+            attacker_timer_started_at: null,
+            defender_timer_started_at: null,
+            end_game_requested_at: null,
+            end_game_requester_id: null,
+            attacker_vote: null,
+            defender_vote: null,
+            vote_mismatch: false
+        }
+    },
+    t_09: {
+        location_id: "loc_04",
+        name: "Gym",
+        location_image_url: "",
+        owner_id: "team_purple",
+        stars: 3,
+        challenge_status: 'idle',
+        under_attack: false,
+        cooldown_ends_at: null,
+        current_attacker_id: null,
+        bet_amount: 0,
+        game_info: {
+            title: "Fitness Challenge",
+            description_md: "## Rules\\n\\nMost reps wins!",
+            win_condition: "Most exercises completed.",
+            home_advantage: "Defender picks exercise.",
+            has_timer: true,
+            timer_duration_seconds: 120,
+            timer_mode: "shared",
+            has_scoreboard: true,
+            score_unit: "Reps"
+        },
+        live_state: {
+            attacker_score: 0,
+            defender_score: 0,
+            timer_started_at: null,
+            is_paused: false,
+            game_started: false,
+            attacker_elapsed_seconds: 0,
+            defender_elapsed_seconds: 0,
+            attacker_timer_started_at: null,
+            defender_timer_started_at: null,
+            end_game_requested_at: null,
+            end_game_requester_id: null,
+            attacker_vote: null,
+            defender_vote: null,
+            vote_mismatch: false
+        }
+    },
+    t_10: {
+        location_id: "loc_05",
+        name: "Pool",
+        location_image_url: "",
+        owner_id: "team_purple",
+        stars: 2,
+        challenge_status: 'idle',
+        under_attack: false,
+        cooldown_ends_at: null,
+        current_attacker_id: null,
+        bet_amount: 0,
+        game_info: {
+            title: "Swimming Race",
+            description_md: "## Rules\\n\\nFirst to finish wins!",
+            win_condition: "First to complete 2 laps.",
+            home_advantage: "Defender picks lane.",
+            has_timer: true,
+            timer_duration_seconds: 60,
+            timer_mode: "shared",
+            has_scoreboard: false,
+            score_unit: "Laps"
+        },
+        live_state: {
+            attacker_score: 0,
+            defender_score: 0,
+            timer_started_at: null,
+            is_paused: false,
+            game_started: false,
+            attacker_elapsed_seconds: 0,
+            defender_elapsed_seconds: 0,
+            attacker_timer_started_at: null,
+            defender_timer_started_at: null,
+            end_game_requested_at: null,
+            end_game_requester_id: null,
+            attacker_vote: null,
+            defender_vote: null,
+            vote_mismatch: false
+        }
+    },
+    t_11: {
+        location_id: "loc_06",
+        name: "Arcade",
+        location_image_url: "",
+        owner_id: "team_purple",
+        stars: 2,  // Team Purple: 3+3+2+2 = 10 stars total
+        challenge_status: 'idle',
+        under_attack: false,
+        cooldown_ends_at: null,
+        current_attacker_id: null,
+        bet_amount: 0,
+        game_info: {
+            title: "High Score",
+            description_md: "## Rules\\n\\nHighest arcade score wins!",
+            win_condition: "Highest score in 3 games.",
+            home_advantage: "Defender picks first game.",
+            has_timer: false,
+            timer_duration_seconds: 0,
+            timer_mode: "shared",
+            has_scoreboard: true,
+            score_unit: "Points"
         },
         live_state: {
             attacker_score: 0,

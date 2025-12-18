@@ -15,9 +15,9 @@ export const RANKS = {
  */
 const DEFAULT_CONFIG = {
     rank_thresholds: {
-        rookie: { min_score: 10000 },
-        rising_star: { min_score: 100000 },
-        legend: { min_score: 1000000, min_fan_favourites: 1 }
+        rookie: { min_followers: 10000, min_stars: 0 },
+        rising_star: { min_followers: 100000, min_stars: 3 },
+        legend: { min_followers: 1000000, min_stars: 10, min_fan_favourites: 1 }
     },
     rank_weights: {
         followers: 1,
@@ -28,7 +28,8 @@ const DEFAULT_CONFIG = {
 
 /**
  * Calculate total score for a team based on weighted stats
- * @param {Object} team - Team object with followers, territories (for stars calc)
+ * Used for sorting/comparing teams within the same rank
+ * @param {Object} team - Team object with followers
  * @param {Array} territories - Array of territory objects owned by team
  * @param {Object} config - Game rules config with rank_weights
  * @returns {number} Total score
@@ -49,7 +50,10 @@ export function calculateTeamScore(team, territories = [], config = DEFAULT_CONF
 }
 
 /**
- * Determine rank for a team based on their score and thresholds
+ * Determine rank for a team based on strict AND thresholds
+ * - Rookie: >= min_followers AND >= min_stars
+ * - Rising Star: >= min_followers AND >= min_stars
+ * - Legend: >= min_followers AND >= min_stars AND >= min_fan_favourites
  * @param {Object} team - Team object
  * @param {Array} territories - Territories owned by team
  * @param {Object} config - Game rules config
@@ -57,20 +61,28 @@ export function calculateTeamScore(team, territories = [], config = DEFAULT_CONF
  */
 export function determineBaseRank(team, territories = [], config = DEFAULT_CONFIG) {
     const thresholds = config.rank_thresholds || DEFAULT_CONFIG.rank_thresholds
-    const score = calculateTeamScore(team, territories, config)
+
+    const followers = team.followers || 0
+    const totalStars = territories.reduce((sum, t) => sum + (t.stars || 0), 0)
     const fanFavourites = (team.fan_favourites || []).length
 
-    // Check from highest to lowest
-    if (score >= thresholds.legend.min_score &&
-        fanFavourites >= (thresholds.legend.min_fan_favourites || 0)) {
+    // Check from highest to lowest (Legend -> Rising Star -> Rookie)
+    const legend = thresholds.legend
+    if (followers >= legend.min_followers &&
+        totalStars >= legend.min_stars &&
+        fanFavourites >= (legend.min_fan_favourites || 0)) {
         return RANKS.LEGEND
     }
 
-    if (score >= thresholds.rising_star.min_score) {
+    const risingStar = thresholds.rising_star
+    if (followers >= risingStar.min_followers &&
+        totalStars >= risingStar.min_stars) {
         return RANKS.RISING_STAR
     }
 
-    if (score >= thresholds.rookie.min_score) {
+    const rookie = thresholds.rookie
+    if (followers >= rookie.min_followers &&
+        totalStars >= (rookie.min_stars || 0)) {
         return RANKS.ROOKIE
     }
 
