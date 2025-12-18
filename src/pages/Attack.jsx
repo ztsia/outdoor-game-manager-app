@@ -157,8 +157,9 @@ export default function Attack() {
 
             {/* Filter and Sort Controls */}
             <div className="flex flex-col gap-4 p-4 pb-0">
-                <div className="flex items-center gap-4">
-                    {/* Sort Toggle */}
+                {/* Sort Section */}
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-muted-foreground">Sort:</span>
                     <Button
                         variant="outline"
                         size="sm"
@@ -171,36 +172,39 @@ export default function Attack() {
                     </Button>
                 </div>
 
-                {/* Team Filters (Wrapped) */}
-                <div className="flex flex-wrap gap-2">
-                    <Badge
-                        variant="outline"
-                        className={cn(
-                            "cursor-pointer",
-                            filterTeams.length === 0 && "bg-primary text-primary-foreground"
-                        )}
-                        onClick={() => setFilterTeams([])}
-                    >
-                        All
-                    </Badge>
-                    {Object.values(teamsMap).map(tm => {
-                        const isSelected = filterTeams.includes(tm.id)
-                        const { r, g, b } = hexToRgb(tm.color)
-                        return (
-                            <Badge
-                                key={tm.id}
-                                variant="outline"
-                                className={cn("cursor-pointer transition-all", isSelected ? "border-2 font-bold shadow-sm" : "border opacity-80")}
-                                style={isSelected
-                                    ? { backgroundColor: `rgba(${r}, ${g}, ${b}, 0.20)`, borderColor: tm.color, color: tm.color }
-                                    : { backgroundColor: 'white', borderColor: '#e5e7eb', color: '#6b7280' }
-                                }
-                                onClick={() => toggleTeamFilter(tm.id)}
-                            >
-                                {tm.name}
-                            </Badge>
-                        )
-                    })}
+                {/* Filter Section */}
+                <div className="flex flex-col gap-2">
+                    <span className="text-sm font-medium text-muted-foreground">Filter by Team:</span>
+                    <div className="flex flex-wrap gap-2">
+                        <Badge
+                            variant="outline"
+                            className={cn(
+                                "cursor-pointer",
+                                filterTeams.length === 0 && "bg-primary text-primary-foreground"
+                            )}
+                            onClick={() => setFilterTeams([])}
+                        >
+                            All
+                        </Badge>
+                        {Object.values(teamsMap).map(tm => {
+                            const isSelected = filterTeams.includes(tm.id)
+                            const { r, g, b } = hexToRgb(tm.color)
+                            return (
+                                <Badge
+                                    key={tm.id}
+                                    variant="outline"
+                                    className={cn("cursor-pointer transition-all", isSelected ? "border-2 font-bold shadow-sm" : "border opacity-80")}
+                                    style={isSelected
+                                        ? { backgroundColor: `rgba(${r}, ${g}, ${b}, 0.20)`, borderColor: tm.color, color: tm.color }
+                                        : { backgroundColor: 'white', borderColor: '#e5e7eb', color: '#6b7280' }
+                                    }
+                                    onClick={() => toggleTeamFilter(tm.id)}
+                                >
+                                    {tm.name}
+                                </Badge>
+                            )
+                        })}
+                    </div>
                 </div>
             </div>
 
