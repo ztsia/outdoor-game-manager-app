@@ -31,12 +31,21 @@ const systemConfig = {
         battle_cooldown_minutes: 15,
         challenge_timeout_seconds: 120, // 2 minutes for defender to respond
         max_territory_stars: 3, // Maximum stars a territory can have
+        // Rank thresholds - teams must meet ALL conditions (using score)
         rank_thresholds: {
-            rising_star: { followers: 100000, stars: 3, territories: 3 },
-            legend: { followers: 1000000, stars: 10, fan_fav: 1 }
+            rookie: { min_score: 10000 },        // 10k followers equivalent
+            rising_star: { min_score: 100000 },  // 100k followers + 3 stars
+            legend: { min_score: 1000000, min_fan_favourites: 1 }  // 1M + 10 stars + 1 fan fav
+        },
+        // Weights for calculating total score
+        rank_weights: {
+            followers: 1,           // 1 follower = 1 point
+            star: 20000,            // 1 star = 20,000 points
+            fan_favourite: 100000   // 1 fan favourite = 100,000 points
         }
     }
 }
+
 
 // Teams
 const teams = {

@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Pencil, Star, Trophy, Swords, Globe, LogOut } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useTeamData } from '@/hooks/useTeamData'
+import { useRank } from '@/hooks/useRank'
+import { RankBadge } from '@/components/game/RankBadge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -23,6 +25,7 @@ import { GameResultModal } from '@/components/dashboard/GameResultModal'
 export default function Dashboard() {
     const { teamId, logout } = useAuth()
     const { team, territories, loading, updateTeamName } = useTeamData(teamId)
+    const { rank, isLivingIcon } = useRank(teamId)
     const navigate = useNavigate()
     const location = useLocation()
 
@@ -152,9 +155,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="mt-4">
-                    <Badge variant="secondary" className="text-sm font-semibold">
-                        {team.rank}
-                    </Badge>
+                    <RankBadge rank={rank} isLivingIcon={isLivingIcon} />
                 </div>
             </div>
 
