@@ -167,7 +167,7 @@ export default function Attack() {
                     >
                         <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
                         Stars
-                        {sortOrder === 'desc' ? <ArrowDown className="ml-1 h-4 w-4" /> : <ArrowUp className="ml-1 h-4 w-4" />}
+                        {sortOrder === 'desc' ? <ArrowUp className="ml-1 h-4 w-4" /> : <ArrowDown className="ml-1 h-4 w-4" />}
                     </Button>
                 </div>
 
@@ -190,10 +190,10 @@ export default function Attack() {
                             <Badge
                                 key={tm.id}
                                 variant="outline"
-                                className="cursor-pointer"
+                                className={cn("cursor-pointer transition-all", isSelected ? "border-2 font-bold shadow-sm" : "border opacity-80")}
                                 style={isSelected
-                                    ? { backgroundColor: `rgba(${r}, ${g}, ${b}, 0.15)`, borderColor: tm.color, color: tm.color }
-                                    : { backgroundColor: 'white', borderColor: tm.color, color: tm.color }
+                                    ? { backgroundColor: `rgba(${r}, ${g}, ${b}, 0.20)`, borderColor: tm.color, color: tm.color }
+                                    : { backgroundColor: 'white', borderColor: '#e5e7eb', color: '#6b7280' }
                                 }
                                 onClick={() => toggleTeamFilter(tm.id)}
                             >
