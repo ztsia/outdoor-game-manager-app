@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ArrowUp, ArrowDown, Star } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useGameData } from '@/hooks/useGameData'
 import { useTeamData } from '@/hooks/useTeamData'
@@ -8,10 +8,12 @@ import { useAllTeams } from '@/hooks/useAllTeams'
 import { useAttackTransaction } from '@/hooks/useAttackTransaction'
 import { getGameRules } from '@/services/challengeService'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { GameCard } from '@/components/game/GameCard'
 import { AttackChallengeModal } from '@/components/game/AttackChallengeModal'
 import { getTerritoryStatus } from '@/lib/territoryStatus'
 import { formatNumber } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 
@@ -26,6 +28,10 @@ export default function Attack() {
     // Modal state
     const [selectedTerritory, setSelectedTerritory] = useState(null)
     const [modalOpen, setModalOpen] = useState(false)
+
+    // Filter and sort state
+    const [filterTeams, setFilterTeams] = useState([]) // Array of teamIds
+    const [sortOrder, setSortOrder] = useState('desc') // 'desc' | 'asc'
 
     // Real-time ticker state - use lazy initializer to avoid purity issues
     const [now, setNow] = useState(() => Date.now())
@@ -88,6 +94,25 @@ export default function Attack() {
     // Calculate cost for selected territory
     const attackCost = selectedTerritory ? calculateCost(selectedTerritory.stars) : 0
 
+    // Helper: hex to RGB
+    const hexToRgb = (hexColor) => {
+        if (!hexColor) return { r: 107, g: 114, b: 128 }
+        const hex = hexColor.replace('#', '')
+        const r = parseInt(hex.substring(0, 2), 16)
+        const g = parseInt(hex.substring(2, 4), 16)
+        const b = parseInt(hex.substring(4, 6), 16)
+        return { r, g, b }
+    }
+
+    // Toggle team in filter
+    const toggleTeamFilter = (teamId) => {
+        setFilterTeams(prev =>
+            prev.includes(teamId)
+                ? prev.filter(id => id !== teamId)
+                : [...prev, teamId]
+        )
+    }
+
     if (loading) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-background">
@@ -96,10 +121,18 @@ export default function Attack() {
         )
     }
 
-    // Sort territories by name
-    const sortedTerritories = [...territories].sort((a, b) =>
-        a.name.localeCompare(b.name)
-    )
+    // Filter and sort territories
+    const filteredTerritories = territories.filter(t => {
+        if (filterTeams.length === 0) return true
+        return filterTeams.includes(t.owner_id)
+    })
+
+    const sortedTerritories = [...filteredTerritories].sort((a, b) => {
+        if (sortOrder === 'desc') {
+            return b.stars - a.stars
+        }
+        return a.stars - b.stars
+    })
 
     return (
         <div className="min-h-screen bg-background pb-4">
@@ -119,6 +152,55 @@ export default function Attack() {
                             Balance: {team ? formatNumber(team.followers) : '...'} followers
                         </p>
                     </div>
+                </div>
+            </div>
+
+            {/* Filter and Sort Controls */}
+            <div className="flex flex-col gap-4 p-4 pb-0">
+                <div className="flex items-center gap-4">
+                    {/* Sort Toggle */}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                        className="shrink-0"
+                    >
+                        <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+                        Stars
+                        {sortOrder === 'desc' ? <ArrowDown className="ml-1 h-4 w-4" /> : <ArrowUp className="ml-1 h-4 w-4" />}
+                    </Button>
+                </div>
+
+                {/* Team Filters (Wrapped) */}
+                <div className="flex flex-wrap gap-2">
+                    <Badge
+                        variant="outline"
+                        className={cn(
+                            "cursor-pointer",
+                            filterTeams.length === 0 && "bg-primary text-primary-foreground"
+                        )}
+                        onClick={() => setFilterTeams([])}
+                    >
+                        All
+                    </Badge>
+                    {Object.values(teamsMap).map(tm => {
+                        const isSelected = filterTeams.includes(tm.id)
+                        const { r, g, b } = hexToRgb(tm.color)
+                        return (
+                            <Badge
+                                key={tm.id}
+                                variant="outline"
+                                className="cursor-pointer"
+                                style={isSelected
+                                    ? { backgroundColor: `rgba(${r}, ${g}, ${b}, 0.15)`, borderColor: tm.color, color: tm.color }
+                                    : { backgroundColor: 'white', borderColor: tm.color, color: tm.color }
+                                }
+                                onClick={() => toggleTeamFilter(tm.id)}
+                            >
+                                {tm.name}
+                            </Badge>
+                        )
+                    })}
                 </div>
             </div>
 

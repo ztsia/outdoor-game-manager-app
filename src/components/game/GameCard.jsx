@@ -14,9 +14,9 @@ import { TerritoryStatusBadge } from '@/components/game/TerritoryStatusBadge'
 export function GameCard({ territory, status, ownerTeam, onAction }) {
     return (
         <Card
-            className={`overflow-hidden transition-all ${status.disabled
-                    ? 'opacity-60'
-                    : 'cursor-pointer hover:shadow-lg hover:scale-[1.01]'
+            className={`overflow-hidden p-0 gap-0 transition-all ${status.disabled
+                ? 'opacity-60'
+                : 'cursor-pointer hover:shadow-lg hover:scale-[1.01]'
                 }`}
             onClick={() => {
                 if (!status.disabled && onAction) {
@@ -44,24 +44,24 @@ export function GameCard({ territory, status, ownerTeam, onAction }) {
                 </div>
             </div>
 
-            <CardContent className="p-4">
+            <CardContent className="p-5">
                 {/* Header: Name + Stars */}
                 <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-base line-clamp-1">{territory.name}</h3>
+                    <h3 className="font-semibold text-xl line-clamp-1">{territory.name}</h3>
                     <div className="flex items-center gap-1 text-yellow-500 shrink-0">
-                        <Star className="h-4 w-4 fill-current" />
-                        <span className="text-sm font-bold">{territory.stars}</span>
+                        <Star className="h-5 w-5 fill-current" />
+                        <span className="text-base font-bold">{territory.stars}</span>
                     </div>
                 </div>
 
                 {/* Owner */}
-                <div className="mt-2">
+                <div className="mt-3">
                     <TeamChip name={ownerTeam?.name} color={ownerTeam?.color} />
                 </div>
 
                 {/* Game Info */}
-                <div className="mt-3 text-xs text-muted-foreground">
-                    <div className="font-medium text-foreground">
+                <div className="mt-4 text-sm text-muted-foreground">
+                    <div className="font-medium text-foreground text-base">
                         {territory.game_info?.title || 'Unknown Game'}
                     </div>
                 </div>
