@@ -9,19 +9,18 @@ import { cn } from '@/lib/utils'
  * @param {string} [props.className] - Optional additional class names.
  */
 export function TeamChip({ name, color, className }) {
-    // Determine text color based on background luminance for contrast
-    const getContrastColor = (hexColor) => {
-        if (!hexColor) return '#FFFFFF'
+    // Parse hex color to RGB for transparent background
+    const hexToRgb = (hexColor) => {
+        if (!hexColor) return { r: 107, g: 114, b: 128 } // Default gray
         const hex = hexColor.replace('#', '')
         const r = parseInt(hex.substring(0, 2), 16)
         const g = parseInt(hex.substring(2, 4), 16)
         const b = parseInt(hex.substring(4, 6), 16)
-        // Using perceived luminance formula
-        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-        return luminance > 0.5 ? '#000000' : '#FFFFFF'
+        return { r, g, b }
     }
 
-    const textColor = getContrastColor(color)
+    const { r, g, b } = hexToRgb(color)
+    const solidColor = color || '#6B7280'
 
     return (
         <span
@@ -30,8 +29,9 @@ export function TeamChip({ name, color, className }) {
                 className
             )}
             style={{
-                backgroundColor: color || '#6B7280', // Default gray if no color
-                color: textColor,
+                backgroundColor: `rgba(${r}, ${g}, ${b}, 0.15)`,
+                color: solidColor,
+                border: `1px solid ${solidColor}`,
             }}
         >
             {name || 'Unknown'}
