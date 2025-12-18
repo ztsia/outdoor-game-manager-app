@@ -123,7 +123,7 @@ export default function Attack() {
             </div>
 
             {/* Territory List */}
-            <div className="p-4 space-y-3">
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {sortedTerritories.map((territory) => {
                     const status = getTerritoryStatus(territory, teamId, defendingTeams, now, challengeTimeout)
                     const ownerTeam = teamsMap[territory.owner_id]
