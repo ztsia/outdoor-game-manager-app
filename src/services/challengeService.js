@@ -6,30 +6,38 @@ import { db } from '@/firebase'
 
 /**
  * Fetch global game rules from system_config
- * @returns {Promise<{starCosts: Object, challengeTimeoutSeconds: number}>}
+ * @returns {Promise<Object>} Full game_rules config
  */
 export async function getGameRules() {
-    // Default tiered costs
-    const defaultStarCosts = {
-        0: 10000,
-        1: 50000,
-        2: 100000,
-        3: 500000
+    // Default values
+    const defaults = {
+        star_value: 10000,
+        battle_cooldown_minutes: 15,
+        challenge_timeout_seconds: 120,
+        max_territory_stars: 3,
+        rank_thresholds: {
+            rookie: { min_followers: 10000, min_stars: 0 },
+            rising_star: { min_followers: 100000, min_stars: 3 },
+            legend: { min_followers: 1000000, min_stars: 10, min_fan_favourites: 1 }
+        },
+        rank_weights: {
+            followers: 1,
+            star: 20000,
+            fan_favourite: 100000
+        }
     }
 
     try {
         const configDoc = await getDoc(doc(db, 'system_config', 'game_rules'))
         if (configDoc.exists()) {
             const data = configDoc.data()
-            return {
-                starCosts: data.star_costs || defaultStarCosts,
-                challengeTimeoutSeconds: data.challenge_timeout_seconds || 120
-            }
+            // Merge with defaults to ensure all fields exist
+            return { ...defaults, ...data }
         }
-        return { starCosts: defaultStarCosts, challengeTimeoutSeconds: 120 }
+        return defaults
     } catch (err) {
         console.error('[challengeService] Error fetching game rules:', err)
-        return { starCosts: defaultStarCosts, challengeTimeoutSeconds: 120 }
+        return defaults
     }
 }
 

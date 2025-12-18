@@ -1,6 +1,8 @@
 /**
  * Rank Service - Calculate team ranks dynamically based on stats
  */
+import { doc, updateDoc } from 'firebase/firestore'
+import { db } from '@/firebase'
 
 // Rank constants
 export const RANKS = {
@@ -146,5 +148,21 @@ export function getTeamRankInfo(team, teamTerritories, allTeams, allTerritories,
         rank,
         isLivingIcon: livingIcon,
         score
+    }
+}
+
+/**
+ * Update team rank in database
+ * @param {string} teamId - Team document ID
+ * @param {string} newRank - New rank value
+ * @returns {Promise<void>}
+ */
+export async function updateTeamRank(teamId, newRank) {
+    try {
+        const teamRef = doc(db, 'teams', teamId)
+        await updateDoc(teamRef, { rank: newRank || 'Rookie' })
+        console.log(`[rankService] Updated ${teamId} rank to: ${newRank}`)
+    } catch (err) {
+        console.error('[rankService] Error updating team rank:', err)
     }
 }

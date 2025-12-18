@@ -293,8 +293,10 @@ export default function Attack() {
                                 <div className="flex items-center gap-1">
                                     <span>Battle Cost:</span>
                                     <div className="relative group">
-                                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-48 p-3 rounded-lg bg-popover border shadow-lg text-xs">
+                                        <button type="button" className="cursor-help focus:outline-none">
+                                            <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                                        </button>
+                                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block group-focus-within:block z-50 w-48 p-3 rounded-lg bg-popover border shadow-lg text-xs">
                                             <p className="font-semibold mb-2">Cost by Star Level:</p>
                                             <div className="space-y-1">
                                                 <div className="flex justify-between"><span>0 ⭐</span><span>{formatNumber(starCosts[0] || 10000)}</span></div>

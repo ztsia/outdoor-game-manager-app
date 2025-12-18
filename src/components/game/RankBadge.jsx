@@ -10,24 +10,27 @@ const RANK_CONFIG = {
     [RANKS.ROOKIE]: {
         icon: Sprout,
         label: 'Rookie',
-        className: 'bg-zinc-500 text-white border-zinc-600'
+        // Bronze styling
+        className: 'bg-[#CD7F32] text-white border border-white/40 shadow-sm'
     },
     [RANKS.RISING_STAR]: {
         icon: Star,
         label: 'Rising Star',
-        className: 'bg-blue-500 text-white border-blue-600'
+        // Silver styling with dark text for contrast
+        className: 'bg-[#C0C0C0] text-slate-900 border border-white/40 shadow-sm'
     },
     [RANKS.LEGEND]: {
         icon: Crown,
         label: 'Legend',
-        className: 'bg-amber-500 text-white border-amber-600'
+        // Gold styling with dark text for contrast
+        className: 'bg-[#FFD700] text-yellow-900 border border-white/40 shadow-sm'
     }
 }
 
 const LIVING_ICON_CONFIG = {
     icon: Gem,
     label: 'Living Icon',
-    className: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-purple-600 animate-pulse'
+    className: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border border-white/40 shadow-sm animate-pulse'
 }
 
 /**

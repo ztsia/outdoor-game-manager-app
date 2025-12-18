@@ -1,12 +1,13 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useTeamData } from './useTeamData'
 import { subscribeToAllTeams } from '@/services/teamService'
 import { subscribeToAllTerritories } from '@/services/gameService'
 import { getGameRules } from '@/services/challengeService'
-import { getTeamRankInfo, RANKS } from '@/services/rankService'
+import { getTeamRankInfo, updateTeamRank, RANKS } from '@/services/rankService'
 
 /**
  * Hook to get a team's current rank and Living Icon status
+ * Also persists rank changes to the database
  * @param {string} teamId - Team ID to get rank for
  * @returns {Object} { rank, isLivingIcon, score, loading }
  */
@@ -16,6 +17,9 @@ export function useRank(teamId) {
     const [allTerritories, setAllTerritories] = useState([])
     const [config, setConfig] = useState(null)
     const [loading, setLoading] = useState(true)
+
+    // Track last persisted rank to avoid unnecessary writes
+    const lastPersistedRank = useRef(null)
 
     // Fetch game rules config
     useEffect(() => {
@@ -56,6 +60,17 @@ export function useRank(teamId) {
         return getTeamRankInfo(team, teamTerritories, allTeams, allTerritories, config)
     }, [team, teamTerritories, allTeams, allTerritories, config])
 
+    // Persist rank changes to database
+    useEffect(() => {
+        if (!teamId || !rankInfo.rank || loading || teamLoading) return
+
+        // Only update if rank actually changed
+        if (rankInfo.rank !== lastPersistedRank.current) {
+            lastPersistedRank.current = rankInfo.rank
+            updateTeamRank(teamId, rankInfo.rank)
+        }
+    }, [teamId, rankInfo.rank, loading, teamLoading])
+
     return {
         rank: rankInfo.rank,
         isLivingIcon: rankInfo.isLivingIcon,
@@ -65,3 +80,4 @@ export function useRank(teamId) {
 }
 
 export { RANKS }
+
