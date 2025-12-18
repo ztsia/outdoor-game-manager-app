@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useBlocker } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { subscribeToTerritory, getTeam } from '@/services/gameService'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useGameHost } from '@/hooks/useGameHost'
@@ -49,22 +49,31 @@ export default function GamePage() {
     // Track if we've resolved to prevent double resolution
     const [hasResolved, setHasResolved] = useState(false)
 
+    // Track if we're navigating away (to prevent blocker interference)
+    const isNavigatingAway = useRef(false)
+
+    // Track previous challenge status for passive game end detection
+    const prevChallengeStatus = useRef(null)
+
+    // Max stars constant
+    const MAX_STARS = 3
+
     // Game host controls
     const gameHost = useGameHost(territoryId)
 
     console.log('[GamePage] Mounted with territoryId:', territoryId)
 
-    // Block navigation when game is active (battle mode)
-    const shouldBlock = territory?.challenge_status === 'accepted'
+    // Block navigation when game is active (battle mode) - but not when navigating intentionally
+    const shouldBlock = territory?.challenge_status === 'accepted' && !isNavigatingAway.current
 
     const blocker = useBlocker(
         ({ currentLocation, nextLocation }) =>
             shouldBlock && currentLocation.pathname !== nextLocation.pathname
     )
 
-    // Handle blocker - show toast and reset
+    // Handle blocker - show toast and reset (only if not intentional navigation)
     useEffect(() => {
-        if (blocker.state === 'blocked') {
+        if (blocker.state === 'blocked' && !isNavigatingAway.current) {
             toast.error('Cannot exit active game')
             blocker.reset()
         }
@@ -135,7 +144,7 @@ export default function GamePage() {
     const myVote = isAttacker ? attackerVote : isDefender ? defenderVote : null
     const opponentVote = isAttacker ? defenderVote : isDefender ? attackerVote : null
 
-    // Check for consensus and resolve
+    // Check for consensus and resolve (ACTIVE resolver - one client triggers this)
     useEffect(() => {
         if (!endGameRequested || !territory || hasResolved) return
 
@@ -146,6 +155,7 @@ export default function GamePage() {
                 const winner = attackerVote
                 // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: guarded by hasResolved check
                 setHasResolved(true)
+                isNavigatingAway.current = true
 
                 console.log('[GamePage] Consensus reached! Winner:', winner)
 
@@ -155,22 +165,26 @@ export default function GamePage() {
                     (winner === 'attacker' && isAttacker) ||
                     (winner === 'defender' && isDefender)
 
+                const currentStars = territory.stars || 1
+                const starsAdded = currentStars < MAX_STARS
+                const newStars = starsAdded ? currentStars + 1 : currentStars
+
                 const resultData = {
                     winner,
                     isWinner,
                     territoryName: territory.name,
                     territoryId: territory.id || territoryId,
-                    stars: (territory.stars || 1) + 1, // +1 star to winner
+                    stars: newStars,
+                    starsAdded,
                     betAmount,
                     attackerName: territory.current_attacker_id?.replace('team_', '').toUpperCase(),
                     defenderName: territory.owner_id?.replace('team_', '').toUpperCase(),
-                    // What you gained/lost
                     outcome: isWinner ? 'victory' : 'defeat',
                     followersChange: isWinner
-                        ? betAmount // Winner gets bet (refund for attacker, winnings for defender)
+                        ? betAmount
                         : isAttacker
-                            ? 0 // Attacker already lost bet when initiating
-                            : 0 // Defender keeps territory but gets 0 extra
+                            ? 0
+                            : 0
                 }
 
                 // Resolve the game (only one client will succeed due to Firestore)
@@ -186,7 +200,64 @@ export default function GamePage() {
                 gameHost.setVoteMismatch()
             }
         }
-    }, [attackerVote, defenderVote, endGameRequested, territory, gameHost, navigate, isAttacker, isDefender, territoryId])
+    }, [attackerVote, defenderVote, endGameRequested, territory, gameHost, navigate, isAttacker, isDefender, territoryId, hasResolved, MAX_STARS])
+
+    // PASSIVE game end watcher - detects when another client resolved the game
+    useEffect(() => {
+        const currentStatus = territory?.challenge_status
+        const previousStatus = prevChallengeStatus.current
+
+        // Update ref for next comparison
+        prevChallengeStatus.current = currentStatus
+
+        // Skip if already navigating or no meaningful transition
+        if (isNavigatingAway.current || hasResolved) return
+        if (!territory || !teamId) return
+
+        // Detect transition from 'accepted' to 'idle'
+        if (previousStatus === 'accepted' && currentStatus === 'idle') {
+            console.log('[GamePage] Passive game end detected - another client resolved')
+            isNavigatingAway.current = true
+
+            // Determine outcome based on final state
+            // After resolution: owner_id is the winner's team (if attacker won, they're now owner)
+            const finalOwnerId = territory.owner_id
+            const wasAttacker = isAttacker // We were the attacker before resolution
+            const wasDefender = isDefender // We were the defender before resolution
+
+            // If we were attacker and are now owner -> we won
+            // If we were defender and are still owner -> we won
+            // Note: After resolution, our teamId comparison might not work directly
+            // Let's use a simpler heuristic: check our role and final state
+            const isWinner = teamId === finalOwnerId ? wasDefender : wasAttacker && teamId === finalOwnerId
+
+            // Simplify: Just check if teamId matches new owner
+            const iAmWinner = teamId === finalOwnerId
+            const winner = iAmWinner ? (wasAttacker ? 'attacker' : 'defender') : (wasAttacker ? 'defender' : 'attacker')
+
+            const betAmount = territory.bet_amount || 0
+            const currentStars = territory.stars || 1
+
+            const resultData = {
+                winner,
+                isWinner: iAmWinner,
+                territoryName: territory.name,
+                territoryId: territory.id || territoryId,
+                stars: currentStars, // Already updated by resolver
+                starsAdded: false, // We don't know for passive, assume already handled
+                betAmount,
+                attackerName: 'ATTACKER', // Data may be cleared
+                defenderName: 'DEFENDER',
+                outcome: iAmWinner ? 'victory' : 'defeat',
+                followersChange: iAmWinner ? betAmount : 0
+            }
+
+            navigate('/dashboard', {
+                replace: true,
+                state: { gameResult: resultData }
+            })
+        }
+    }, [territory?.challenge_status, territory, teamId, isAttacker, isDefender, territoryId, navigate, hasResolved])
 
     // Handle "End Game" button press
     const handleRequestEndGame = () => {
@@ -306,26 +377,17 @@ export default function GamePage() {
                 ) : (
                     // Battle Mode - All tabs
                     <Tabs defaultValue="rules" className="w-full">
-                        <TabsList className="w-full justify-start rounded-none border-b h-auto p-0">
-                            <TabsTrigger
-                                value="rules"
-                                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-                            >
+                        <TabsList className="grid w-full grid-cols-3 mx-4 my-2">
+                            <TabsTrigger value="rules">
                                 Rules
                             </TabsTrigger>
                             {gameStarted && gameInfo.has_scoreboard && (
-                                <TabsTrigger
-                                    value="scoreboard"
-                                    className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-                                >
+                                <TabsTrigger value="scoreboard">
                                     Scoreboard
                                 </TabsTrigger>
                             )}
                             {gameStarted && gameInfo.has_timer && (
-                                <TabsTrigger
-                                    value="timer"
-                                    className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary"
-                                >
+                                <TabsTrigger value="timer">
                                     Timer
                                 </TabsTrigger>
                             )}
@@ -342,6 +404,8 @@ export default function GamePage() {
                                     role={role}
                                     onIncrement={gameHost.incrementScore}
                                     onDecrement={gameHost.decrementScore}
+                                    attackerColor={attackerTeam?.color}
+                                    defenderColor={defenderTeam?.color}
                                 />
                             </TabsContent>
                         )}

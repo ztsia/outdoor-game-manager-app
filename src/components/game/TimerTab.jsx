@@ -41,19 +41,23 @@ export function TimerTab({
     // Shared timer calculation
     useEffect(() => {
         if (timerMode !== 'shared') return
-        if (!liveState?.timer_started_at || liveState?.is_paused) {
-            setSharedElapsed(0)
+
+        const storedElapsed = liveState?.shared_elapsed_seconds || 0
+        const timerStarted = liveState?.timer_started_at
+
+        if (!timerStarted) {
+            setSharedElapsed(storedElapsed)
             return
         }
 
         const interval = setInterval(() => {
-            const startTime = liveState.timer_started_at?.toDate?.() || new Date(liveState.timer_started_at)
-            const elapsed = Math.floor((Date.now() - startTime.getTime()) / 1000)
-            setSharedElapsed(elapsed)
+            const startTime = timerStarted?.toDate?.() || new Date(timerStarted)
+            const runningElapsed = Math.floor((Date.now() - startTime.getTime()) / 1000)
+            setSharedElapsed(storedElapsed + runningElapsed)
         }, 100)
 
         return () => clearInterval(interval)
-    }, [liveState?.timer_started_at, liveState?.is_paused, timerMode])
+    }, [liveState?.timer_started_at, liveState?.shared_elapsed_seconds, timerMode])
 
     // Split timer calculation - Attacker
     useEffect(() => {
@@ -116,7 +120,7 @@ export function TimerTab({
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
     }
 
-    const isSharedRunning = liveState?.timer_started_at && !liveState?.is_paused
+    const isSharedRunning = !!liveState?.timer_started_at
     const isAttackerRunning = !!liveState?.attacker_timer_started_at
     const isDefenderRunning = !!liveState?.defender_timer_started_at
 
@@ -140,7 +144,7 @@ export function TimerTab({
                                         Start
                                     </Button>
                                 ) : (
-                                    <Button onClick={onPauseSharedTimer} variant="secondary" className="gap-2">
+                                    <Button onClick={() => onPauseSharedTimer(sharedElapsed)} variant="secondary" className="gap-2">
                                         <Pause className="h-4 w-4" />
                                         Pause
                                     </Button>

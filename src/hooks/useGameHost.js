@@ -60,8 +60,7 @@ export function useGameHost(territoryId) {
     const startSharedTimer = async () => {
         try {
             await updateDoc(territoryRef, {
-                'live_state.timer_started_at': Timestamp.now(),
-                'live_state.is_paused': false
+                'live_state.timer_started_at': Timestamp.now()
             })
             console.log('[useGameHost] Shared timer started')
         } catch (err) {
@@ -72,13 +71,15 @@ export function useGameHost(territoryId) {
 
     /**
      * Pause shared timer
+     * @param {number} currentElapsed - Current elapsed time in seconds
      */
-    const pauseSharedTimer = async () => {
+    const pauseSharedTimer = async (currentElapsed) => {
         try {
             await updateDoc(territoryRef, {
-                'live_state.is_paused': true
+                'live_state.shared_elapsed_seconds': currentElapsed,
+                'live_state.timer_started_at': null
             })
-            console.log('[useGameHost] Shared timer paused')
+            console.log(`[useGameHost] Shared timer paused at ${currentElapsed}s`)
         } catch (err) {
             console.error('[useGameHost] Failed to pause timer:', err)
             toast.error('Failed to pause timer')
@@ -91,8 +92,8 @@ export function useGameHost(territoryId) {
     const resetSharedTimer = async () => {
         try {
             await updateDoc(territoryRef, {
-                'live_state.timer_started_at': null,
-                'live_state.is_paused': false
+                'live_state.shared_elapsed_seconds': 0,
+                'live_state.timer_started_at': null
             })
             console.log('[useGameHost] Shared timer reset')
         } catch (err) {
@@ -291,7 +292,7 @@ export function useGameHost(territoryId) {
                     'live_state.attacker_score': 0,
                     'live_state.defender_score': 0,
                     'live_state.timer_started_at': null,
-                    'live_state.is_paused': false,
+                    'live_state.shared_elapsed_seconds': 0,
                     'live_state.attacker_elapsed_seconds': 0,
                     'live_state.defender_elapsed_seconds': 0,
                     'live_state.attacker_timer_started_at': null,
