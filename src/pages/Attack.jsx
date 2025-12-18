@@ -272,7 +272,7 @@ export default function Attack() {
 
             {/* Attack Confirmation Modal */}
             <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-                <DialogContent>
+                <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Swords className="h-5 w-5" />
