@@ -28,6 +28,7 @@ const auth = getAuth(app)
 const systemConfig = {
     game_rules: {
         battle_cooldown_minutes: 15,
+        world_tour_cooldown_minutes: 15, // Cooldown after a world tour game is played
         challenge_timeout_seconds: 120, // 2 minutes for defender to respond
         max_territory_stars: 3, // Maximum stars a territory can have
         // Tiered attack costs based on territory star count
@@ -595,6 +596,8 @@ const worldTourGames = {
         location_image_url: "",
         high_score: 45,
         high_score_holder_id: "team_blue",
+        current_team_id: null,       // Team currently playing (null = available)
+        cooldown_ends_at: null,      // Timestamp when cooldown ends
         multiplier_config: { normal: 1, hard: 2, extreme: 3 },
         description_md: "## How to Play\nSort the beans by color as fast as possible!",
         timer_config: {
@@ -609,6 +612,8 @@ const worldTourGames = {
         location_image_url: "",
         high_score: 0,
         high_score_holder_id: null,
+        current_team_id: null,       // Team currently playing (null = available)
+        cooldown_ends_at: null,      // Timestamp when cooldown ends
         multiplier_config: { normal: 1, hard: 2, extreme: 3 },
         description_md: "## How to Play\nStack as many hot dogs as possible!",
         timer_config: {

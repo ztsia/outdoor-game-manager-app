@@ -1,17 +1,20 @@
-import { Star, MapPin } from 'lucide-react'
+import { Star, MapPin, Trophy } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { TeamChip } from '@/components/ui/TeamChip'
 import { TerritoryStatusBadge } from '@/components/game/TerritoryStatusBadge'
 
 /**
  * GameCard - A clickable card displaying a game/territory listing
+ * Supports both Territory mode and World Tour mode
+ * 
  * @param {object} props
  * @param {object} props.territory - The territory/game object
  * @param {object} props.status - Status object { disabled, reason, badge }
- * @param {object} props.ownerTeam - The team object of the owner
+ * @param {object} props.ownerTeam - The team object of the owner (Territory) or high score holder (World Tour)
  * @param {function} props.onAction - Callback when the card is clicked (if not disabled)
+ * @param {boolean} [props.isWorldTour=false] - Whether this is a World Tour game
  */
-export function GameCard({ territory, status, ownerTeam, onAction }) {
+export function GameCard({ territory, status, ownerTeam, onAction, isWorldTour = false }) {
     return (
         <Card
             className={`overflow-hidden p-0 gap-0 transition-all ${status.disabled
@@ -45,25 +48,47 @@ export function GameCard({ territory, status, ownerTeam, onAction }) {
             </div>
 
             <CardContent className="p-5">
-                {/* Header: Name + Stars */}
+                {/* Header: Name + Stars (Territory) or Name only (World Tour) */}
                 <div className="flex items-start justify-between gap-2">
                     <h3 className="font-semibold text-xl line-clamp-1">{territory.name}</h3>
-                    <div className="flex items-center gap-1 text-yellow-500 shrink-0">
-                        <Star className="h-5 w-5 fill-current" />
-                        <span className="text-base font-bold">{territory.stars}</span>
-                    </div>
+                    {!isWorldTour && (
+                        <div className="flex items-center gap-1 text-yellow-500 shrink-0">
+                            <Star className="h-5 w-5 fill-current" />
+                            <span className="text-base font-bold">{territory.stars}</span>
+                        </div>
+                    )}
                 </div>
 
-                {/* Owner */}
+                {/* Owner (Territory) or Fan Favourite (World Tour) */}
                 <div className="mt-3">
-                    <TeamChip name={ownerTeam?.name} color={ownerTeam?.color} />
+                    {isWorldTour ? (
+                        <div className="flex items-center gap-2">
+                            <Trophy className="h-4 w-4 text-yellow-500" />
+                            <span className="text-sm text-muted-foreground">Fan Favourite:</span>
+                            {ownerTeam ? (
+                                <TeamChip name={ownerTeam.name} color={ownerTeam.color} />
+                            ) : (
+                                <span className="text-sm text-muted-foreground italic">None yet</span>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">Owner:</span>
+                            <TeamChip name={ownerTeam?.name} color={ownerTeam?.color} />
+                        </div>
+                    )}
                 </div>
 
                 {/* Game Info */}
                 <div className="mt-4 text-sm text-muted-foreground">
                     <div className="font-medium text-foreground text-base">
-                        {territory.game_info?.title || 'Unknown Game'}
+                        {territory.game_info?.title || territory.name}
                     </div>
+                    {isWorldTour && territory.high_score > 0 && (
+                        <div className="mt-1">
+                            High Score: <span className="font-semibold text-foreground">{territory.high_score}</span>
+                        </div>
+                    )}
                 </div>
             </CardContent>
         </Card>

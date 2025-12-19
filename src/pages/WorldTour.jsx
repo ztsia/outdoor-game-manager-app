@@ -1,32 +1,85 @@
-import { useAuth } from '@/contexts/AuthProvider'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
+import { useWorldTourGames } from '@/hooks/useWorldTourGames'
+import { useAllTeams } from '@/hooks/useAllTeams'
+import { getWorldTourStatus } from '@/lib/territoryStatus'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { GameCard } from '@/components/game/GameCard'
 
 export default function WorldTour() {
-    const { role, teamId, logout } = useAuth()
+    const navigate = useNavigate()
+    const { games, loading: gamesLoading } = useWorldTourGames()
+    const { teamsMap, loading: teamsLoading } = useAllTeams()
+
+    // Real-time ticker for countdown timers
+    const [now, setNow] = useState(() => Date.now())
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setNow(Date.now())
+        }, 1000)
+        return () => clearInterval(interval)
+    }, [])
+
+    const loading = gamesLoading || teamsLoading
+
+    if (loading) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-background">
+                <p className="text-muted-foreground">Loading world tour games...</p>
+            </div>
+        )
+    }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader className="text-center">
-                    <CardTitle className="text-2xl font-bold">World Tour 🌍</CardTitle>
-                    <CardDescription>Complete challenges around the world</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex flex-wrap items-center justify-center gap-2">
-                        <Badge variant="secondary">Role: {role}</Badge>
-                        {teamId && <Badge variant="outline">Team: {teamId}</Badge>}
-                    </div>
-                    <div className="rounded-lg bg-muted p-8 text-center text-muted-foreground">
-                        <p className="text-lg font-medium">Coming Soon</p>
-                        <p className="text-sm">World Tour games will be listed here.</p>
-                    </div>
-                    <Button variant="outline" className="w-full" onClick={logout}>
-                        Logout
+        <div className="min-h-screen bg-background pb-4">
+            {/* Header */}
+            <div className="sticky top-0 z-10 bg-background border-b p-4">
+                <div className="flex items-center gap-3">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => navigate('/dashboard')}
+                    >
+                        <ArrowLeft className="h-5 w-5" />
                     </Button>
-                </CardContent>
-            </Card>
+                    <div>
+                        <h1 className="text-xl font-bold">World Tour 🌍</h1>
+                        <p className="text-sm text-muted-foreground">
+                            Non-PvP Challenges - Set high scores!
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Games List */}
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {games.map((game) => {
+                    const status = getWorldTourStatus(game, now)
+                    const highScoreTeam = teamsMap[game.high_score_holder_id]
+
+                    return (
+                        <GameCard
+                            key={game.id}
+                            territory={game}
+                            status={status}
+                            ownerTeam={highScoreTeam}
+                            isWorldTour={true}
+                            onAction={() => {
+                                // No navigation yet - placeholder
+                                console.log('[WorldTour] Selected game:', game.id)
+                            }}
+                        />
+                    )
+                })}
+            </div>
+
+            {games.length === 0 && (
+                <div className="p-8 text-center text-muted-foreground">
+                    <p>No world tour games available.</p>
+                </div>
+            )}
         </div>
     )
 }

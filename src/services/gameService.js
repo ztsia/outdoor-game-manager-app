@@ -68,3 +68,25 @@ export async function getTeam(teamId) {
     return null
 }
 
+/**
+ * Subscribe to all world tour games in real-time
+ * @param {Function} callback - Called with array of world tour game objects
+ * @param {Function} onError - Called on error
+ * @returns {Function} Unsubscribe function
+ */
+export function subscribeToAllWorldTourGames(callback, onError) {
+    return onSnapshot(
+        collection(db, 'world_tour_games'),
+        (snapshot) => {
+            const games = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data()
+            }))
+            callback(games)
+        },
+        (err) => {
+            console.error('[gameService] Error fetching world tour games:', err)
+            if (onError) onError(err)
+        }
+    )
+}
