@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Swords, AlertCircle, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TeamChip } from '@/components/ui/TeamChip'
@@ -36,6 +37,7 @@ export function AttackChallengeModal({
     onConfirm
 }) {
     const hasEnoughFunds = team ? team.followers >= attackCost : false
+    const [showCostTooltip, setShowCostTooltip] = useState(false)
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -59,19 +61,28 @@ export function AttackChallengeModal({
                         <div className="flex justify-between items-center text-sm">
                             <div className="flex items-center gap-1">
                                 <span>Battle Cost:</span>
-                                <div className="relative group">
-                                    <button type="button" className="cursor-help focus:outline-none">
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        className="cursor-help focus:outline-none p-2 -m-2 opacity-70 hover:opacity-100 transition-opacity"
+                                        onClick={() => setShowCostTooltip(!showCostTooltip)}
+                                        onMouseEnter={() => setShowCostTooltip(true)}
+                                        onMouseLeave={() => setShowCostTooltip(false)}
+                                    >
                                         <HelpCircle className="h-4 w-4 text-muted-foreground" />
                                     </button>
-                                    <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block group-focus-within:block z-50 w-48 p-3 rounded-lg bg-popover border shadow-lg text-xs">
-                                        <p className="font-semibold mb-2">Cost by Star Level:</p>
-                                        <div className="space-y-1">
-                                            <div className="flex justify-between"><span>0 ⭐</span><span>{formatNumber(starCosts[0] || 10000)}</span></div>
-                                            <div className="flex justify-between"><span>1 ⭐</span><span>{formatNumber(starCosts[1] || 50000)}</span></div>
-                                            <div className="flex justify-between"><span>2 ⭐</span><span>{formatNumber(starCosts[2] || 100000)}</span></div>
-                                            <div className="flex justify-between"><span>3 ⭐</span><span>{formatNumber(starCosts[3] || 500000)}</span></div>
+
+                                    {showCostTooltip && (
+                                        <div className="absolute left-0 bottom-full mb-2 z-50 w-48 p-3 rounded-lg bg-popover border shadow-lg text-xs animate-in fade-in zoom-in-95 duration-200">
+                                            <p className="font-semibold mb-2">Cost by Star Level:</p>
+                                            <div className="space-y-1">
+                                                <div className="flex justify-between"><span>0 ⭐</span><span>{formatNumber(starCosts[0] || 10000)}</span></div>
+                                                <div className="flex justify-between"><span>1 ⭐</span><span>{formatNumber(starCosts[1] || 50000)}</span></div>
+                                                <div className="flex justify-between"><span>2 ⭐</span><span>{formatNumber(starCosts[2] || 100000)}</span></div>
+                                                <div className="flex justify-between"><span>3 ⭐</span><span>{formatNumber(starCosts[3] || 500000)}</span></div>
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
                             <span className="font-mono font-bold text-lg">
