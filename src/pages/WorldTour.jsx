@@ -70,8 +70,9 @@ export default function WorldTour() {
                             isWorldTour={true}
                             title={locationsMap[game.location_id]?.name || game.name}
                             onAction={() => {
-                                // No navigation yet - placeholder
-                                console.log('[WorldTour] Selected game:', game.id)
+                                if (status?.type === 'available') {
+                                    navigate(`/game/${game.id}`)
+                                }
                             }}
                         />
                     )
