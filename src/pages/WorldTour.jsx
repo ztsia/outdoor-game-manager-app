@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { useWorldTourGames } from '@/hooks/useWorldTourGames'
 import { useAllTeams } from '@/hooks/useAllTeams'
+import { useLocations } from '@/hooks/useLocations'
 import { getWorldTourStatus } from '@/lib/territoryStatus'
 import { Button } from '@/components/ui/button'
 import { GameCard } from '@/components/game/GameCard'
@@ -11,6 +12,7 @@ export default function WorldTour() {
     const navigate = useNavigate()
     const { games, loading: gamesLoading } = useWorldTourGames()
     const { teamsMap, loading: teamsLoading } = useAllTeams()
+    const { locationsMap, loading: locationsLoading } = useLocations()
 
     // Real-time ticker for countdown timers
     const [now, setNow] = useState(() => Date.now())
@@ -22,7 +24,7 @@ export default function WorldTour() {
         return () => clearInterval(interval)
     }, [])
 
-    const loading = gamesLoading || teamsLoading
+    const loading = gamesLoading || teamsLoading || locationsLoading
 
     if (loading) {
         return (
@@ -66,6 +68,7 @@ export default function WorldTour() {
                             status={status}
                             ownerTeam={highScoreTeam}
                             isWorldTour={true}
+                            title={locationsMap[game.location_id]?.name || game.name}
                             onAction={() => {
                                 // No navigation yet - placeholder
                                 console.log('[WorldTour] Selected game:', game.id)

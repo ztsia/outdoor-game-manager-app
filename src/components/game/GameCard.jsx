@@ -13,8 +13,14 @@ import { TerritoryStatusBadge } from '@/components/game/TerritoryStatusBadge'
  * @param {object} props.ownerTeam - The team object of the owner (Territory) or high score holder (World Tour)
  * @param {function} props.onAction - Callback when the card is clicked (if not disabled)
  * @param {boolean} [props.isWorldTour=false] - Whether this is a World Tour game
+ * @param {string} [props.title] - Location name to display as card title (overrides territory.name in header)
  */
-export function GameCard({ territory, status, ownerTeam, onAction, isWorldTour = false }) {
+export function GameCard({ territory, status, ownerTeam, onAction, isWorldTour = false, title }) {
+    // Title (header) = Location Name, fallback to territory.name if not provided
+    const displayTitle = title || territory.name
+    // Game Name = territory.name (which is now the game name after schema change)
+    const gameName = territory.name
+
     return (
         <Card
             className={`overflow-hidden p-0 gap-0 transition-all ${status.disabled
@@ -32,7 +38,7 @@ export function GameCard({ territory, status, ownerTeam, onAction, isWorldTour =
                 {territory.location_image_url ? (
                     <img
                         src={territory.location_image_url}
-                        alt={territory.name}
+                        alt={displayTitle}
                         className="h-full w-full object-cover"
                     />
                 ) : (
@@ -48,9 +54,9 @@ export function GameCard({ territory, status, ownerTeam, onAction, isWorldTour =
             </div>
 
             <CardContent className="p-5">
-                {/* Header: Name + Stars (Territory) or Name only (World Tour) */}
+                {/* Header: Location Name + Stars (Territory) or Location Name only (World Tour) */}
                 <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-xl line-clamp-1">{territory.name}</h3>
+                    <h3 className="font-semibold text-xl line-clamp-1">{displayTitle}</h3>
                     {!isWorldTour && (
                         <div className="flex items-center gap-1 text-yellow-500 shrink-0">
                             <Star className="h-5 w-5 fill-current" />
@@ -79,10 +85,10 @@ export function GameCard({ territory, status, ownerTeam, onAction, isWorldTour =
                     )}
                 </div>
 
-                {/* Game Info */}
+                {/* Game Name (smaller, below owner) */}
                 <div className="mt-4 text-sm text-muted-foreground">
                     <div className="font-medium text-foreground text-base">
-                        {territory.game_info?.title || territory.name}
+                        {gameName}
                     </div>
                     {isWorldTour && territory.high_score > 0 && (
                         <div className="mt-1">
@@ -94,4 +100,3 @@ export function GameCard({ territory, status, ownerTeam, onAction, isWorldTour =
         </Card>
     )
 }
-

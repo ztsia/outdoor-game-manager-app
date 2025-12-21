@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthProvider'
 import { useGameData } from '@/hooks/useGameData'
 import { useTeamData } from '@/hooks/useTeamData'
 import { useAllTeams } from '@/hooks/useAllTeams'
+import { useLocations } from '@/hooks/useLocations'
 import { useAttackTransaction } from '@/hooks/useAttackTransaction'
 import { getGameRules } from '@/services/challengeService'
 import { Button } from '@/components/ui/button'
@@ -22,6 +23,7 @@ export default function Attack() {
     const { territories, defendingTeams, loading: territoriesLoading } = useGameData()
     const { team, loading: teamLoading } = useTeamData(teamId)
     const { teamsMap, loading: teamsLoading } = useAllTeams()
+    const { locationsMap, loading: locationsLoading } = useLocations()
     const { starCosts, calculateCost, initiateAttack, loading: attackLoading } = useAttackTransaction()
     const navigate = useNavigate()
 
@@ -37,7 +39,7 @@ export default function Attack() {
     const [now, setNow] = useState(() => Date.now())
     const [challengeTimeout, setChallengeTimeout] = useState(120)
 
-    const loading = territoriesLoading || teamLoading || teamsLoading
+    const loading = territoriesLoading || teamLoading || teamsLoading || locationsLoading
 
     // Fetch game rules for timeout duration
     useEffect(() => {
@@ -220,6 +222,7 @@ export default function Attack() {
                             territory={territory}
                             status={status}
                             ownerTeam={ownerTeam}
+                            title={locationsMap[territory.location_id]?.name}
                             onAction={() => handleSelectTerritory(territory)}
                         />
                     )
@@ -237,6 +240,7 @@ export default function Attack() {
                 starCosts={starCosts}
                 loading={attackLoading}
                 onConfirm={handleConfirmAttack}
+                locationName={locationsMap[selectedTerritory?.location_id]?.name}
             />
         </div>
     )

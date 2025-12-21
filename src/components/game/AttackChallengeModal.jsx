@@ -34,7 +34,8 @@ export function AttackChallengeModal({
     attackCost,
     starCosts,
     loading,
-    onConfirm
+    onConfirm,
+    locationName
 }) {
     const hasEnoughFunds = team ? team.followers >= attackCost : false
     const [showCostTooltip, setShowCostTooltip] = useState(false)
@@ -45,7 +46,7 @@ export function AttackChallengeModal({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Swords className="h-5 w-5" />
-                        Challenge {territory?.name}
+                        Challenge for {locationName || 'Territory'}
                     </DialogTitle>
                     <DialogDescription className="flex items-center gap-2">
                         Owned by <TeamChip
@@ -127,7 +128,7 @@ export function AttackChallengeModal({
 
                     {/* Game Info */}
                     <div className="text-sm text-muted-foreground">
-                        <p><strong>Game:</strong> {territory?.game_info?.title}</p>
+                        <p><strong>Game:</strong> {territory?.name}</p>
                         <p><strong>Win Condition:</strong> {territory?.game_info?.win_condition}</p>
                     </div>
                 </div>

@@ -152,11 +152,11 @@ const locations = {
     }
 }
 
-// Territories
+// Territories - name is now Game Name, location resolved via location_id
 const territories = {
     t_01: {
         location_id: "loc_01",
-        name: "Vocal Room",
+        name: "Football Brawl",
         location_image_url: "",
         owner_id: "team_red",
         stars: 2,  // Team Red: 2 + 1 = 3 stars total
@@ -166,7 +166,6 @@ const territories = {
         current_attacker_id: null,
         bet_amount: 0,
         game_info: {
-            title: "Football Brawl",
             description_md: "## Rules\n\nFirst to score 2 goals wins!\n\n### Gameplay\n1. Each team takes turns shooting\n2. No hands allowed\n3. Standard football rules apply",
             win_condition: "First to 2 goals.",
             home_advantage: "Defender starts with ball possession.",
@@ -182,12 +181,10 @@ const territories = {
             timer_started_at: null,
             is_paused: false,
             game_started: false,
-            // Split timer fields
             attacker_elapsed_seconds: 0,
             defender_elapsed_seconds: 0,
             attacker_timer_started_at: null,
             defender_timer_started_at: null,
-            // Voting fields
             end_game_requested_at: null,
             end_game_requester_id: null,
             attacker_vote: null,
@@ -197,7 +194,7 @@ const territories = {
     },
     t_02: {
         location_id: "loc_02",
-        name: "Dance Studio",
+        name: "Dance Battle",
         location_image_url: "",
         owner_id: "team_blue",
         stars: 2,  // Team Blue: 2 + 3 + 3 + 2 = 10 stars total
@@ -207,7 +204,6 @@ const territories = {
         current_attacker_id: null,
         bet_amount: 0,
         game_info: {
-            title: "Dance Battle",
             description_md: "## Rules\n\nBest of 3 dance rounds!\n\n### Judging\n- Style: 40%\n- Technique: 30%\n- Creativity: 30%",
             win_condition: "Best of 3 rounds.",
             home_advantage: "Defender picks first song.",
@@ -236,7 +232,7 @@ const territories = {
     },
     t_03: {
         location_id: "loc_03",
-        name: "Recording Booth",
+        name: "Trivia Challenge",
         location_image_url: "",
         owner_id: "team_red",
         stars: 1,
@@ -246,7 +242,6 @@ const territories = {
         current_attacker_id: null,
         bet_amount: 0,
         game_info: {
-            title: "Trivia Challenge",
             description_md: "## Rules\n\nAnswer 5 questions correctly to win!\n\n### Categories\n- History\n- Science\n- Pop Culture",
             win_condition: "First to 5 correct answers.",
             home_advantage: "Defender gets 1 free pass.",
@@ -275,7 +270,7 @@ const territories = {
     },
     t_04: {
         location_id: "loc_04",
-        name: "Rooftop Garden",
+        name: "Hot Zone",
         location_image_url: "",
         owner_id: "team_green",
         stars: 3,
@@ -285,7 +280,6 @@ const territories = {
         current_attacker_id: null,
         bet_amount: 0,
         game_info: {
-            title: "Hot Zone",
             description_md: "## Rules\n\nHold the flag in the hot zone!\n\n### Scoring\n- First to accumulate 100 seconds in the zone wins\n- Only one team can be in the zone at a time",
             win_condition: "First to 100 seconds in zone.",
             home_advantage: "Defender knows zone boundaries.",
@@ -314,7 +308,7 @@ const territories = {
     },
     t_05: {
         location_id: "loc_06",
-        name: "Library",
+        name: "Word Puzzle",
         location_image_url: "",
         owner_id: "team_blue",
         stars: 3,  // Team Blue needs more territories for 10 stars
@@ -324,7 +318,6 @@ const territories = {
         current_attacker_id: null,
         bet_amount: 0,
         game_info: {
-            title: "Word Puzzle",
             description_md: "## Rules\n\nSolve the word puzzle the fastest!\n\n### Tips\n- Look for prefixes and suffixes\n- Common letters: E, T, A, O",
             win_condition: "First to solve puzzle.",
             home_advantage: "Defender gets hint.",
@@ -353,7 +346,7 @@ const territories = {
     },
     t_06: {
         location_id: "loc_01",  // Reusing location for simplicity
-        name: "Game Room",
+        name: "Board Game Marathon",
         location_image_url: "",
         owner_id: "team_blue",
         stars: 3,  // Team Blue: 2 + 3 + 3 = 8 stars so far
@@ -363,7 +356,6 @@ const territories = {
         current_attacker_id: null,
         bet_amount: 0,
         game_info: {
-            title: "Board Game Marathon",
             description_md: "## Rules\\n\\nWin 2 out of 3 board games!",
             win_condition: "Best of 3 games.",
             home_advantage: "Defender picks first game.",
@@ -392,7 +384,7 @@ const territories = {
     },
     t_07: {
         location_id: "loc_02",  // Reusing location
-        name: "Art Studio",
+        name: "Speed Drawing",
         location_image_url: "",
         owner_id: "team_blue",
         stars: 2,  // Team Blue: 2 + 3 + 3 + 2 = 10 stars total!
@@ -402,7 +394,6 @@ const territories = {
         current_attacker_id: null,
         bet_amount: 0,
         game_info: {
-            title: "Speed Drawing",
             description_md: "## Rules\\n\\nDraw the prompt the fastest!",
             win_condition: "First to 3 correct drawings.",
             home_advantage: "Defender picks first prompt.",
@@ -432,7 +423,7 @@ const territories = {
     // Team Purple territories for Living Icon (needs 10 stars total)
     t_08: {
         location_id: "loc_03",
-        name: "Music Hall",
+        name: "Karaoke Battle",
         location_image_url: "",
         owner_id: "team_purple",
         stars: 3,
@@ -442,7 +433,6 @@ const territories = {
         current_attacker_id: null,
         bet_amount: 0,
         game_info: {
-            title: "Karaoke Battle",
             description_md: "## Rules\\n\\nBest singer wins!",
             win_condition: "Best of 3 songs.",
             home_advantage: "Defender picks first song.",
@@ -471,7 +461,7 @@ const territories = {
     },
     t_09: {
         location_id: "loc_04",
-        name: "Gym",
+        name: "Fitness Challenge",
         location_image_url: "",
         owner_id: "team_purple",
         stars: 3,
@@ -481,7 +471,6 @@ const territories = {
         current_attacker_id: null,
         bet_amount: 0,
         game_info: {
-            title: "Fitness Challenge",
             description_md: "## Rules\\n\\nMost reps wins!",
             win_condition: "Most exercises completed.",
             home_advantage: "Defender picks exercise.",
@@ -510,7 +499,7 @@ const territories = {
     },
     t_10: {
         location_id: "loc_05",
-        name: "Pool",
+        name: "Swimming Race",
         location_image_url: "",
         owner_id: "team_purple",
         stars: 2,
@@ -520,7 +509,6 @@ const territories = {
         current_attacker_id: null,
         bet_amount: 0,
         game_info: {
-            title: "Swimming Race",
             description_md: "## Rules\\n\\nFirst to finish wins!",
             win_condition: "First to complete 2 laps.",
             home_advantage: "Defender picks lane.",
@@ -549,7 +537,7 @@ const territories = {
     },
     t_11: {
         location_id: "loc_06",
-        name: "Arcade",
+        name: "High Score",
         location_image_url: "",
         owner_id: "team_purple",
         stars: 2,  // Team Purple: 3+3+2+2 = 10 stars total
@@ -559,7 +547,6 @@ const territories = {
         current_attacker_id: null,
         bet_amount: 0,
         game_info: {
-            title: "High Score",
             description_md: "## Rules\\n\\nHighest arcade score wins!",
             win_condition: "Highest score in 3 games.",
             home_advantage: "Defender picks first game.",

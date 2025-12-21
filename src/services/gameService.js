@@ -90,3 +90,26 @@ export function subscribeToAllWorldTourGames(callback, onError) {
         }
     )
 }
+
+/**
+ * Subscribe to all locations in real-time
+ * @param {Function} callback - Called with array of location objects
+ * @param {Function} onError - Called on error
+ * @returns {Function} Unsubscribe function
+ */
+export function subscribeToAllLocations(callback, onError) {
+    return onSnapshot(
+        collection(db, 'locations'),
+        (snapshot) => {
+            const locations = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data()
+            }))
+            callback(locations)
+        },
+        (err) => {
+            console.error('[gameService] Error fetching locations:', err)
+            if (onError) onError(err)
+        }
+    )
+}

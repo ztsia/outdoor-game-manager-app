@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Pencil, Star, Trophy, Swords, Globe, LogOut } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useTeamData } from '@/hooks/useTeamData'
+import { useLocations } from '@/hooks/useLocations'
 import { useRank } from '@/hooks/useRank'
 import { RankBadge } from '@/components/game/RankBadge'
 import { Button } from '@/components/ui/button'
@@ -24,7 +25,8 @@ import { GameResultModal } from '@/components/dashboard/GameResultModal'
 
 export default function Dashboard() {
     const { teamId, logout } = useAuth()
-    const { team, territories, loading, updateTeamName } = useTeamData(teamId)
+    const { team, territories, loading: teamLoading, updateTeamName } = useTeamData(teamId)
+    const { locationsMap, loading: locationsLoading } = useLocations()
     const { rank, isLivingIcon } = useRank(teamId)
     const navigate = useNavigate()
     const location = useLocation()
@@ -64,6 +66,7 @@ export default function Dashboard() {
         setNewTeamName(team?.name || '')
         setEditDialogOpen(true)
     }
+    const loading = teamLoading || locationsLoading
 
     if (loading) {
         return (
@@ -204,7 +207,10 @@ export default function Dashboard() {
                                         className="flex items-center justify-between rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
                                         onClick={() => navigate(`/game/${territory.id}`)}
                                     >
-                                        <span className="font-medium">{territory.name}</span>
+                                        <div>
+                                            <span className="font-medium">{locationsMap[territory.location_id]?.name || 'Unknown Location'}</span>
+                                            <p className="text-sm text-muted-foreground">{territory.name}</p>
+                                        </div>
                                         <div className="flex items-center gap-1 text-yellow-500">
                                             <Star className="h-4 w-4 fill-current" />
                                             <span className="font-bold">{territory.stars}</span>

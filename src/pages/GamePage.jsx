@@ -2,6 +2,7 @@ import { useParams, useNavigate, useBlocker } from 'react-router-dom'
 import { useEffect, useState, useRef } from 'react'
 import { subscribeToTerritory, getTeam } from '@/services/gameService'
 import { useAuth } from '@/contexts/AuthProvider'
+import { useLocations } from '@/hooks/useLocations'
 import { useGameHost } from '@/hooks/useGameHost'
 import { Button } from '@/components/ui/button'
 import { TeamChip } from '@/components/ui/TeamChip'
@@ -57,6 +58,9 @@ export default function GamePage() {
 
     // Max stars constant
     const MAX_STARS = 3
+
+    // Locations for display
+    const { locationsMap } = useLocations()
 
     // Game host controls
     const gameHost = useGameHost(territoryId)
@@ -341,7 +345,7 @@ export default function GamePage() {
 
             {/* Title & Status Banner */}
             <div className="p-4 border-b">
-                <h1 className="text-xl font-bold">{gameInfo.title || territory.name}</h1>
+                <h1 className="text-xl font-bold">{locationsMap[territory.location_id]?.name || 'Unknown Location'}</h1>
                 <p className="text-sm text-muted-foreground mb-3">{territory.name}</p>
 
                 {/* Battle Header */}
