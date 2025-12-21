@@ -1,7 +1,7 @@
 /**
  * Game Service - Centralized Firestore operations for game data
  */
-import { collection, doc, onSnapshot } from 'firebase/firestore'
+import { collection, doc, onSnapshot, getDoc } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 /**
@@ -59,7 +59,6 @@ export function subscribeToTerritory(territoryId, callback, onError) {
 export async function getTeam(teamId) {
     if (!teamId) return null
 
-    const { getDoc } = await import('firebase/firestore')
     const teamDoc = await getDoc(doc(db, 'teams', teamId))
 
     if (teamDoc.exists()) {
