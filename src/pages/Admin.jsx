@@ -1,31 +1,62 @@
 import { useAuth } from '@/contexts/AuthProvider'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { LocationsTab } from '@/components/admin/LocationsTab'
+import { TerritoriesTab } from '@/components/admin/TerritoriesTab'
+import { WorldTourTab } from '@/components/admin/WorldTourTab'
+import { TeamsTab } from '@/components/admin/TeamsTab'
+import { SystemConfigTab } from '@/components/admin/SystemConfigTab'
 
 export default function Admin() {
     const { role, logout } = useAuth()
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader className="text-center">
-                    <CardTitle className="text-2xl font-bold">Admin Panel 🔧</CardTitle>
-                    <CardDescription>System Administration</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex flex-wrap items-center justify-center gap-2">
-                        <Badge variant="secondary">Role: {role}</Badge>
+        <div className="min-h-screen bg-background">
+            {/* Header */}
+            <div className="sticky top-0 z-10 bg-background border-b px-4 py-3">
+                <div className="flex items-center justify-between max-w-6xl mx-auto">
+                    <div>
+                        <h1 className="text-xl font-bold">Admin Panel 🔧</h1>
+                        <p className="text-sm text-muted-foreground">Role: {role}</p>
                     </div>
-                    <div className="rounded-lg bg-muted p-8 text-center text-muted-foreground">
-                        <p className="text-lg font-medium">Admin Dashboard</p>
-                        <p className="text-sm">Manage users, teams, game settings, and system configuration.</p>
-                    </div>
-                    <Button variant="outline" className="w-full" onClick={logout}>
+                    <Button variant="outline" size="sm" onClick={logout}>
                         Logout
                     </Button>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="max-w-6xl mx-auto p-4">
+                <Tabs defaultValue="locations" className="w-full">
+                    <TabsList className="grid w-full grid-cols-5">
+                        <TabsTrigger value="locations">Locations</TabsTrigger>
+                        <TabsTrigger value="territories">Territories</TabsTrigger>
+                        <TabsTrigger value="worldtour">World Tour</TabsTrigger>
+                        <TabsTrigger value="teams">Teams</TabsTrigger>
+                        <TabsTrigger value="config">Config</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="locations" className="mt-4">
+                        <LocationsTab />
+                    </TabsContent>
+
+                    <TabsContent value="territories" className="mt-4">
+                        <TerritoriesTab />
+                    </TabsContent>
+
+                    <TabsContent value="worldtour" className="mt-4">
+                        <WorldTourTab />
+                    </TabsContent>
+
+                    <TabsContent value="teams" className="mt-4">
+                        <TeamsTab />
+                    </TabsContent>
+
+                    <TabsContent value="config" className="mt-4">
+                        <SystemConfigTab />
+                    </TabsContent>
+                </Tabs>
+            </div>
         </div>
     )
 }

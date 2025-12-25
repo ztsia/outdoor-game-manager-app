@@ -21,7 +21,13 @@ export default function Login() {
             'HQ': '/hq',
             'ADMIN': '/admin'
         }
-        const redirectTo = location.state?.from?.pathname || roleHomeMap[role] || '/dashboard'
+        let redirectTo = location.state?.from?.pathname || roleHomeMap[role] || '/dashboard'
+
+        // If Admin is being sent to Dashboard (e.g. from redirect), send to Admin panel instead
+        if (role === 'ADMIN' && redirectTo === '/dashboard') {
+            redirectTo = '/admin'
+        }
+
         return <Navigate to={redirectTo} replace />
     }
 
