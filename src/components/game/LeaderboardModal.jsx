@@ -57,7 +57,7 @@ export function LeaderboardModal({ open, onOpenChange, attempts = [], gameName, 
                                         >
                                             {/* Fan Favourite Badge Row (only for #1) */}
                                             {isTopRank && (
-                                                <div className="mb-2 flex justify-center">
+                                                <div className="mb-2 flex justify-start">
                                                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold shadow-sm">
                                                         <Trophy className="h-3 w-3" />
                                                         Fan Favourite
