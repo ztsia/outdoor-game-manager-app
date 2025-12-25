@@ -7,6 +7,24 @@ import { toast } from 'sonner'
  * Provides methods for score updates, timer controls, voting, and game resolution
  */
 export function useGameHost(territoryId) {
+    // Guard: Return no-op functions if territoryId is not provided
+    if (!territoryId) {
+        return {
+            incrementScore: async () => { },
+            decrementScore: async () => { },
+            startGame: async () => { },
+            startSharedTimer: async () => { },
+            pauseSharedTimer: async () => { },
+            resetSharedTimer: async () => { },
+            startSplitTimer: async () => { },
+            pauseSplitTimer: async () => { },
+            requestEndGame: async () => { },
+            submitVote: async () => { },
+            setVoteMismatch: async () => { },
+            resolveGame: async () => false
+        }
+    }
+
     const territoryRef = doc(db, 'territories', territoryId)
 
     /**

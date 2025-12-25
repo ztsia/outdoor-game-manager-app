@@ -7,6 +7,15 @@ import { toast } from 'sonner'
  * Provides methods for start, score submission, and abandoning
  */
 export function useWorldTourHost(gameId) {
+    // Guard: Return no-op functions if gameId is not provided
+    if (!gameId) {
+        return {
+            startGame: async () => { },
+            submitScore: async () => { },
+            abandonGame: async () => { }
+        }
+    }
+
     const gameRef = doc(db, 'world_tour_games', gameId)
 
     /**
