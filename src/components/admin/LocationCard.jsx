@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { MapPin } from 'lucide-react'
+import { getGoogleDriveDirectLink } from '@/lib/utils'
 
 /**
  * LocationCard - Displays a location in the admin panel
@@ -10,6 +11,7 @@ import { MapPin } from 'lucide-react'
  */
 export function LocationCard({ location, onClick }) {
     const isWorldTour = location.type === 'world_tour'
+    const imageUrl = getGoogleDriveDirectLink(location.image_url)
 
     return (
         <Card
@@ -18,9 +20,9 @@ export function LocationCard({ location, onClick }) {
         >
             {/* Cover Image */}
             <div className="relative aspect-video w-full overflow-hidden bg-muted">
-                {location.image_url ? (
+                {imageUrl ? (
                     <img
-                        src={location.image_url}
+                        src={imageUrl}
                         alt={location.name}
                         className="h-full w-full object-cover"
                     />

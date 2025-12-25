@@ -17,12 +17,18 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Info, Trash2, Loader2 } from 'lucide-react'
+import EmojiPicker from 'emoji-picker-react'
 
 /**
  * LocationModal - Create/Edit/Delete location
@@ -135,14 +141,28 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
                         {/* Country Emoji (only for World Tour) */}
                         {type === 'world_tour' && (
                             <div className="space-y-2">
-                                <Label htmlFor="emoji">Country Emoji</Label>
-                                <Input
-                                    id="emoji"
-                                    value={emoji}
-                                    onChange={(e) => setEmoji(e.target.value)}
-                                    placeholder="🇯🇵"
-                                    className="text-2xl"
-                                />
+                                <Label>Country Emoji</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className="w-full justify-start text-2xl h-12"
+                                        >
+                                            {emoji || 'Click to select flag 🏳️'}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-full p-0" align="start">
+                                        <EmojiPicker
+                                            onEmojiClick={(emojiData) => setEmoji(emojiData.emoji)}
+                                            categories={[
+                                                { category: 'flags', name: 'Flags' }
+                                            ]}
+                                            searchPlaceholder="Search flags..."
+                                            width="100%"
+                                            height={350}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                         )}
 
