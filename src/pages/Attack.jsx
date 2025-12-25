@@ -29,12 +29,12 @@ export default function Attack() {
     const { starCosts, calculateCost, initiateAttack, loading: attackLoading } = useAttackTransaction()
     const navigate = useNavigate()
 
-    // Check if defender of selected territory is playing World Tour
-    const { activeGame: defenderActiveGame } = useActiveWorldTourGame(selectedTerritory?.owner_id)
-
     // Modal state
     const [selectedTerritory, setSelectedTerritory] = useState(null)
     const [modalOpen, setModalOpen] = useState(false)
+
+    // Check if defender of selected territory is playing World Tour
+    const { activeGame: defenderActiveGame } = useActiveWorldTourGame(selectedTerritory?.owner_id)
 
     // Filter and sort state
     const [filterTeams, setFilterTeams] = useState([]) // Array of teamIds
