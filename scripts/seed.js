@@ -581,7 +581,7 @@ const territories = {
     }
 }
 
-// World Tour Games
+// World Tour Games - Aligned with territory schema
 const worldTourGames = {
     game_japan: {
         location_id: "loc_05",
@@ -592,13 +592,25 @@ const worldTourGames = {
         high_score_holder_id: "team_blue",
         current_team_id: null,       // Team currently playing (null = available)
         cooldown_ends_at: null,      // Timestamp when cooldown ends
-        attempts: [],                // Array of { team_id, team_name, score, timestamp }
+        attempts: [],                // Array of { team_id, team_name, score, difficulty, timestamp }
         multiplier_config: { normal: 1, hard: 2, extreme: 3 },
-        description_md: "## How to Play\nSort the beans by color as fast as possible!",
-        timer_config: {
+        // Aligned with territory.game_info
+        game_info: {
+            description_md: "## How to Play\nSort the beans by color as fast as possible!\n\n### Rules\n1. Pick up beans from the center pile\n2. Sort them into the correct colored bowls\n3. Speed matters!",
             has_timer: true,
-            duration_seconds: 60,
-            type: "countdown"
+            timer_duration_seconds: 60,
+            timer_mode: "shared",    // 'shared' for World Tour single-player
+            has_scoreboard: true,
+            score_unit: "Beans"
+        },
+        // Aligned with territory.live_state (simplified for single-player)
+        live_state: {
+            game_started: false,
+            difficulty: null,        // 'normal' | 'hard' | 'extreme'
+            score: 0,
+            timer_started_at: null,
+            elapsed_seconds: 0,
+            is_paused: false
         }
     },
     game_usa: {
@@ -608,15 +620,25 @@ const worldTourGames = {
         location_image_url: "",
         high_score: 0,
         high_score_holder_id: null,
-        current_team_id: null,       // Team currently playing (null = available)
-        cooldown_ends_at: null,      // Timestamp when cooldown ends
-        attempts: [],                // Array of { team_id, team_name, score, timestamp }
+        current_team_id: null,
+        cooldown_ends_at: null,
+        attempts: [],
         multiplier_config: { normal: 1, hard: 2, extreme: 3 },
-        description_md: "## How to Play\nStack as many hot dogs as possible!",
-        timer_config: {
+        game_info: {
+            description_md: "## How to Play\nStack as many hot dogs as possible!\n\n### Rules\n1. Balance hot dogs on the plate\n2. Don't let them fall!\n3. Higher stacks = more points",
             has_timer: true,
-            duration_seconds: 45,
-            type: "countdown"
+            timer_duration_seconds: 45,
+            timer_mode: "shared",
+            has_scoreboard: true,
+            score_unit: "Hot Dogs"
+        },
+        live_state: {
+            game_started: false,
+            difficulty: null,
+            score: 0,
+            timer_started_at: null,
+            elapsed_seconds: 0,
+            is_paused: false
         }
     }
 }

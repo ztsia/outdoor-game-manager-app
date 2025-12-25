@@ -101,6 +101,9 @@ export default function Dashboard() {
         return count.toString()
     }
 
+    // Calculate total stars from all territories
+    const totalStars = territories.reduce((acc, t) => acc + (t.stars || 0), 0)
+
     return (
         <div className="min-h-screen bg-background pb-24">
             {/* Team Card */}
@@ -195,13 +198,18 @@ export default function Dashboard() {
                 </Card>
             </div>
 
-            {/* My Assets */}
+            {/* My Territories */}
             <div className="px-4">
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                            <Star className="h-5 w-5 text-yellow-500" />
-                            My Assets ({territories.length})
+                        <CardTitle className="flex items-center justify-between text-lg">
+                            <div className="flex items-center gap-2">
+                                <Star className="h-5 w-5 text-yellow-500" />
+                                My Territories ({territories.length})
+                            </div>
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400">
+                                ⭐ {totalStars} Total
+                            </Badge>
                         </CardTitle>
                     </CardHeader>
                     <CardContent>

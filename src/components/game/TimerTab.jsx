@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Play, Pause, RotateCcw } from 'lucide-react'
 
 /**
- * TimerTab - Timer display and controls (shared or split mode)
+ * TimerTab - Timer display and controls (stopwatch, countdown, or split mode)
  * 
  * @param {Object} props
  * @param {Object} props.territory - Territory data with live_state and game_info
@@ -24,13 +25,14 @@ export function TimerTab({
     onStartSharedTimer,
     onPauseSharedTimer,
     onResetSharedTimer,
+    onSetCountdownDuration,
     onStartSplitTimer,
     onPauseSplitTimer,
     onVictory
 }) {
     const gameInfo = territory?.game_info
     const liveState = territory?.live_state
-    const timerMode = gameInfo?.timer_mode || 'shared'
+    const timerMode = gameInfo?.timer_mode || 'stopwatch'
     const targetSeconds = gameInfo?.timer_duration_seconds || 100
 
     // Helper to parse hex color to RGB for transparent background
@@ -50,9 +52,9 @@ export function TimerTab({
     const [attackerElapsed, setAttackerElapsed] = useState(0)
     const [defenderElapsed, setDefenderElapsed] = useState(0)
 
-    // Shared timer calculation
+    // Stopwatch/Countdown timer calculation (shared mechanism)
     useEffect(() => {
-        if (timerMode !== 'shared') return
+        if (timerMode !== 'stopwatch' && timerMode !== 'countdown') return
 
         const storedElapsed = liveState?.shared_elapsed_seconds || 0
         const timerStarted = liveState?.timer_started_at
@@ -136,12 +138,18 @@ export function TimerTab({
     const isAttackerRunning = !!liveState?.attacker_timer_started_at
     const isDefenderRunning = !!liveState?.defender_timer_started_at
 
-    if (timerMode === 'shared') {
+    // Local state for countdown duration input
+    const [durationInput, setDurationInput] = useState('')
+    const countdownDuration = liveState?.countdown_duration || 0
+    const countdownRemaining = Math.max(0, countdownDuration - sharedElapsed)
+
+    // Stopwatch Mode (count up)
+    if (timerMode === 'stopwatch') {
         return (
             <div className="p-4">
                 <Card>
                     <CardHeader className="text-center pb-2">
-                        <CardTitle className="text-sm text-muted-foreground">Timer</CardTitle>
+                        <CardTitle className="text-sm text-muted-foreground">Stopwatch</CardTitle>
                     </CardHeader>
                     <CardContent className="text-center">
                         <p className="text-6xl font-mono font-bold mb-6">
@@ -154,6 +162,83 @@ export function TimerTab({
                                     <Button onClick={onStartSharedTimer} className="gap-2">
                                         <Play className="h-4 w-4" />
                                         Start
+                                    </Button>
+                                ) : (
+                                    <Button onClick={() => onPauseSharedTimer(sharedElapsed)} variant="secondary" className="gap-2">
+                                        <Pause className="h-4 w-4" />
+                                        Pause
+                                    </Button>
+                                )}
+                                <Button onClick={onResetSharedTimer} variant="outline" className="gap-2">
+                                    <RotateCcw className="h-4 w-4" />
+                                    Reset
+                                </Button>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
+    // Countdown Mode (count down from set duration)
+    if (timerMode === 'countdown') {
+        const hasStarted = sharedElapsed > 0 || isSharedRunning
+        const isFinished = countdownDuration > 0 && countdownRemaining <= 0
+
+        const handleSetDuration = () => {
+            const seconds = parseInt(durationInput, 10)
+            if (!isNaN(seconds) && seconds > 0 && onSetCountdownDuration) {
+                onSetCountdownDuration(seconds)
+                setDurationInput('')
+            }
+        }
+
+        return (
+            <div className="p-4">
+                <Card>
+                    <CardHeader className="text-center pb-2">
+                        <CardTitle className="text-sm text-muted-foreground">Countdown</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-center">
+                        {/* Duration Setup (only when not started and no duration) */}
+                        {!hasStarted && countdownDuration === 0 && role !== 'spectator' && (
+                            <div className="space-y-3 mb-4">
+                                <p className="text-sm text-muted-foreground">Set timer duration (seconds)</p>
+                                <div className="flex gap-2 justify-center">
+                                    <Input
+                                        type="number"
+                                        placeholder="e.g. 60"
+                                        value={durationInput}
+                                        onChange={(e) => setDurationInput(e.target.value)}
+                                        className="w-24 text-center"
+                                    />
+                                    <Button onClick={handleSetDuration}>
+                                        Set
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Timer Display */}
+                        <p className={`text-6xl font-mono font-bold mb-6 ${isFinished ? 'text-destructive' : ''}`}>
+                            {formatTime(countdownRemaining)}
+                        </p>
+
+                        {/* Show set duration info */}
+                        {countdownDuration > 0 && (
+                            <p className="text-xs text-muted-foreground mb-4">
+                                Duration: {formatTime(countdownDuration)}
+                            </p>
+                        )}
+
+                        {/* Controls */}
+                        {role !== 'spectator' && countdownDuration > 0 && (
+                            <div className="flex gap-2 justify-center">
+                                {!isSharedRunning ? (
+                                    <Button onClick={onStartSharedTimer} className="gap-2" disabled={isFinished}>
+                                        <Play className="h-4 w-4" />
+                                        {hasStarted ? 'Resume' : 'Start'}
                                     </Button>
                                 ) : (
                                     <Button onClick={() => onPauseSharedTimer(sharedElapsed)} variant="secondary" className="gap-2">

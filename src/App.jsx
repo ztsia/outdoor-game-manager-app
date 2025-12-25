@@ -9,7 +9,8 @@ import Dashboard from '@/pages/Dashboard'
 import Attack from '@/pages/Attack'
 import WorldTour from '@/pages/WorldTour'
 import WaitingPage from '@/pages/WaitingPage'
-import GamePage from '@/pages/GamePage'
+import TerritoryGamePage from '@/pages/TerritoryGamePage'
+import WorldTourGamePage from '@/pages/WorldTourGamePage'
 import HQ from '@/pages/HQ'
 import Admin from '@/pages/Admin'
 
@@ -101,7 +102,7 @@ const router = createBrowserRouter([
         path: '/game/:territoryId',
         element: (
           <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
-            <GamePage />
+            <TerritoryGamePage />
           </ProtectedRoute>
         )
       },
@@ -109,7 +110,7 @@ const router = createBrowserRouter([
         path: '/world-tour/:gameId',
         element: (
           <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
-            <GamePage mode="world_tour" />
+            <WorldTourGamePage />
           </ProtectedRoute>
         )
       },

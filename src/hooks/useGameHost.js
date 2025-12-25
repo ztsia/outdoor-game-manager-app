@@ -121,6 +121,22 @@ export function useGameHost(territoryId) {
     }
 
     /**
+     * Set countdown duration
+     * @param {number} seconds - Duration in seconds
+     */
+    const setCountdownDuration = async (seconds) => {
+        try {
+            await updateDoc(territoryRef, {
+                'live_state.countdown_duration': seconds
+            })
+            console.log(`[useGameHost] Countdown duration set to ${seconds}s`)
+        } catch (err) {
+            console.error('[useGameHost] Failed to set countdown duration:', err)
+            toast.error('Failed to set timer duration')
+        }
+    }
+
+    /**
      * Start split timer for a specific role
      */
     const startSplitTimer = async (role) => {
@@ -346,6 +362,7 @@ export function useGameHost(territoryId) {
         startSharedTimer,
         pauseSharedTimer,
         resetSharedTimer,
+        setCountdownDuration,
         // Split timer
         startSplitTimer,
         pauseSplitTimer,
