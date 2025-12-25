@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
-import { db } from '@/services/firebase'
+import { db } from '@/firebase'
 
 /**
  * Hook to detect if a team has an active World Tour game in progress
