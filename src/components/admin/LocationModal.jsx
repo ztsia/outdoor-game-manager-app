@@ -17,18 +17,14 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import { Info, Trash2, Loader2 } from 'lucide-react'
+import { Info, Trash2, Loader2, ChevronDown, ChevronUp, ImageOff } from 'lucide-react'
 import EmojiPicker from 'emoji-picker-react'
+import { getGoogleDriveDirectLink } from '@/lib/utils'
 
 /**
  * LocationModal - Create/Edit/Delete location
@@ -48,6 +44,8 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
     const [imageUrl, setImageUrl] = useState('')
     const [saving, setSaving] = useState(false)
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+    const [imageError, setImageError] = useState(false)
 
     // Populate form when editing
     useEffect(() => {
@@ -63,7 +61,14 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
             setEmoji('')
             setImageUrl('')
         }
+        setShowEmojiPicker(false)
+        setImageError(false)
     }, [location, open])
+
+    // Reset image error when URL changes
+    useEffect(() => {
+        setImageError(false)
+    }, [imageUrl])
 
     const handleSave = async () => {
         if (!name.trim()) return
@@ -93,10 +98,12 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
         }
     }
 
+    const previewImageUrl = getGoogleDriveDirectLink(imageUrl.trim())
+
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
                             {isEditMode ? 'Edit Location' : 'Add Location'}
@@ -142,27 +149,35 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
                         {type === 'world_tour' && (
                             <div className="space-y-2">
                                 <Label>Country Emoji</Label>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full justify-start text-2xl h-12"
-                                        >
-                                            {emoji || 'Click to select flag 🏳️'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-full p-0" align="start">
+                                <Button
+                                    variant="outline"
+                                    className="w-full justify-between text-2xl h-12"
+                                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                    type="button"
+                                >
+                                    <span>{emoji || 'Select flag 🏳️'}</span>
+                                    {showEmojiPicker ? (
+                                        <ChevronUp className="h-4 w-4 ml-2" />
+                                    ) : (
+                                        <ChevronDown className="h-4 w-4 ml-2" />
+                                    )}
+                                </Button>
+                                {showEmojiPicker && (
+                                    <div className="border rounded-md overflow-hidden">
                                         <EmojiPicker
-                                            onEmojiClick={(emojiData) => setEmoji(emojiData.emoji)}
+                                            onEmojiClick={(emojiData) => {
+                                                setEmoji(emojiData.emoji)
+                                                setShowEmojiPicker(false)
+                                            }}
                                             categories={[
                                                 { category: 'flags', name: 'Flags' }
                                             ]}
                                             searchPlaceholder="Search flags..."
                                             width="100%"
-                                            height={350}
+                                            height={300}
                                         />
-                                    </PopoverContent>
-                                </Popover>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -181,15 +196,36 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
                                     >
                                         this Google Drive folder
                                     </a>
-                                    , then paste the direct link below.
+                                    . Ensure the file is set to <strong>"Anyone with the link"</strong>.
                                 </AlertDescription>
                             </Alert>
                             <Input
                                 id="imageUrl"
                                 value={imageUrl}
                                 onChange={(e) => setImageUrl(e.target.value)}
-                                placeholder="https://..."
+                                placeholder="https://drive.google.com/file/d/.../view"
                             />
+
+                            {/* Live Image Preview */}
+                            {imageUrl.trim() && (
+                                <div className="mt-3 border rounded-md overflow-hidden bg-muted">
+                                    <p className="text-xs text-muted-foreground p-2 border-b">Preview</p>
+                                    {imageError ? (
+                                        <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+                                            <ImageOff className="h-8 w-8 mb-2" />
+                                            <p className="text-sm">Failed to load image</p>
+                                            <p className="text-xs">Check if file is set to "Anyone with the link"</p>
+                                        </div>
+                                    ) : (
+                                        <img
+                                            src={previewImageUrl}
+                                            alt="Preview"
+                                            className="w-full h-40 object-cover"
+                                            onError={() => setImageError(true)}
+                                        />
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
 

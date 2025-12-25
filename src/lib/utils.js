@@ -20,14 +20,14 @@ export function getGoogleDriveDirectLink(url) {
   const filePattern = /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/;
   const fileMatch = url.match(filePattern);
   if (fileMatch) {
-    return `https://drive.google.com/uc?export=view&id=${fileMatch[1]}`;
+    return `https://lh3.googleusercontent.com/d/${fileMatch[1]}`;
   }
 
   // Pattern 2: open?id=FILE_ID
   const openPattern = /drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/;
   const openMatch = url.match(openPattern);
   if (openMatch) {
-    return `https://drive.google.com/uc?export=view&id=${openMatch[1]}`;
+    return `https://lh3.googleusercontent.com/d/${openMatch[1]}`;
   }
 
   // Not a recognized Drive link, return as-is
