@@ -165,7 +165,7 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
                                     )}
                                 </Button>
                                 {showEmojiPicker && (
-                                    <div className="border rounded-md overflow-hidden">
+                                    <div className="[&_.epr-category-nav]:hidden border rounded-md overflow-hidden">
                                         <EmojiPicker
                                             onEmojiClick={(emojiData) => {
                                                 setEmoji(emojiData.emoji)
