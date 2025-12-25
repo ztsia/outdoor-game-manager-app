@@ -313,8 +313,12 @@ export default function WorldTourGamePage() {
                                 <ScoreboardTab
                                     territory={game}
                                     role="player"
+                                    mode="single"
                                     onIncrement={() => worldTourHost.incrementScore()}
                                     onDecrement={() => worldTourHost.decrementScore()}
+                                    onScoreChange={(newScore) => worldTourHost.setScore(newScore)}
+                                    playerColor={team?.color}
+                                    playerName={team?.name?.toUpperCase() || 'PLAYER'}
                                 />
                             </TabsContent>
                         )}

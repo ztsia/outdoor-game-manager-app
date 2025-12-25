@@ -15,6 +15,7 @@ export function useWorldTourHost(gameId) {
             abandonGame: async () => { },
             incrementScore: async () => { },
             decrementScore: async () => { },
+            setScore: async () => { },
             startTimer: async () => { },
             pauseTimer: async () => { },
             resetTimer: async () => { }
@@ -160,6 +161,21 @@ export function useWorldTourHost(gameId) {
     }
 
     /**
+     * Set score to a specific value
+     * @param {number} newScore - The new score value
+     */
+    const setScore = async (newScore) => {
+        try {
+            const value = Math.max(0, Math.floor(newScore) || 0)
+            await updateDoc(gameRef, {
+                'live_state.score': value
+            })
+        } catch (err) {
+            console.error('[useWorldTourHost] Failed to set score:', err)
+        }
+    }
+
+    /**
      * Start shared timer
      */
     const startTimer = async () => {
@@ -206,6 +222,7 @@ export function useWorldTourHost(gameId) {
         abandonGame,
         incrementScore,
         decrementScore,
+        setScore,
         startTimer,
         pauseTimer,
         resetTimer
