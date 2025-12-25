@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Swords, HelpCircle, ArrowRight, Star } from 'lucide-react'
+import { Swords, HelpCircle, ArrowRight, Star, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { TeamChip } from '@/components/ui/TeamChip'
@@ -27,7 +27,8 @@ export function AttackChallengeModal({
     attackCost,
     starCosts,
     loading,
-    onConfirm
+    onConfirm,
+    isDefenderBusy
 }) {
     const hasEnoughFunds = team ? team.followers >= attackCost : false
     const remaining = team ? Math.max(0, team.followers - attackCost) : 0
@@ -58,6 +59,16 @@ export function AttackChallengeModal({
                         </div>
                     </DialogDescription>
                 </DialogHeader>
+
+                {/* Warning when defender is busy */}
+                {isDefenderBusy && (
+                    <div className="mx-6 mb-2 flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3 text-sm text-amber-800 dark:text-amber-200">
+                        <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                        <span>
+                            The defender appears to be playing a World Tour game. They may need extra time to respond.
+                        </span>
+                    </div>
+                )}
 
                 {/* Hero Section */}
                 <div className="flex flex-col items-center justify-center py-6 px-6 space-y-6">

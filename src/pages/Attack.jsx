@@ -7,6 +7,7 @@ import { useTeamData } from '@/hooks/useTeamData'
 import { useAllTeams } from '@/hooks/useAllTeams'
 import { useLocations } from '@/hooks/useLocations'
 import { useAttackTransaction } from '@/hooks/useAttackTransaction'
+import { useActiveWorldTourGame } from '@/hooks/useActiveWorldTourGame'
 import { getGameRules } from '@/services/challengeService'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -27,6 +28,9 @@ export default function Attack() {
     const { locationsMap, loading: locationsLoading } = useLocations()
     const { starCosts, calculateCost, initiateAttack, loading: attackLoading } = useAttackTransaction()
     const navigate = useNavigate()
+
+    // Check if defender of selected territory is playing World Tour
+    const { activeGame: defenderActiveGame } = useActiveWorldTourGame(selectedTerritory?.owner_id)
 
     // Modal state
     const [selectedTerritory, setSelectedTerritory] = useState(null)
@@ -229,6 +233,7 @@ export default function Attack() {
                 loading={attackLoading}
                 onConfirm={handleConfirmAttack}
                 locationName={locationsMap[selectedTerritory?.location_id]?.name}
+                isDefenderBusy={!!defenderActiveGame}
             />
         </div>
     )

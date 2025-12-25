@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useChallengeResponse } from '@/hooks/useChallengeResponse'
+import { useActiveWorldTourGame } from '@/hooks/useActiveWorldTourGame'
 import { useTeamData } from '@/hooks/useTeamData'
 import { getGameRules } from '@/services/challengeService'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { TeamChip } from '@/components/ui/TeamChip'
-import { AlertTriangle, Shield, Swords, X, Eye, Clock } from 'lucide-react'
+import { AlertTriangle, Shield, Swords, Eye, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 
 /**
@@ -21,6 +22,7 @@ export function DefenderNotification() {
     const navigate = useNavigate()
     const location = useLocation()
     const { incomingChallenge, acceptChallenge, declineChallenge, loading } = useChallengeResponse(teamId)
+    const { activeGame: activeWorldTourGame } = useActiveWorldTourGame(teamId)
 
     // Fetch attacker team data for the chip
     const { team: attackerTeam } = useTeamData(incomingChallenge?.current_attacker_id)
@@ -88,8 +90,10 @@ export function DefenderNotification() {
         return null
     }
 
-    // Determine if user is currently playing
-    const isPlaying = location.pathname.includes('/world-tour') || location.pathname.includes('/game/')
+    // Determine if user is currently playing (territory game or ACTIVE World Tour)
+    const isInTerritoryGame = location.pathname.includes('/game/')
+    const isWorldTourInProgress = !!activeWorldTourGame
+    const isPlaying = isInTerritoryGame || isWorldTourInProgress
 
     const handleAccept = async () => {
         if (timerRef.current) clearInterval(timerRef.current)
@@ -195,7 +199,7 @@ export function DefenderNotification() {
                             disabled={loading}
                         >
                             <Shield className="mr-2 h-4 w-4" />
-                            ACCEPT CHALLENGE
+                            {isWorldTourInProgress ? 'ACCEPT (Ask to Wait)' : 'ACCEPT CHALLENGE'}
                         </Button>
                         <Button
                             variant="destructive"
@@ -203,10 +207,9 @@ export function DefenderNotification() {
                             onClick={handleDecline}
                             disabled={loading}
                         >
-                            <X className="mr-2 h-4 w-4" />
                             DECLINE
                         </Button>
-                        {isPlaying && (
+                        {isPlaying && !isWorldTourInProgress && (
                             <Button
                                 variant="outline"
                                 className="w-full"
@@ -221,37 +224,28 @@ export function DefenderNotification() {
         )
     }
 
-    // Show Banner when playing (and not dismissed)
-    if (isPlaying && !bannerDismissed) {
+    // Show Banner when playing World Tour (and not dismissed)
+    if (isWorldTourInProgress && !bannerDismissed) {
         return (
-            <div className="fixed top-0 left-0 right-0 z-50 animate-pulse bg-destructive p-3 text-destructive-foreground shadow-lg">
+            <div className="fixed top-0 left-0 right-0 z-50 bg-destructive p-3 text-destructive-foreground shadow-lg animate-[pop-shrink_2s_ease-in-out_infinite]">
                 <div className="container mx-auto flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <AlertTriangle className="h-5 w-5 flex-shrink-0" />
                         <span className="font-semibold">
-                            ⚠️ Attack on {territoryName}!
+                            ⚔️ Attack on {territoryName}!
                             {timeRemaining !== null && (
                                 <span className="ml-2">({formatTime(timeRemaining)})</span>
                             )}
                         </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => setShowModal(true)}
-                        >
-                            <Eye className="mr-1 h-4 w-4" />
-                            View
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={handleWait}
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setShowModal(true)}
+                    >
+                        <Eye className="mr-1 h-4 w-4" />
+                        Respond
+                    </Button>
                 </div>
             </div>
         )

@@ -61,10 +61,10 @@ export function LeaderboardModal({ open, onOpenChange, attempts = [], gameName, 
                                             <div className="col-span-8 flex items-center gap-2 flex-wrap">
                                                 <TeamChip name={team.name || 'Unknown'} color={team.color} />
                                                 {isTopRank && (
-                                                    <Badge variant="outline" className="gap-1 text-yellow-600 border-yellow-500/50 bg-yellow-500/10">
-                                                        <Flag className="h-3 w-3" />
+                                                    <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1.5">
+                                                        <Trophy className="h-3 w-3 fill-current" />
                                                         Fan Favourite
-                                                    </Badge>
+                                                    </div>
                                                 )}
                                             </div>
                                             <div className="col-span-3 text-right font-mono font-bold">

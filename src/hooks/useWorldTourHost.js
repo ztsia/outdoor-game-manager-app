@@ -1,4 +1,4 @@
-import { doc, updateDoc, getDoc, Timestamp, arrayUnion, increment } from 'firebase/firestore'
+import { doc, updateDoc, getDoc, Timestamp, arrayUnion, arrayRemove, increment } from 'firebase/firestore'
 import { db } from '@/firebase'
 import { toast } from 'sonner'
 
@@ -65,6 +65,7 @@ export function useWorldTourHost(gameId) {
             const gameDoc = await getDoc(gameRef)
             const gameData = gameDoc.exists() ? gameDoc.data() : {}
             const currentHighScore = gameData.high_score || 0
+            const previousHolderId = gameData.high_score_holder_id
 
             const cooldownEnd = new Date(Date.now() + cooldownMinutes * 60 * 1000)
 
@@ -89,12 +90,30 @@ export function useWorldTourHost(gameId) {
             }
 
             // Update high score if beaten
-            if (finalScore > currentHighScore) {
+            const isNewHighScore = finalScore > currentHighScore
+            if (isNewHighScore) {
                 updates.high_score = finalScore
                 updates.high_score_holder_id = teamId
             }
 
             await updateDoc(gameRef, updates)
+
+            // Handle fan_favourites ownership transfer
+            if (isNewHighScore && gameId) {
+                // Remove from previous holder (if exists)
+                if (previousHolderId && previousHolderId !== teamId) {
+                    const previousTeamRef = doc(db, 'teams', previousHolderId)
+                    await updateDoc(previousTeamRef, {
+                        fan_favourites: arrayRemove(gameId)
+                    })
+                }
+
+                // Add to current team
+                const currentTeamRef = doc(db, 'teams', teamId)
+                await updateDoc(currentTeamRef, {
+                    fan_favourites: arrayUnion(gameId)
+                })
+            }
 
             // Add followers to team
             if (followersGained > 0 && teamId) {

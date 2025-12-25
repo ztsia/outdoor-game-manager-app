@@ -209,3 +209,16 @@
     transform: translateY(-3px);
   }
 }
+
+/* Pop-shrink animation for attack notification banner */
+@keyframes pop-shrink {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.02);
+  }
+}

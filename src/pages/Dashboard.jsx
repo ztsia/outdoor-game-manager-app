@@ -5,7 +5,9 @@ import { useAuth } from '@/contexts/AuthProvider'
 import { useTeamData } from '@/hooks/useTeamData'
 import { useLocations } from '@/hooks/useLocations'
 import { useWorldTourGames } from '@/hooks/useWorldTourGames'
+import { useTeams } from '@/hooks/useTeams'
 import { useRank } from '@/hooks/useRank'
+import { subscribeToWorldTourGame } from '@/services/gameService'
 import { RankBadge } from '@/components/game/RankBadge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -23,6 +25,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { GameResultModal } from '@/components/dashboard/GameResultModal'
+import { LeaderboardModal } from '@/components/game/LeaderboardModal'
 import { NavFooter } from '@/components/ui/nav-footer'
 
 export default function Dashboard() {
@@ -30,6 +33,7 @@ export default function Dashboard() {
     const { team, territories, loading: teamLoading, updateTeamName } = useTeamData(teamId)
     const { locationsMap, loading: locationsLoading } = useLocations()
     const { gamesMap, loading: gamesLoading } = useWorldTourGames()
+    const { teamsMap } = useTeams()
     const { rank, isLivingIcon } = useRank(teamId)
     const navigate = useNavigate()
     const location = useLocation()
@@ -37,6 +41,9 @@ export default function Dashboard() {
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [newTeamName, setNewTeamName] = useState('')
     const [gameResult, setGameResult] = useState(null)
+    const [leaderboardOpen, setLeaderboardOpen] = useState(false)
+    const [selectedGameId, setSelectedGameId] = useState(null)
+    const [selectedGameData, setSelectedGameData] = useState(null)
 
     // Check for game result from navigation state
     useEffect(() => {
@@ -46,6 +53,26 @@ export default function Dashboard() {
             window.history.replaceState({}, document.title)
         }
     }, [location.state])
+
+    // Subscribe to selected game for leaderboard
+    useEffect(() => {
+        if (!selectedGameId) {
+            setSelectedGameData(null)
+            return
+        }
+
+        const unsubscribe = subscribeToWorldTourGame(
+            selectedGameId,
+            (data) => {
+                setSelectedGameData(data)
+            },
+            (err) => {
+                console.error('[Dashboard] Error fetching game:', err)
+            }
+        )
+
+        return () => unsubscribe()
+    }, [selectedGameId])
 
     // Handle team name update
     const handleUpdateName = async () => {
@@ -62,6 +89,12 @@ export default function Dashboard() {
             toast.error('Failed to update team name')
             console.error(error)
         }
+    }
+
+    // Handle badge click to open leaderboard
+    const handleBadgeClick = (gameId) => {
+        setSelectedGameId(gameId)
+        setLeaderboardOpen(true)
     }
 
     // Open edit dialog with current name
@@ -183,7 +216,12 @@ export default function Dashboard() {
                                 {team.fan_favourites.map((gameId) => {
                                     const game = gamesMap[gameId]
                                     return (
-                                        <Badge key={gameId} variant="outline" className="shrink-0">
+                                        <Badge
+                                            key={gameId}
+                                            variant="outline"
+                                            className="shrink-0 cursor-pointer hover:bg-muted transition-colors"
+                                            onClick={() => handleBadgeClick(gameId)}
+                                        >
                                             {game?.country_emoji || '🏆'} {game?.name || gameId.replace('game_', '').toUpperCase()}
                                         </Badge>
                                     )
@@ -251,6 +289,15 @@ export default function Dashboard() {
                     onClose={() => setGameResult(null)}
                 />
             )}
+
+            {/* Leaderboard Modal */}
+            <LeaderboardModal
+                open={leaderboardOpen}
+                onOpenChange={setLeaderboardOpen}
+                attempts={selectedGameData?.attempts || []}
+                gameName={selectedGameData?.name}
+                teamsMap={teamsMap}
+            />
         </div>
     )
 }
