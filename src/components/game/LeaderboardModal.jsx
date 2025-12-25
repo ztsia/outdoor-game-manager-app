@@ -50,25 +50,32 @@ export function LeaderboardModal({ open, onOpenChange, attempts = [], gameName, 
                                     return (
                                         <div
                                             key={`${attempt.team_id}-${attempt.timestamp?.seconds || index}`}
-                                            className={`grid grid-cols-12 gap-2 p-2 rounded-lg text-sm ${isTopRank ? 'bg-yellow-500/10 border border-yellow-500/30' :
+                                            className={`p-2 rounded-lg text-sm ${isTopRank ? 'bg-yellow-500/10 border border-yellow-500/30' :
                                                 index === 1 ? 'bg-slate-500/10' :
                                                     index === 2 ? 'bg-amber-700/10' : 'bg-muted/50'
                                                 }`}
                                         >
-                                            <div className="col-span-1 font-bold">
-                                                {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
-                                            </div>
-                                            <div className="col-span-8 flex items-center gap-2 flex-wrap">
-                                                <TeamChip name={team.name || 'Unknown'} color={team.color} />
-                                                {isTopRank && (
-                                                    <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1.5">
-                                                        <Trophy className="h-3 w-3 fill-current" />
+                                            {/* Fan Favourite Badge Row (only for #1) */}
+                                            {isTopRank && (
+                                                <div className="mb-2 flex justify-center">
+                                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold shadow-sm">
+                                                        <Trophy className="h-3 w-3" />
                                                         Fan Favourite
                                                     </div>
-                                                )}
-                                            </div>
-                                            <div className="col-span-3 text-right font-mono font-bold">
-                                                {attempt.score}
+                                                </div>
+                                            )}
+
+                                            {/* Team Info Row */}
+                                            <div className="grid grid-cols-12 gap-2">
+                                                <div className="col-span-1 font-bold">
+                                                    {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                                                </div>
+                                                <div className="col-span-8 flex items-center gap-2 flex-wrap">
+                                                    <TeamChip name={team.name || 'Unknown'} color={team.color} />
+                                                </div>
+                                                <div className="col-span-3 text-right font-mono font-bold">
+                                                    {attempt.score}
+                                                </div>
                                             </div>
                                         </div>
                                     )
