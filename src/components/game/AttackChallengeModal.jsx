@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Swords, HelpCircle, ArrowRight } from 'lucide-react'
+import { Swords, HelpCircle, ArrowRight, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { TeamChip } from '@/components/ui/TeamChip'
@@ -49,7 +49,13 @@ export function AttackChallengeModal({
                         <span>
                             Attacking <span className="font-semibold text-foreground">{territory?.name}</span>
                         </span>
-                        <TeamChip name={ownerTeam?.name} color={ownerTeam?.color} />
+                        <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="gap-1 font-normal">
+                                <Star className="h-3 w-3 fill-current text-yellow-500" />
+                                {territory?.stars} Stars
+                            </Badge>
+                            <TeamChip name={ownerTeam?.name} color={ownerTeam?.color} />
+                        </div>
                     </DialogDescription>
                 </DialogHeader>
 
@@ -98,6 +104,7 @@ export function AttackChallengeModal({
                     {/* Balance Flow */}
                     <div className="flex flex-col items-center gap-2 w-full">
                         <div className="flex items-center gap-3 text-sm px-4 py-2 rounded-full bg-secondary/50">
+                            <span className="text-muted-foreground text-xs mr-1">Balance:</span>
                             <span className={hasEnoughFunds ? "text-muted-foreground" : "text-destructive"}>
                                 {formatNumber(team?.followers || 0)}
                             </span>
@@ -119,10 +126,13 @@ export function AttackChallengeModal({
                 <div className="p-6 pt-0 space-y-4">
                     {/* Game Info Card */}
                     <Card className="bg-muted/30 border-none shadow-none">
-                        <CardContent className="p-3 text-center text-xs text-muted-foreground">
-                            <span className="font-medium text-foreground">{territory?.game_info?.title}</span>
-                            <span className="mx-2">•</span>
-                            <span>{territory?.game_info?.win_condition}</span>
+                        <CardContent className="p-3 text-center text-xs">
+                            <div className="space-y-1">
+                                <div className="font-medium text-foreground text-sm">{territory?.game_info?.title}</div>
+                                <div className="text-muted-foreground">
+                                    Win Condition: <span className="text-foreground">{territory?.game_info?.win_condition}</span>
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
 
