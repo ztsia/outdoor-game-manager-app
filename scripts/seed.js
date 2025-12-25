@@ -177,7 +177,7 @@ const territories = {
             home_advantage: "Defender starts with ball possession.",
             has_timer: true,
             timer_duration_seconds: 150,
-            timer_mode: "shared",  // 'shared' | 'split'
+            timer_mode: "countdown",  // 'stopwatch' | 'countdown' | 'split'
             has_scoreboard: true,
             score_unit: "Goals"
         },
@@ -253,7 +253,7 @@ const territories = {
             home_advantage: "Defender gets 1 free pass.",
             has_timer: true,
             timer_duration_seconds: 30,
-            timer_mode: "shared",
+            timer_mode: "countdown",
             has_scoreboard: true,
             score_unit: "Points"
         },
@@ -329,7 +329,7 @@ const territories = {
             home_advantage: "Defender gets hint.",
             has_timer: true,
             timer_duration_seconds: 120,
-            timer_mode: "shared",
+            timer_mode: "countdown",
             has_scoreboard: false,
             score_unit: "Puzzles"
         },
@@ -405,7 +405,7 @@ const territories = {
             home_advantage: "Defender picks first prompt.",
             has_timer: true,
             timer_duration_seconds: 60,
-            timer_mode: "shared",
+            timer_mode: "countdown",
             has_scoreboard: true,
             score_unit: "Drawings"
         },
@@ -482,7 +482,7 @@ const territories = {
             home_advantage: "Defender picks exercise.",
             has_timer: true,
             timer_duration_seconds: 120,
-            timer_mode: "shared",
+            timer_mode: "countdown",
             has_scoreboard: true,
             score_unit: "Reps"
         },
@@ -520,7 +520,7 @@ const territories = {
             home_advantage: "Defender picks lane.",
             has_timer: true,
             timer_duration_seconds: 60,
-            timer_mode: "shared",
+            timer_mode: "countdown",
             has_scoreboard: false,
             score_unit: "Laps"
         },
@@ -599,7 +599,7 @@ const worldTourGames = {
             description_md: "## How to Play\nSort the beans by color as fast as possible!\n\n### Rules\n1. Pick up beans from the center pile\n2. Sort them into the correct colored bowls\n3. Speed matters!",
             has_timer: true,
             timer_duration_seconds: 60,
-            timer_mode: "shared",    // 'shared' for World Tour single-player
+            timer_mode: "countdown",    // 'countdown' for World Tour single-player
             has_scoreboard: true,
             score_unit: "Beans"
         },
@@ -628,7 +628,7 @@ const worldTourGames = {
             description_md: "## How to Play\nStack as many hot dogs as possible!\n\n### Rules\n1. Balance hot dogs on the plate\n2. Don't let them fall!\n3. Higher stacks = more points",
             has_timer: true,
             timer_duration_seconds: 45,
-            timer_mode: "shared",
+            timer_mode: "countdown",
             has_scoreboard: true,
             score_unit: "Hot Dogs"
         },
