@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { subscribeToAllWorldTourGames } from '@/services/gameService'
 
 /**
  * Custom hook to fetch real-time data for all world tour games
- * @returns {Object} Games array, loading state, error
+ * @returns {Object} Games array, gamesMap, loading state, error
  */
 export function useWorldTourGames() {
     const [games, setGames] = useState([])
@@ -25,5 +25,14 @@ export function useWorldTourGames() {
         return () => unsubscribe()
     }, [])
 
-    return { games, loading, error }
+    // Create a map for O(1) lookups by game ID
+    const gamesMap = useMemo(() => {
+        const map = {}
+        games.forEach((game) => {
+            map[game.id] = game
+        })
+        return map
+    }, [games])
+
+    return { games, gamesMap, loading, error }
 }
