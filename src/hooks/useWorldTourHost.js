@@ -51,11 +51,10 @@ export function useWorldTourHost(gameId) {
      * Submit score and end the game
      * @param {number} finalScore - The final calculated score
      * @param {string} teamId - Team ID
-     * @param {string} teamName - Team name for leaderboard display
      * @param {string} difficulty - Difficulty level played
      * @param {number} followersGained - Followers to add to team
      */
-    const submitScore = async (finalScore, teamId, teamName, difficulty, followersGained = 0) => {
+    const submitScore = async (finalScore, teamId, difficulty, followersGained = 0) => {
         try {
             // Get config for cooldown
             const configDoc = await getDoc(doc(db, 'system_config', 'game_rules'))
@@ -71,7 +70,6 @@ export function useWorldTourHost(gameId) {
 
             const attempt = {
                 team_id: teamId,
-                team_name: teamName,
                 score: finalScore,
                 difficulty: difficulty,
                 timestamp: Timestamp.now()

@@ -10,20 +10,20 @@ const RANK_CONFIG = {
     [RANKS.ROOKIE]: {
         icon: Sprout,
         label: 'Rookie',
-        // Bronze - flattened gradient
-        className: 'bg-gradient-to-b from-[#dea460] to-[#CD7F32] text-white border border-white/20'
+        // Bronze metallic gradient
+        className: 'bg-gradient-to-br from-orange-400 via-[#CD7F32] to-orange-700 text-white border border-white/20'
     },
     [RANKS.RISING_STAR]: {
         icon: Star,
         label: 'Rising Star',
-        // Silver - flattened gradient
-        className: 'bg-gradient-to-b from-[#e2e8f0] to-[#94a3b8] text-slate-900 border border-white/20'
+        // Silver metallic gradient
+        className: 'bg-gradient-to-br from-slate-300 via-gray-400 to-slate-600 text-slate-900 border border-white/20'
     },
     [RANKS.LEGEND]: {
         icon: Crown,
         label: 'Legend',
-        // Gold - flattened gradient
-        className: 'bg-gradient-to-b from-[#fcd34d] to-[#d97706] text-yellow-900 border border-white/20'
+        // Gold metallic gradient
+        className: 'bg-gradient-to-br from-yellow-300 via-amber-400 to-amber-600 text-yellow-900 border border-white/20'
     }
 }
 

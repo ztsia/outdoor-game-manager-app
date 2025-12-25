@@ -1,20 +1,23 @@
-import { Trophy } from 'lucide-react'
+import { Trophy, Flag } from 'lucide-react'
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
+import { TeamChip } from '@/components/ui/TeamChip'
 
 /**
  * LeaderboardModal - Displays global charts for World Tour games
  * @param {object} props
  * @param {boolean} props.open - Modal visibility
  * @param {function} props.onOpenChange - Callback to change visibility
- * @param {Array} props.attempts - Array of { team_id, team_name, score, timestamp }
+ * @param {Array} props.attempts - Array of { team_id, score, difficulty, timestamp }
  * @param {string} props.gameName - Name of the game
+ * @param {Object} props.teamsMap - Map of team_id to team object { name, color }
  */
-export function LeaderboardModal({ open, onOpenChange, attempts = [], gameName }) {
+export function LeaderboardModal({ open, onOpenChange, attempts = [], gameName, teamsMap = {} }) {
     // Sort attempts by score (highest first)
     const sortedAttempts = [...attempts].sort((a, b) => b.score - a.score)
 
@@ -34,37 +37,42 @@ export function LeaderboardModal({ open, onOpenChange, attempts = [], gameName }
                             {/* Header */}
                             <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground px-2">
                                 <div className="col-span-1">#</div>
-                                <div className="col-span-6">Team</div>
+                                <div className="col-span-8">Team</div>
                                 <div className="col-span-3 text-right">Score</div>
-                                <div className="col-span-2 text-right">Date</div>
                             </div>
 
                             {/* Entries */}
                             <div className="space-y-1 max-h-80 overflow-y-auto">
-                                {sortedAttempts.map((attempt, index) => (
-                                    <div
-                                        key={`${attempt.team_id}-${attempt.timestamp?.seconds || index}`}
-                                        className={`grid grid-cols-12 gap-2 p-2 rounded-lg text-sm ${index === 0 ? 'bg-yellow-500/10 border border-yellow-500/30' :
+                                {sortedAttempts.map((attempt, index) => {
+                                    const team = teamsMap[attempt.team_id] || {}
+                                    const isTopRank = index === 0
+
+                                    return (
+                                        <div
+                                            key={`${attempt.team_id}-${attempt.timestamp?.seconds || index}`}
+                                            className={`grid grid-cols-12 gap-2 p-2 rounded-lg text-sm ${isTopRank ? 'bg-yellow-500/10 border border-yellow-500/30' :
                                                 index === 1 ? 'bg-slate-500/10' :
                                                     index === 2 ? 'bg-amber-700/10' : 'bg-muted/50'
-                                            }`}
-                                    >
-                                        <div className="col-span-1 font-bold">
-                                            {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                                                }`}
+                                        >
+                                            <div className="col-span-1 font-bold">
+                                                {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                                            </div>
+                                            <div className="col-span-8 flex items-center gap-2 flex-wrap">
+                                                <TeamChip name={team.name || 'Unknown'} color={team.color} />
+                                                {isTopRank && (
+                                                    <Badge variant="outline" className="gap-1 text-yellow-600 border-yellow-500/50 bg-yellow-500/10">
+                                                        <Flag className="h-3 w-3" />
+                                                        Fan Favourite
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            <div className="col-span-3 text-right font-mono font-bold">
+                                                {attempt.score}
+                                            </div>
                                         </div>
-                                        <div className="col-span-6 truncate font-medium">
-                                            {attempt.team_name}
-                                        </div>
-                                        <div className="col-span-3 text-right font-mono font-bold">
-                                            {attempt.score}
-                                        </div>
-                                        <div className="col-span-2 text-right text-xs text-muted-foreground">
-                                            {attempt.timestamp?.toDate?.()
-                                                ? new Date(attempt.timestamp.toDate()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                                                : '-'}
-                                        </div>
-                                    </div>
-                                ))}
+                                    )
+                                })}
                             </div>
                         </div>
                     ) : (
@@ -79,3 +87,4 @@ export function LeaderboardModal({ open, onOpenChange, attempts = [], gameName }
         </Dialog>
     )
 }
+

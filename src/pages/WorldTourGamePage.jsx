@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthProvider'
 import { useLocations } from '@/hooks/useLocations'
 import { useWorldTourHost } from '@/hooks/useWorldTourHost'
 import { useTeamData } from '@/hooks/useTeamData'
+import { useTeams } from '@/hooks/useTeams'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -50,6 +51,9 @@ export default function WorldTourGamePage() {
 
     // Locations for display
     const { locationsMap } = useLocations()
+
+    // All teams for leaderboard display
+    const { teamsMap } = useTeams()
 
     // Game host controls
     const worldTourHost = useWorldTourHost(gameId)
@@ -147,7 +151,7 @@ export default function WorldTourGamePage() {
             const isNewHighScore = finalScore > (game?.high_score || 0)
 
             // Submit score and end game
-            await worldTourHost.submitScore(finalScore, teamId, team?.name, difficulty, followersGained)
+            await worldTourHost.submitScore(finalScore, teamId, difficulty, followersGained)
 
             // Prepare result for modal
             setGameResult({
@@ -403,6 +407,7 @@ export default function WorldTourGamePage() {
                 onOpenChange={setLeaderboardOpen}
                 attempts={game?.attempts || []}
                 gameName={game?.name}
+                teamsMap={teamsMap}
             />
         </div>
     )

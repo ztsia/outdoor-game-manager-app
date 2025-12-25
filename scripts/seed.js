@@ -595,28 +595,24 @@ const worldTourGames = {
         attempts: [
             {
                 team_id: "team_blue",
-                team_name: "Blue Team",
                 score: 45,
                 difficulty: "hard",
                 timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) // 2 hours ago
             },
             {
                 team_id: "team_green",
-                team_name: "Green Team",
                 score: 42,
                 difficulty: "hard",
                 timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000) // 1 day ago
             },
             {
                 team_id: "team_red",
-                team_name: "Red Team",
                 score: 30,
                 difficulty: "normal",
                 timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
             },
             {
                 team_id: "team_yellow",
-                team_name: "Yellow Team",
                 score: 38,
                 difficulty: "normal",
                 timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000) // 5 hours ago
@@ -654,21 +650,18 @@ const worldTourGames = {
         attempts: [
             {
                 team_id: "team_purple",
-                team_name: "Purple Team",
                 score: 28,
                 difficulty: "extreme",
                 timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000) // 1 hour ago
             },
             {
                 team_id: "team_yellow",
-                team_name: "Yellow Team",
                 score: 12,
                 difficulty: "normal",
                 timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000) // 5 hours ago
             },
             {
                 team_id: "team_orange",
-                team_name: "Orange Team",
                 score: 20,
                 difficulty: "hard",
                 timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000) // 3 hours ago
