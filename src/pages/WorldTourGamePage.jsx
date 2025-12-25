@@ -241,7 +241,7 @@ export default function WorldTourGamePage() {
             {/* Title & Status */}
             <div className="p-4 border-b">
                 <h1 className="text-xl font-bold">
-                    {game.country_emoji && `${game.country_emoji} `}
+                    {locationsMap[game.location_id]?.emoji && `${locationsMap[game.location_id].emoji} `}
                     {locationName}
                 </h1>
                 <p className="text-sm text-muted-foreground mb-3">{game.name}</p>

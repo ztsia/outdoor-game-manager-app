@@ -215,6 +215,7 @@ export default function Dashboard() {
                             <div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-2">
                                 {team.fan_favourites.map((gameId) => {
                                     const game = gamesMap[gameId]
+                                    const locationEmoji = locationsMap[game?.location_id]?.emoji
                                     return (
                                         <Badge
                                             key={gameId}
@@ -222,7 +223,7 @@ export default function Dashboard() {
                                             className="shrink-0 cursor-pointer hover:bg-muted transition-colors"
                                             onClick={() => handleBadgeClick(gameId)}
                                         >
-                                            {game?.country_emoji || '🏆'} {game?.name || gameId.replace('game_', '').toUpperCase()}
+                                            {locationEmoji || '🏆'} {game?.name || gameId.replace('game_', '').toUpperCase()}
                                         </Badge>
                                     )
                                 })}

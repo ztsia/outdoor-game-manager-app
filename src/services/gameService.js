@@ -1,7 +1,7 @@
 /**
  * Game Service - Centralized Firestore operations for game data
  */
-import { collection, doc, onSnapshot, getDoc } from 'firebase/firestore'
+import { collection, doc, onSnapshot, getDoc, setDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 /**
@@ -135,4 +135,60 @@ export function subscribeToWorldTourGame(gameId, callback, onError) {
             if (onError) onError(err)
         }
     )
+}
+
+// ==================== LOCATION CRUD ====================
+
+/**
+ * Get the next available location ID (e.g., loc_08 if loc_07 exists)
+ * @returns {Promise<string>} Next location ID
+ */
+export async function getNextLocationId() {
+    const snapshot = await getDocs(collection(db, 'locations'))
+    let maxNum = 0
+
+    snapshot.docs.forEach((doc) => {
+        const match = doc.id.match(/^loc_(\d+)$/)
+        if (match) {
+            const num = parseInt(match[1], 10)
+            if (num > maxNum) maxNum = num
+        }
+    })
+
+    const nextNum = maxNum + 1
+    return `loc_${nextNum.toString().padStart(2, '0')}`
+}
+
+/**
+ * Create a new location
+ * @param {Object} locationData - Location data (name, type, emoji, image_url)
+ * @returns {Promise<string>} Created location ID
+ */
+export async function createLocation(locationData) {
+    const locationId = await getNextLocationId()
+    await setDoc(doc(db, 'locations', locationId), {
+        name: locationData.name || '',
+        type: locationData.type || 'territory',
+        emoji: locationData.emoji || '',
+        image_url: locationData.image_url || '',
+        assigned_game_id: locationData.assigned_game_id || null
+    })
+    return locationId
+}
+
+/**
+ * Update an existing location
+ * @param {string} locationId - Location document ID
+ * @param {Object} data - Fields to update
+ */
+export async function updateLocation(locationId, data) {
+    await updateDoc(doc(db, 'locations', locationId), data)
+}
+
+/**
+ * Delete a location
+ * @param {string} locationId - Location document ID
+ */
+export async function deleteLocation(locationId) {
+    await deleteDoc(doc(db, 'locations', locationId))
 }

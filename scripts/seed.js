@@ -142,6 +142,7 @@ const locations = {
         name: "Cafeteria",
         image_url: "",
         type: "world_tour",
+        emoji: "🇯🇵",
         assigned_game_id: "game_japan"
     },
     loc_06: {
@@ -154,6 +155,7 @@ const locations = {
         name: "New York",
         image_url: "",
         type: "world_tour",
+        emoji: "🇺🇸",
         assigned_game_id: "game_usa"
     }
 }
@@ -586,7 +588,6 @@ const worldTourGames = {
     game_japan: {
         location_id: "loc_05",
         name: "Bean Sort",
-        country_emoji: "🇯🇵",
         location_image_url: "",
         high_score: 45,
         high_score_holder_id: "team_blue",
@@ -641,7 +642,6 @@ const worldTourGames = {
     game_usa: {
         location_id: "loc_07",
         name: "Hot Dog Stack",
-        country_emoji: "🇺🇸",
         location_image_url: "",
         high_score: 28,
         high_score_holder_id: "team_purple",
