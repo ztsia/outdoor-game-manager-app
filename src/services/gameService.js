@@ -112,3 +112,27 @@ export function subscribeToAllLocations(callback, onError) {
         }
     )
 }
+
+/**
+ * Subscribe to a single world tour game in real-time
+ * @param {string} gameId - World tour game document ID
+ * @param {Function} callback - Called with game object or null
+ * @param {Function} onError - Called on error
+ * @returns {Function} Unsubscribe function
+ */
+export function subscribeToWorldTourGame(gameId, callback, onError) {
+    return onSnapshot(
+        doc(db, 'world_tour_games', gameId),
+        (snapshot) => {
+            if (snapshot.exists()) {
+                callback({ id: snapshot.id, ...snapshot.data() })
+            } else {
+                callback(null)
+            }
+        },
+        (err) => {
+            console.error('[gameService] Error fetching world tour game:', err)
+            if (onError) onError(err)
+        }
+    )
+}

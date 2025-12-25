@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
 import { useWorldTourGames } from '@/hooks/useWorldTourGames'
 import { useAllTeams } from '@/hooks/useAllTeams'
 import { useLocations } from '@/hooks/useLocations'
 import { getWorldTourStatus } from '@/lib/territoryStatus'
-import { Button } from '@/components/ui/button'
 import { GameCard } from '@/components/game/GameCard'
+import { PageHeader } from '@/components/ui/page-header'
 
 export default function WorldTour() {
     const navigate = useNavigate()
@@ -37,23 +36,10 @@ export default function WorldTour() {
     return (
         <div className="min-h-screen bg-background pb-4">
             {/* Header */}
-            <div className="sticky top-0 z-10 bg-background border-b p-4">
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => navigate('/dashboard')}
-                    >
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                    <div>
-                        <h1 className="text-xl font-bold">World Tour 🌍</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Non-PvP Challenges - Set high scores!
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <PageHeader
+                title="World Tour 🌍"
+                subtitle="Non-PvP Challenges - Set high scores!"
+            />
 
             {/* Games List */}
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -68,12 +54,8 @@ export default function WorldTour() {
                             status={status}
                             ownerTeam={highScoreTeam}
                             isWorldTour={true}
-                            title={locationsMap[game.location_id]?.name || game.name}
-                            onAction={() => {
-                                if (status?.type === 'available') {
-                                    navigate(`/game/${game.id}`)
-                                }
-                            }}
+                            title={`${game.country_emoji || ''} ${locationsMap[game.location_id]?.name || game.name}`.trim()}
+                            onAction={() => navigate(`/world-tour/${game.id}`)}
                         />
                     )
                 })}

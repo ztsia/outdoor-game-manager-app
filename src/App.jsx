@@ -105,6 +105,14 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         )
       },
+      {
+        path: '/world-tour/:gameId',
+        element: (
+          <ProtectedRoute allowedRoles={['MANAGER', 'ADMIN']}>
+            <GamePage mode="world_tour" />
+          </ProtectedRoute>
+        )
+      },
 
       // HQ route
       {

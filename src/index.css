@@ -160,3 +160,30 @@
   --primary-foreground: oklch(0.985 0 0);
   --ring: oklch(0.70 0.18 303.9);
 }
+
+/* Custom Animations for Living Icon Badge */
+@keyframes galaxy-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 15px rgba(34, 211, 238, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 25px rgba(34, 211, 238, 0.8);
+  }
+}

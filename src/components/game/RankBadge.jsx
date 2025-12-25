@@ -30,7 +30,7 @@ const RANK_CONFIG = {
 const LIVING_ICON_CONFIG = {
     icon: Gem,
     label: 'Living Icon',
-    className: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border border-white/40 shadow-sm animate-pulse'
+    className: 'bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-400 bg-[length:200%_200%] text-white border border-cyan-200/50 [animation:galaxy-shimmer_4s_ease-in-out_infinite,pulse-glow_3s_ease-in-out_infinite]'
 }
 
 /**

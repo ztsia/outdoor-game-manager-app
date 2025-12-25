@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useAllTeams } from '@/hooks/useAllTeams'
 import { useAllTerritories } from '@/hooks/useAllTerritories'
@@ -111,15 +112,44 @@ function BattleCard({ item, teamsMap, type = 'territory' }) {
 }
 
 /**
- * Leaderboard Row
+ * Animated Leaderboard Row with rank change detection
  */
 function LeaderboardRow({ team, rank, index, isLivingIcon, score }) {
+    const prevRankRef = useRef(rank)
+    const [isRankChanged, setIsRankChanged] = useState(false)
+
+    // Detect rank changes and trigger flash animation
+    useEffect(() => {
+        if (prevRankRef.current !== rank && prevRankRef.current !== null) {
+            setIsRankChanged(true)
+            const timer = setTimeout(() => setIsRankChanged(false), 1500)
+            return () => clearTimeout(timer)
+        }
+        prevRankRef.current = rank
+    }, [rank])
+
     return (
-        <div className={cn(
-            'flex items-center justify-between p-3 rounded-lg',
-            index === 0 && 'bg-amber-500/10',
-            index % 2 === 1 && 'bg-muted/50'
-        )}>
+        <motion.div
+            layout
+            layoutId={team.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{
+                opacity: 1,
+                y: 0,
+                scale: isRankChanged ? [1, 1.03, 1] : 1,
+                backgroundColor: isRankChanged ? ['transparent', 'rgba(234, 179, 8, 0.3)', 'transparent'] : 'transparent'
+            }}
+            transition={{
+                layout: { type: 'spring', stiffness: 300, damping: 30 },
+                scale: { duration: 0.5 },
+                backgroundColor: { duration: 1.5 }
+            }}
+            className={cn(
+                'flex items-center justify-between p-3 rounded-lg',
+                index === 0 && 'bg-amber-500/10',
+                index % 2 === 1 && !isRankChanged && 'bg-muted/50'
+            )}
+        >
             <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg" style={{ backgroundColor: team.color, color: 'white' }}>
                     {index + 1}
@@ -135,7 +165,7 @@ function LeaderboardRow({ team, rank, index, isLivingIcon, score }) {
             <div className="flex items-center gap-2">
                 <RankBadge rank={rank} isLivingIcon={isLivingIcon} />
             </div>
-        </div>
+        </motion.div>
     )
 }
 

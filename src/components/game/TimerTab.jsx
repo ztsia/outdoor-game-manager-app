@@ -19,6 +19,8 @@ import { Play, Pause, RotateCcw } from 'lucide-react'
 export function TimerTab({
     territory,
     role,
+    attackerColor,
+    defenderColor,
     onStartSharedTimer,
     onPauseSharedTimer,
     onResetSharedTimer,
@@ -30,6 +32,16 @@ export function TimerTab({
     const liveState = territory?.live_state
     const timerMode = gameInfo?.timer_mode || 'shared'
     const targetSeconds = gameInfo?.timer_duration_seconds || 100
+
+    // Helper to parse hex color to RGB for transparent background
+    const hexToRgba = (hexColor, alpha = 0.1) => {
+        if (!hexColor) return `rgba(107, 114, 128, ${alpha})`
+        const hex = hexColor.replace('#', '')
+        const r = parseInt(hex.substring(0, 2), 16)
+        const g = parseInt(hex.substring(2, 4), 16)
+        const b = parseInt(hex.substring(4, 6), 16)
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`
+    }
 
     // Shared timer state
     const [sharedElapsed, setSharedElapsed] = useState(0)
@@ -173,9 +185,17 @@ export function TimerTab({
             </p>
 
             {/* Attacker Timer */}
-            <Card className="border-red-500/50 bg-red-500/5">
+            <Card
+                className="border"
+                style={{
+                    borderColor: attackerColor ? hexToRgba(attackerColor, 0.5) : 'rgba(239, 68, 68, 0.5)',
+                    backgroundColor: attackerColor ? hexToRgba(attackerColor, 0.05) : 'rgba(239, 68, 68, 0.05)'
+                }}
+            >
                 <CardHeader className="text-center pb-2">
-                    <CardTitle className="text-sm text-red-500">⚔️ {attackerName}</CardTitle>
+                    <CardTitle className="text-sm" style={{ color: attackerColor || '#EF4444' }}>
+                        ⚔️ {attackerName}
+                    </CardTitle>
                 </CardHeader>
                 <CardContent className="text-center">
                     <p className="text-5xl font-mono font-bold mb-4">
@@ -187,7 +207,8 @@ export function TimerTab({
                             {!isAttackerRunning ? (
                                 <Button
                                     onClick={() => onStartSplitTimer('attacker')}
-                                    className="gap-2 bg-red-500 hover:bg-red-600"
+                                    className="gap-2"
+                                    style={{ backgroundColor: attackerColor || '#EF4444' }}
                                 >
                                     <Play className="h-4 w-4" />
                                     Start
@@ -208,9 +229,17 @@ export function TimerTab({
             </Card>
 
             {/* Defender Timer */}
-            <Card className="border-blue-500/50 bg-blue-500/5">
+            <Card
+                className="border"
+                style={{
+                    borderColor: defenderColor ? hexToRgba(defenderColor, 0.5) : 'rgba(59, 130, 246, 0.5)',
+                    backgroundColor: defenderColor ? hexToRgba(defenderColor, 0.05) : 'rgba(59, 130, 246, 0.05)'
+                }}
+            >
                 <CardHeader className="text-center pb-2">
-                    <CardTitle className="text-sm text-blue-500">🛡️ {defenderName}</CardTitle>
+                    <CardTitle className="text-sm" style={{ color: defenderColor || '#3B82F6' }}>
+                        🛡️ {defenderName}
+                    </CardTitle>
                 </CardHeader>
                 <CardContent className="text-center">
                     <p className="text-5xl font-mono font-bold mb-4">
@@ -222,7 +251,8 @@ export function TimerTab({
                             {!isDefenderRunning ? (
                                 <Button
                                     onClick={() => onStartSplitTimer('defender')}
-                                    className="gap-2 bg-blue-500 hover:bg-blue-600"
+                                    className="gap-2"
+                                    style={{ backgroundColor: defenderColor || '#3B82F6' }}
                                 >
                                     <Play className="h-4 w-4" />
                                     Start

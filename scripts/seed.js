@@ -149,6 +149,12 @@ const locations = {
         image_url: "",
         type: "territory",
         assigned_game_id: "t_05"
+    },
+    loc_07: {
+        name: "New York",
+        image_url: "",
+        type: "world_tour",
+        assigned_game_id: "game_usa"
     }
 }
 
@@ -579,12 +585,14 @@ const territories = {
 const worldTourGames = {
     game_japan: {
         location_id: "loc_05",
-        name: "Japan (Bean Sort)",
+        name: "Bean Sort",
+        country_emoji: "🇯🇵",
         location_image_url: "",
         high_score: 45,
         high_score_holder_id: "team_blue",
         current_team_id: null,       // Team currently playing (null = available)
         cooldown_ends_at: null,      // Timestamp when cooldown ends
+        attempts: [],                // Array of { team_id, team_name, score, timestamp }
         multiplier_config: { normal: 1, hard: 2, extreme: 3 },
         description_md: "## How to Play\nSort the beans by color as fast as possible!",
         timer_config: {
@@ -594,13 +602,15 @@ const worldTourGames = {
         }
     },
     game_usa: {
-        location_id: null,
-        name: "USA (Hot Dog Stack)",
+        location_id: "loc_07",
+        name: "Hot Dog Stack",
+        country_emoji: "🇺🇸",
         location_image_url: "",
         high_score: 0,
         high_score_holder_id: null,
         current_team_id: null,       // Team currently playing (null = available)
         cooldown_ends_at: null,      // Timestamp when cooldown ends
+        attempts: [],                // Array of { team_id, team_name, score, timestamp }
         multiplier_config: { normal: 1, hard: 2, extreme: 3 },
         description_md: "## How to Play\nStack as many hot dogs as possible!",
         timer_config: {

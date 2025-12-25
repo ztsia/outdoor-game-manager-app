@@ -1,7 +1,10 @@
 import { useState } from 'react'
-import { Swords, AlertCircle, HelpCircle } from 'lucide-react'
+import { Swords, HelpCircle, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { TeamChip } from '@/components/ui/TeamChip'
+import { Separator } from '@/components/ui/separator'
+import { Card, CardContent } from '@/components/ui/card'
 import {
     Dialog,
     DialogContent,
@@ -13,17 +16,7 @@ import {
 import { formatNumber } from '@/lib/formatters'
 
 /**
- * AttackChallengeModal - Modal for confirming an attack/challenge
- * @param {object} props
- * @param {boolean} props.open - Modal visibility
- * @param {function} props.onOpenChange - Callback to change visibility
- * @param {object} props.territory - The selected territory object
- * @param {object} props.ownerTeam - The team object of the owner
- * @param {object} props.team - The current user's team object (for balance check)
- * @param {number} props.attackCost - Calculated cost
- * @param {object} props.starCosts - Object of costs by star level
- * @param {boolean} props.loading - Loading state
- * @param {function} props.onConfirm - Callback when "CONFIRM & LOCK" is clicked
+ * AttackChallengeModal - Payment-style confirmation modal for attacks
  */
 export function AttackChallengeModal({
     open,
@@ -34,117 +27,120 @@ export function AttackChallengeModal({
     attackCost,
     starCosts,
     loading,
-    onConfirm,
-    locationName
+    onConfirm
 }) {
     const hasEnoughFunds = team ? team.followers >= attackCost : false
+    const remaining = team ? Math.max(0, team.followers - attackCost) : 0
     const [showCostTooltip, setShowCostTooltip] = useState(false)
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent onOpenAutoFocus={(e) => e.preventDefault()}>
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
+            <DialogContent
+                className="sm:max-w-md gap-0"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+            >
+                {/* Header */}
+                <DialogHeader className="p-6 pb-4">
+                    <DialogTitle className="text-center flex items-center justify-center gap-2">
                         <Swords className="h-5 w-5" />
-                        Challenge for {locationName || 'Territory'}
+                        Confirm Challenge
                     </DialogTitle>
-                    <DialogDescription className="flex items-center gap-2">
-                        Owned by <TeamChip
-                            name={ownerTeam?.name}
-                            color={ownerTeam?.color}
-                        />
+                    <DialogDescription className="text-center flex flex-col items-center gap-2">
+                        <span>
+                            Attacking <span className="font-semibold text-foreground">{territory?.name}</span>
+                        </span>
+                        <TeamChip name={ownerTeam?.name} color={ownerTeam?.color} />
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4 py-4">
-                    {/* Cost Display with Tooltip */}
-                    <div className="rounded-lg bg-muted p-4 space-y-2">
-                        <div className="flex justify-between items-center text-sm">
-                            <div className="flex items-center gap-1">
-                                <span>Battle Cost:</span>
-                                <div className="relative">
-                                    <button
-                                        type="button"
-                                        className="cursor-help focus:outline-none p-2 -m-2 opacity-70 hover:opacity-100 transition-opacity"
-                                        onClick={() => setShowCostTooltip(!showCostTooltip)}
-                                        onMouseEnter={() => setShowCostTooltip(true)}
-                                        onMouseLeave={() => setShowCostTooltip(false)}
-                                    >
-                                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                                    </button>
+                {/* Hero Section */}
+                <div className="flex flex-col items-center justify-center py-6 px-6 space-y-6">
+                    {/* Wager Amount */}
+                    <div className="text-center space-y-2">
+                        <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs uppercase tracking-wider font-medium">
+                            Wager Amount
+                            {/* Mobile-friendly tooltip */}
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    className="cursor-help focus:outline-none p-2 -m-2 opacity-70 hover:opacity-100 transition-opacity"
+                                    onClick={() => setShowCostTooltip(!showCostTooltip)}
+                                    onMouseEnter={() => setShowCostTooltip(true)}
+                                    onMouseLeave={() => setShowCostTooltip(false)}
+                                >
+                                    <HelpCircle className="h-4 w-4" />
+                                </button>
 
-                                    {showCostTooltip && (
-                                        <div className="absolute left-0 bottom-full mb-2 z-50 w-48 p-3 rounded-lg bg-popover border shadow-lg text-xs animate-in fade-in zoom-in-95 duration-200">
-                                            <p className="font-semibold mb-2">Cost by Star Level:</p>
-                                            <div className="space-y-1">
-                                                <div className="flex justify-between"><span>0 ⭐</span><span>{formatNumber(starCosts[0] || 10000)}</span></div>
-                                                <div className="flex justify-between"><span>1 ⭐</span><span>{formatNumber(starCosts[1] || 50000)}</span></div>
-                                                <div className="flex justify-between"><span>2 ⭐</span><span>{formatNumber(starCosts[2] || 100000)}</span></div>
-                                                <div className="flex justify-between"><span>3 ⭐</span><span>{formatNumber(starCosts[3] || 500000)}</span></div>
-                                            </div>
+                                {showCostTooltip && (
+                                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 w-52 p-3 rounded-lg bg-popover border shadow-lg text-xs animate-in fade-in zoom-in-95 duration-200">
+                                        <p className="font-semibold mb-2">Cost by Territory Stars:</p>
+                                        <div className="space-y-1 mb-3">
+                                            <div className="flex justify-between"><span>0 ⭐</span><span>{formatNumber(starCosts?.[0] || 10000)}</span></div>
+                                            <div className="flex justify-between"><span>1 ⭐</span><span>{formatNumber(starCosts?.[1] || 50000)}</span></div>
+                                            <div className="flex justify-between"><span>2 ⭐</span><span>{formatNumber(starCosts?.[2] || 100000)}</span></div>
+                                            <div className="flex justify-between"><span>3 ⭐</span><span>{formatNumber(starCosts?.[3] || 500000)}</span></div>
                                         </div>
-                                    )}
-                                </div>
+                                        <Separator className="my-2" />
+                                        <p className="text-muted-foreground">
+                                            💡 <strong>Refunded</strong> if you win!
+                                        </p>
+                                    </div>
+                                )}
                             </div>
-                            <span className="font-mono font-bold text-lg">
-                                {formatNumber(attackCost)} followers
-                            </span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                            <span>Your Balance:</span>
-                            <span className={`font-mono font-bold ${hasEnoughFunds ? 'text-green-500' : 'text-red-500'}`}>
-                                {team ? formatNumber(team.followers) : '...'} followers
-                            </span>
-                        </div>
-                        <hr className="border-border" />
-                        <div className="flex justify-between text-sm">
-                            <span>Remaining (if you lose):</span>
-                            <span className={`font-mono font-bold ${hasEnoughFunds ? '' : 'text-red-500'}`}>
-                                {team ? formatNumber(Math.max(0, team.followers - attackCost)) : '...'} followers
-                            </span>
+
+                        {/* Big Number */}
+                        <div className="text-5xl font-black tracking-tighter tabular-nums">
+                            {formatNumber(attackCost)}
                         </div>
                     </div>
 
-                    {/* Bet Return Note */}
-                    <div className="flex items-start gap-2 rounded-lg bg-blue-500/10 p-3 text-blue-600 dark:text-blue-400">
-                        <span className="text-lg">ℹ️</span>
-                        <p className="text-sm">
-                            This cost is placed as a <strong>bet</strong>. If you <strong>win</strong> the battle, it will be fully refunded!
-                        </p>
-                    </div>
-
-                    {/* Insufficient Funds Warning */}
-                    {!hasEnoughFunds && (
-                        <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-destructive">
-                            <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
-                            <div className="text-sm">
-                                <p className="font-medium">Insufficient Followers</p>
-                                <p className="text-destructive/80">
-                                    You need {formatNumber(attackCost - (team?.followers || 0))} more followers.
-                                </p>
-                            </div>
+                    {/* Balance Flow */}
+                    <div className="flex flex-col items-center gap-2 w-full">
+                        <div className="flex items-center gap-3 text-sm px-4 py-2 rounded-full bg-secondary/50">
+                            <span className={hasEnoughFunds ? "text-muted-foreground" : "text-destructive"}>
+                                {formatNumber(team?.followers || 0)}
+                            </span>
+                            <ArrowRight className="w-3 h-3 text-muted-foreground/50" />
+                            <span className={hasEnoughFunds ? "font-bold" : "text-destructive font-bold"}>
+                                {formatNumber(remaining)}
+                            </span>
                         </div>
-                    )}
 
-                    {/* Game Info */}
-                    <div className="text-sm text-muted-foreground">
-                        <p><strong>Game:</strong> {territory?.name}</p>
-                        <p><strong>Win Condition:</strong> {territory?.game_info?.win_condition}</p>
+                        {!hasEnoughFunds && (
+                            <Badge variant="destructive" className="animate-pulse">
+                                Insufficient Funds
+                            </Badge>
+                        )}
                     </div>
                 </div>
 
-                <DialogFooter className="gap-2 sm:gap-0">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        onClick={onConfirm}
-                        disabled={!hasEnoughFunds || loading}
-                        className="gap-1"
-                    >
-                        {loading ? 'Processing...' : 'CONFIRM & LOCK'}
-                    </Button>
-                </DialogFooter>
+                {/* Footer */}
+                <div className="p-6 pt-0 space-y-4">
+                    {/* Game Info Card */}
+                    <Card className="bg-muted/30 border-none shadow-none">
+                        <CardContent className="p-3 text-center text-xs text-muted-foreground">
+                            <span className="font-medium text-foreground">{territory?.game_info?.title}</span>
+                            <span className="mx-2">•</span>
+                            <span>{territory?.game_info?.win_condition}</span>
+                        </CardContent>
+                    </Card>
+
+                    <Separator />
+
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button variant="ghost" onClick={() => onOpenChange(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={onConfirm}
+                            disabled={!hasEnoughFunds || loading}
+                            className="w-full sm:w-auto"
+                        >
+                            {loading ? 'Processing...' : 'PAY & BATTLE'}
+                        </Button>
+                    </DialogFooter>
+                </div>
             </DialogContent>
         </Dialog>
     )

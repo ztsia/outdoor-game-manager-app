@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Pencil, Star, Trophy, Swords, Globe, LogOut } from 'lucide-react'
+import { Pencil, Star, Trophy, LogOut } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useTeamData } from '@/hooks/useTeamData'
 import { useLocations } from '@/hooks/useLocations'
+import { useWorldTourGames } from '@/hooks/useWorldTourGames'
 import { useRank } from '@/hooks/useRank'
 import { RankBadge } from '@/components/game/RankBadge'
 import { Button } from '@/components/ui/button'
@@ -22,11 +23,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { GameResultModal } from '@/components/dashboard/GameResultModal'
+import { NavFooter } from '@/components/ui/nav-footer'
 
 export default function Dashboard() {
     const { teamId, logout } = useAuth()
     const { team, territories, loading: teamLoading, updateTeamName } = useTeamData(teamId)
     const { locationsMap, loading: locationsLoading } = useLocations()
+    const { gamesMap, loading: gamesLoading } = useWorldTourGames()
     const { rank, isLivingIcon } = useRank(teamId)
     const navigate = useNavigate()
     const location = useLocation()
@@ -66,7 +69,7 @@ export default function Dashboard() {
         setNewTeamName(team?.name || '')
         setEditDialogOpen(true)
     }
-    const loading = teamLoading || locationsLoading
+    const loading = teamLoading || locationsLoading || gamesLoading
 
     if (loading) {
         return (
@@ -99,7 +102,7 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="min-h-screen bg-background pb-8">
+        <div className="min-h-screen bg-background pb-24">
             {/* Team Card */}
             <div className="bg-primary p-6 text-primary-foreground">
                 <div className="flex items-center justify-between">
@@ -174,11 +177,14 @@ export default function Dashboard() {
                     <CardContent>
                         {team.fan_favourites && team.fan_favourites.length > 0 ? (
                             <div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-2">
-                                {team.fan_favourites.map((gameId) => (
-                                    <Badge key={gameId} variant="outline" className="shrink-0">
-                                        🏆 {gameId.replace('game_', '').toUpperCase()}
-                                    </Badge>
-                                ))}
+                                {team.fan_favourites.map((gameId) => {
+                                    const game = gamesMap[gameId]
+                                    return (
+                                        <Badge key={gameId} variant="outline" className="shrink-0">
+                                            {game?.country_emoji || '🏆'} {game?.name || gameId.replace('game_', '').toUpperCase()}
+                                        </Badge>
+                                    )
+                                })}
                             </div>
                         ) : (
                             <p className="text-sm text-muted-foreground">
@@ -228,25 +234,7 @@ export default function Dashboard() {
             </div>
 
             {/* Quick Actions */}
-            <div className="fixed bottom-0 left-0 right-0 bg-background p-4 shadow-lg border-t">
-                <div className="flex gap-3">
-                    <Button
-                        className="flex-1 h-14 text-lg gap-2"
-                        onClick={() => navigate('/attack')}
-                    >
-                        <Swords className="h-5 w-5" />
-                        ATTACK
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        className="flex-1 h-14 text-lg gap-2"
-                        onClick={() => navigate('/world-tour')}
-                    >
-                        <Globe className="h-5 w-5" />
-                        WORLD TOUR
-                    </Button>
-                </div>
-            </div>
+            <NavFooter />
 
             {/* Game Result Modal */}
             {gameResult && (

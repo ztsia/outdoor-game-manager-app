@@ -1,9 +1,11 @@
 import { useParams, useNavigate, useBlocker } from 'react-router-dom'
 import { useEffect, useState, useRef } from 'react'
-import { subscribeToTerritory, getTeam } from '@/services/gameService'
+import { subscribeToTerritory, subscribeToWorldTourGame, getTeam } from '@/services/gameService'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useLocations } from '@/hooks/useLocations'
 import { useGameHost } from '@/hooks/useGameHost'
+import { useWorldTourHost } from '@/hooks/useWorldTourHost'
+import { useTeamData } from '@/hooks/useTeamData'
 import { Button } from '@/components/ui/button'
 import { TeamChip } from '@/components/ui/TeamChip'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -15,13 +17,14 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
-import { Swords, Shield, ArrowLeft, Loader2, MapPin, Play, Square, Trophy, AlertCircle } from 'lucide-react'
+import { Swords, Shield, ArrowLeft, Loader2, MapPin, Play, Square, Trophy, AlertCircle, BarChart3 } from 'lucide-react'
 import { toast } from 'sonner'
 
 // Tab components
 import { RulesTab } from '@/components/game/RulesTab'
 import { ScoreboardTab } from '@/components/game/ScoreboardTab'
 import { TimerTab } from '@/components/game/TimerTab'
+import { LeaderboardModal } from '@/components/game/LeaderboardModal'
 
 // Helper function for text contrast on colored backgrounds
 function getContrastTextColor(hexColor) {
@@ -36,16 +39,22 @@ function getContrastTextColor(hexColor) {
 
 /**
  * GamePage - Game Host Mode (Distributed View)
- * Supports Battle Mode (active game) and View Mode (territory info)
+ * Supports Battle Mode (active game), View Mode (territory info), and World Tour Mode
  * Now includes cooperative voting for game ending
  */
-export default function GamePage() {
-    const { territoryId } = useParams()
+export default function GamePage({ mode = 'territory' }) {
+    const { territoryId, gameId } = useParams()
     const navigate = useNavigate()
     const { teamId } = useAuth()
+    const { team } = useTeamData(teamId)
     const [territory, setTerritory] = useState(null)
     const [loading, setLoading] = useState(true)
     const [victoryWinner, setVictoryWinner] = useState(null)
+
+    // World Tour specific state
+    const [leaderboardOpen, setLeaderboardOpen] = useState(false)
+    const isWorldTour = mode === 'world_tour'
+    const docId = isWorldTour ? gameId : territoryId
 
     // Track if we've resolved to prevent double resolution
     const [hasResolved, setHasResolved] = useState(false)
@@ -62,13 +71,15 @@ export default function GamePage() {
     // Locations for display
     const { locationsMap } = useLocations()
 
-    // Game host controls
-    const gameHost = useGameHost(territoryId)
+    // Game host controls (only for territory mode)
+    const gameHost = useGameHost(isWorldTour ? null : territoryId)
+    const worldTourHost = useWorldTourHost(isWorldTour ? gameId : null)
 
-    console.log('[GamePage] Mounted with territoryId:', territoryId)
+    console.log('[GamePage] Mounted with mode:', mode, 'docId:', docId)
 
     // Block navigation when game is active (battle mode) - but not when navigating intentionally
-    const shouldBlock = territory?.challenge_status === 'accepted' && !isNavigatingAway.current
+    // World Tour mode doesn't block navigation
+    const shouldBlock = !isWorldTour && territory?.challenge_status === 'accepted' && !isNavigatingAway.current
 
     const blocker = useBlocker(
         ({ currentLocation, nextLocation }) =>
@@ -97,12 +108,13 @@ export default function GamePage() {
     }, [shouldBlock])
 
     useEffect(() => {
-        if (!territoryId) return
+        if (!docId) return
 
-        const unsubscribe = subscribeToTerritory(
-            territoryId,
-            (territoryData) => {
-                setTerritory(territoryData)
+        const subscribeFn = isWorldTour ? subscribeToWorldTourGame : subscribeToTerritory
+        const unsubscribe = subscribeFn(
+            docId,
+            (data) => {
+                setTerritory(data)
                 setLoading(false)
             },
             (err) => {
@@ -112,14 +124,14 @@ export default function GamePage() {
         )
 
         return () => unsubscribe()
-    }, [territoryId])
+    }, [docId, isWorldTour])
 
     // Fetch team data for attacker and defender
     const [attackerTeam, setAttackerTeam] = useState(null)
     const [defenderTeam, setDefenderTeam] = useState(null)
 
     useEffect(() => {
-        if (!territory) return
+        if (!territory || isWorldTour) return
 
         const fetchTeams = async () => {
             const [attacker, defender] = await Promise.all([
@@ -130,7 +142,7 @@ export default function GamePage() {
             setDefenderTeam(defender)
         }
         fetchTeams()
-    }, [territory?.current_attacker_id, territory?.owner_id])
+    }, [territory?.current_attacker_id, territory?.owner_id, isWorldTour])
 
     // Voting state from territory
     const liveState = territory?.live_state || {}
@@ -345,32 +357,83 @@ export default function GamePage() {
 
             {/* Title & Status Banner */}
             <div className="p-4 border-b">
-                <h1 className="text-xl font-bold">{locationsMap[territory.location_id]?.name || 'Unknown Location'}</h1>
+                <h1 className="text-xl font-bold">
+                    {isWorldTour && territory.country_emoji && `${territory.country_emoji} `}
+                    {locationsMap[territory.location_id]?.name || (isWorldTour ? territory.name : 'Unknown Location')}
+                </h1>
                 <p className="text-sm text-muted-foreground mb-3">{territory.name}</p>
 
-                {/* Battle Header */}
-                {isBattleMode && attackerTeam && defenderTeam ? (
-                    <div className="flex items-center justify-center gap-3">
-                        <div className="flex flex-col items-center">
-                            <TeamChip name={attackerTeam.name} color={attackerTeam.color} className="text-sm px-3 py-1" />
-                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                                <Swords className="h-3 w-3" />
-                                <span>Attacker</span>
+                {/* World Tour Header */}
+                {isWorldTour ? (
+                    <div className="space-y-3">
+                        {/* High Score Display */}
+                        <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
+                            <div className="flex items-center gap-2">
+                                <Trophy className="h-5 w-5 text-yellow-500" />
+                                <span className="text-sm font-medium">High Score</span>
                             </div>
+                            <span className="text-lg font-bold">{territory.high_score || 0}</span>
                         </div>
-                        <span className="text-lg font-bold text-muted-foreground">VS</span>
-                        <div className="flex flex-col items-center">
-                            <TeamChip name={defenderTeam.name} color={defenderTeam.color} className="text-sm px-3 py-1" />
-                            <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                                <Shield className="h-3 w-3" />
-                                <span>Defender</span>
-                            </div>
-                        </div>
+
+                        {/* Global Charts Button */}
+                        <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => setLeaderboardOpen(true)}
+                        >
+                            <BarChart3 className="h-4 w-4 mr-2" />
+                            Global Charts
+                        </Button>
+
+                        {/* Start / End Game Buttons */}
+                        {territory.current_team_id === teamId ? (
+                            <Button
+                                variant="destructive"
+                                className="w-full"
+                                onClick={() => worldTourHost.abandonGame()}
+                            >
+                                <Square className="h-4 w-4 mr-2" />
+                                End Run
+                            </Button>
+                        ) : territory.current_team_id ? (
+                            <p className="text-center text-sm text-muted-foreground">
+                                Another team is currently playing...
+                            </p>
+                        ) : (
+                            <Button
+                                className="w-full"
+                                onClick={() => worldTourHost.startGame(teamId)}
+                            >
+                                <Play className="h-4 w-4 mr-2" />
+                                Start Game
+                            </Button>
+                        )}
                     </div>
-                ) : isBattleMode ? (
-                    <p className="text-center text-sm text-muted-foreground">Loading teams...</p>
                 ) : (
-                    <p className="text-center text-sm text-muted-foreground">📍 Your Territory</p>
+                    /* Battle Header (Territory Mode) */
+                    isBattleMode && attackerTeam && defenderTeam ? (
+                        <div className="flex items-center justify-center gap-3">
+                            <div className="flex flex-col items-center">
+                                <TeamChip name={attackerTeam.name} color={attackerTeam.color} className="text-sm px-3 py-1" />
+                                <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                                    <Swords className="h-3 w-3" />
+                                    <span>Attacker</span>
+                                </div>
+                            </div>
+                            <span className="text-lg font-bold text-muted-foreground">VS</span>
+                            <div className="flex flex-col items-center">
+                                <TeamChip name={defenderTeam.name} color={defenderTeam.color} className="text-sm px-3 py-1" />
+                                <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                                    <Shield className="h-3 w-3" />
+                                    <span>Defender</span>
+                                </div>
+                            </div>
+                        </div>
+                    ) : isBattleMode ? (
+                        <p className="text-center text-sm text-muted-foreground">Loading teams...</p>
+                    ) : (
+                        <p className="text-center text-sm text-muted-foreground">📍 Your Territory</p>
+                    )
                 )}
             </div>
 
@@ -420,6 +483,8 @@ export default function GamePage() {
                                 <TimerTab
                                     territory={territory}
                                     role={role}
+                                    attackerColor={attackerTeam?.color}
+                                    defenderColor={defenderTeam?.color}
                                     onStartSharedTimer={gameHost.startSharedTimer}
                                     onPauseSharedTimer={gameHost.pauseSharedTimer}
                                     onResetSharedTimer={gameHost.resetSharedTimer}
@@ -540,6 +605,16 @@ export default function GamePage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* World Tour Leaderboard Modal */}
+            {isWorldTour && (
+                <LeaderboardModal
+                    open={leaderboardOpen}
+                    onOpenChange={setLeaderboardOpen}
+                    attempts={territory?.attempts || []}
+                    gameName={territory?.name}
+                />
+            )}
         </div>
     )
 }

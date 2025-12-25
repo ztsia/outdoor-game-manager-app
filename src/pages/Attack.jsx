@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowUp, ArrowDown, Star } from 'lucide-react'
+import { ArrowUp, ArrowDown, Star } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useGameData } from '@/hooks/useGameData'
 import { useTeamData } from '@/hooks/useTeamData'
@@ -16,6 +16,7 @@ import { getTerritoryStatus } from '@/lib/territoryStatus'
 import { formatNumber } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { PageHeader } from '@/components/ui/page-header'
 
 
 export default function Attack() {
@@ -139,23 +140,10 @@ export default function Attack() {
     return (
         <div className="min-h-screen bg-background pb-4">
             {/* Header */}
-            <div className="sticky top-0 z-10 bg-background border-b p-4">
-                <div className="flex items-center gap-3">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => navigate('/dashboard')}
-                    >
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                    <div>
-                        <h1 className="text-xl font-bold">Attack Territory</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Balance: {team ? formatNumber(team.followers) : '...'} followers
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <PageHeader
+                title="Attack Territory"
+                subtitle={`Balance: ${team ? formatNumber(team.followers) : '...'} followers`}
+            />
 
             {/* Filter and Sort Controls */}
             <div className="flex flex-col gap-4 p-4 pb-0">
