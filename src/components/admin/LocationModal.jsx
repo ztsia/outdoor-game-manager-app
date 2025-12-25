@@ -153,7 +153,7 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
                                 <Label>Country Emoji</Label>
                                 <Button
                                     variant="outline"
-                                    className="w-full justify-between text-2xl h-12"
+                                    className="w-full justify-between text-base h-12"
                                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                                     type="button"
                                 >
@@ -165,7 +165,7 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
                                     )}
                                 </Button>
                                 {showEmojiPicker && (
-                                    <div className="[&_.epr-category-nav]:hidden border rounded-md overflow-hidden">
+                                    <div className="[&_.epr-category-nav]:!hidden border rounded-md overflow-hidden">
                                         <EmojiPicker
                                             onEmojiClick={(emojiData) => {
                                                 setEmoji(emojiData.emoji)
