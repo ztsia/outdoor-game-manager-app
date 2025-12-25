@@ -30,7 +30,8 @@ const RANK_CONFIG = {
 const LIVING_ICON_CONFIG = {
     icon: Gem,
     label: 'Living Icon',
-    className: 'bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-400 bg-[length:200%_200%] text-white border border-cyan-200/50 [animation:galaxy-shimmer_4s_ease-in-out_infinite,pulse-glow_3s_ease-in-out_infinite]'
+    // Holographic Nebula: Iridescent gradient with intense glow
+    className: 'bg-gradient-to-r from-indigo-500 via-purple-500 via-pink-500 to-cyan-500 bg-[length:300%_300%] text-white border border-white/50 shadow-[0_0_20px_rgba(168,85,247,0.6)] [animation:galaxy-shimmer_4s_ease-in-out_infinite,pulse-glow_3s_ease-in-out_infinite]'
 }
 
 /**
