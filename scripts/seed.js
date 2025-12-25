@@ -592,7 +592,36 @@ const worldTourGames = {
         high_score_holder_id: "team_blue",
         current_team_id: null,       // Team currently playing (null = available)
         cooldown_ends_at: null,      // Timestamp when cooldown ends
-        attempts: [],                // Array of { team_id, team_name, score, difficulty, timestamp }
+        attempts: [
+            {
+                team_id: "team_blue",
+                team_name: "Blue Team",
+                score: 45,
+                difficulty: "hard",
+                timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) // 2 hours ago
+            },
+            {
+                team_id: "team_green",
+                team_name: "Green Team",
+                score: 42,
+                difficulty: "hard",
+                timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000) // 1 day ago
+            },
+            {
+                team_id: "team_red",
+                team_name: "Red Team",
+                score: 30,
+                difficulty: "normal",
+                timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
+            },
+            {
+                team_id: "team_yellow",
+                team_name: "Yellow Team",
+                score: 38,
+                difficulty: "normal",
+                timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000) // 5 hours ago
+            }
+        ],
         multiplier_config: { normal: 1, hard: 2, extreme: 3 },
         // Aligned with territory.game_info
         game_info: {
@@ -618,11 +647,33 @@ const worldTourGames = {
         name: "Hot Dog Stack",
         country_emoji: "🇺🇸",
         location_image_url: "",
-        high_score: 0,
-        high_score_holder_id: null,
+        high_score: 28,
+        high_score_holder_id: "team_purple",
         current_team_id: null,
         cooldown_ends_at: null,
-        attempts: [],
+        attempts: [
+            {
+                team_id: "team_purple",
+                team_name: "Purple Team",
+                score: 28,
+                difficulty: "extreme",
+                timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000) // 1 hour ago
+            },
+            {
+                team_id: "team_yellow",
+                team_name: "Yellow Team",
+                score: 12,
+                difficulty: "normal",
+                timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000) // 5 hours ago
+            },
+            {
+                team_id: "team_orange",
+                team_name: "Orange Team",
+                score: 20,
+                difficulty: "hard",
+                timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000) // 3 hours ago
+            }
+        ],
         multiplier_config: { normal: 1, hard: 2, extreme: 3 },
         game_info: {
             description_md: "## How to Play\nStack as many hot dogs as possible!\n\n### Rules\n1. Balance hot dogs on the plate\n2. Don't let them fall!\n3. Higher stacks = more points",
