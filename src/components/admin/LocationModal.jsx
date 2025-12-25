@@ -75,11 +75,13 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
 
         setSaving(true)
         try {
+            // Process Google Drive link before saving
+            const processedImageUrl = getGoogleDriveDirectLink(imageUrl.trim())
             await onSave({
                 name: name.trim(),
                 type,
                 emoji: type === 'world_tour' ? emoji : '',
-                image_url: imageUrl.trim()
+                image_url: processedImageUrl
             })
             onOpenChange(false)
         } finally {
@@ -175,6 +177,7 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
                                             searchPlaceholder="Search flags..."
                                             width="100%"
                                             height={300}
+                                            skinTonesDisabled={true}
                                         />
                                     </div>
                                 )}
