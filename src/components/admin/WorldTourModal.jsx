@@ -240,7 +240,7 @@ export function WorldTourModal({
                                 <SelectContent>
                                     {availableLocations.map(loc => (
                                         <SelectItem key={loc.id} value={loc.id}>
-                                            {loc.emoji || '🌍'} {loc.name} ({loc.id})
+                                            {loc.emoji || '🌍'} {loc.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

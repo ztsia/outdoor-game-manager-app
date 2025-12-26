@@ -3,7 +3,7 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { Markdown } from 'tiptap-markdown'
 import { Button } from '@/components/ui/button'
-import { Bold, Italic, List, ListOrdered, Heading2 } from 'lucide-react'
+import { Bold, Italic, List, ListOrdered, Heading1, Heading2, Heading3, Heading4 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 /**
@@ -52,7 +52,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }) {
     return (
         <div className={cn("border rounded-md bg-background", className)}>
             {/* Toolbar */}
-            <div className="flex gap-1 p-1 border-b bg-muted/50">
+            <div className="flex gap-1 p-1 border-b bg-muted/50 flex-wrap">
                 <Button
                     type="button"
                     variant={editor.isActive('bold') ? 'secondary' : 'ghost'}
@@ -69,6 +69,15 @@ export function RichTextEditor({ value, onChange, placeholder, className }) {
                 >
                     <Italic className="h-4 w-4" />
                 </Button>
+                <div className="w-px h-6 bg-border mx-1" />
+                <Button
+                    type="button"
+                    variant={editor.isActive('heading', { level: 1 }) ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+                >
+                    <Heading1 className="h-4 w-4" />
+                </Button>
                 <Button
                     type="button"
                     variant={editor.isActive('heading', { level: 2 }) ? 'secondary' : 'ghost'}
@@ -77,6 +86,23 @@ export function RichTextEditor({ value, onChange, placeholder, className }) {
                 >
                     <Heading2 className="h-4 w-4" />
                 </Button>
+                <Button
+                    type="button"
+                    variant={editor.isActive('heading', { level: 3 }) ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+                >
+                    <Heading3 className="h-4 w-4" />
+                </Button>
+                <Button
+                    type="button"
+                    variant={editor.isActive('heading', { level: 4 }) ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
+                >
+                    <Heading4 className="h-4 w-4" />
+                </Button>
+                <div className="w-px h-6 bg-border mx-1" />
                 <Button
                     type="button"
                     variant={editor.isActive('bulletList') ? 'secondary' : 'ghost'}
@@ -100,3 +126,4 @@ export function RichTextEditor({ value, onChange, placeholder, className }) {
         </div>
     )
 }
+

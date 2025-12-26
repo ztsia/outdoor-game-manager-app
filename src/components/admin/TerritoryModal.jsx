@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
@@ -216,7 +217,7 @@ export function TerritoryModal({
                                 <SelectContent>
                                     {availableLocations.map(loc => (
                                         <SelectItem key={loc.id} value={loc.id}>
-                                            {loc.name} ({loc.id})
+                                            {loc.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -239,7 +240,7 @@ export function TerritoryModal({
                             >
                                 {starOptions.map(n => (
                                     <ToggleGroupItem key={n} value={String(n)}>
-                                        {'⭐'.repeat(n) || '0'} {n}
+                                        {n === 0 ? '🚫' : '⭐'.repeat(n)} {n}
                                     </ToggleGroupItem>
                                 ))}
                             </ToggleGroup>
@@ -260,22 +261,24 @@ export function TerritoryModal({
                         {/* Win Condition */}
                         <div className="space-y-2">
                             <Label htmlFor="win-condition">Win Condition</Label>
-                            <Input
+                            <Textarea
                                 id="win-condition"
                                 value={winCondition}
                                 onChange={(e) => setWinCondition(e.target.value)}
                                 placeholder="e.g., First to 2 goals."
+                                rows={2}
                             />
                         </div>
 
                         {/* Home Advantage */}
                         <div className="space-y-2">
                             <Label htmlFor="home-advantage">Home Advantage</Label>
-                            <Input
+                            <Textarea
                                 id="home-advantage"
                                 value={homeAdvantage}
                                 onChange={(e) => setHomeAdvantage(e.target.value)}
                                 placeholder="e.g., Defender starts with ball possession."
+                                rows={2}
                             />
                         </div>
 
