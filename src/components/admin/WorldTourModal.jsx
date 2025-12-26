@@ -18,20 +18,27 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover'
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { RichTextEditor } from '@/components/ui/RichTextEditor'
-import { Trash2, Loader2, RotateCcw, Eraser } from 'lucide-react'
+import { Trash2, Loader2, RotateCcw, Eraser, ChevronsUpDown, Check } from 'lucide-react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 /**
  * WorldTourModal - Create/Edit/Delete World Tour game with configuration
@@ -69,6 +76,7 @@ export function WorldTourModal({
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
     const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
     const [cleanupConfirmOpen, setCleanupConfirmOpen] = useState(false)
+    const [locationPopoverOpen, setLocationPopoverOpen] = useState(false)
 
     // Filter available locations (world_tour type, not taken or current game)
     const availableLocations = locations.filter(loc => {
@@ -233,18 +241,52 @@ export function WorldTourModal({
                         {/* Location */}
                         <div className="space-y-2">
                             <Label>Location *</Label>
-                            <Select value={locationId} onValueChange={setLocationId}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a location" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {availableLocations.map(loc => (
-                                        <SelectItem key={loc.id} value={loc.id}>
-                                            {loc.emoji || '🌍'} {loc.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Popover open={locationPopoverOpen} onOpenChange={setLocationPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={locationPopoverOpen}
+                                        className="w-full justify-between font-normal"
+                                    >
+                                        {locationId
+                                            ? (() => {
+                                                const loc = availableLocations.find(l => l.id === locationId)
+                                                return loc ? `${loc.emoji || '🌍'} ${loc.name}` : 'Select location...'
+                                            })()
+                                            : 'Select location...'}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-full p-0" align="start">
+                                    <Command>
+                                        <CommandInput placeholder="Search locations..." />
+                                        <CommandList>
+                                            <CommandEmpty>No location found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {availableLocations.map(loc => (
+                                                    <CommandItem
+                                                        key={loc.id}
+                                                        value={loc.name}
+                                                        onSelect={() => {
+                                                            setLocationId(loc.id)
+                                                            setLocationPopoverOpen(false)
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                locationId === loc.id ? "opacity-100" : "opacity-0"
+                                                            )}
+                                                        />
+                                                        {loc.emoji || '🌍'} {loc.name}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                             {availableLocations.length === 0 && (
                                 <p className="text-sm text-muted-foreground">
                                     No available World Tour locations. Create a new location first.
