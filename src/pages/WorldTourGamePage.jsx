@@ -213,9 +213,9 @@ export default function WorldTourGamePage() {
             {/* Hero Header */}
             <div className="relative">
                 {/* Hero Image */}
-                {game.location_image_url ? (
+                {locationsMap[game.location_id]?.image_url ? (
                     <img
-                        src={game.location_image_url}
+                        src={locationsMap[game.location_id].image_url}
                         alt={game.name}
                         className="w-full h-40 object-cover"
                     />

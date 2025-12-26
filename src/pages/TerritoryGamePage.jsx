@@ -310,9 +310,9 @@ export default function TerritoryGamePage() {
             {/* Hero Header */}
             <div className="relative">
                 {/* Hero Image */}
-                {territory.location_image_url ? (
+                {locationsMap[territory.location_id]?.image_url ? (
                     <img
-                        src={territory.location_image_url}
+                        src={locationsMap[territory.location_id].image_url}
                         alt={territory.name}
                         className="w-full h-40 object-cover"
                     />

@@ -165,7 +165,6 @@ const territories = {
     t_01: {
         location_id: "loc_01",
         name: "Football Brawl",
-        location_image_url: "",
         owner_id: "team_red",
         stars: 2,  // Team Red: 2 + 1 = 3 stars total
         challenge_status: 'idle',  // 'idle' | 'requesting' | 'accepted'
@@ -203,7 +202,6 @@ const territories = {
     t_02: {
         location_id: "loc_02",
         name: "Dance Battle",
-        location_image_url: "",
         owner_id: "team_blue",
         stars: 2,  // Team Blue: 2 + 3 + 3 + 2 = 10 stars total
         challenge_status: 'idle',
@@ -241,7 +239,6 @@ const territories = {
     t_03: {
         location_id: "loc_03",
         name: "Trivia Challenge",
-        location_image_url: "",
         owner_id: "team_red",
         stars: 1,
         challenge_status: 'idle',
@@ -279,7 +276,6 @@ const territories = {
     t_04: {
         location_id: "loc_04",
         name: "Hot Zone",
-        location_image_url: "",
         owner_id: "team_green",
         stars: 3,
         challenge_status: 'idle',
@@ -317,7 +313,6 @@ const territories = {
     t_05: {
         location_id: "loc_06",
         name: "Word Puzzle",
-        location_image_url: "",
         owner_id: "team_blue",
         stars: 3,  // Team Blue needs more territories for 10 stars
         challenge_status: 'idle',
@@ -355,7 +350,6 @@ const territories = {
     t_06: {
         location_id: "loc_01",  // Reusing location for simplicity
         name: "Board Game Marathon",
-        location_image_url: "",
         owner_id: "team_blue",
         stars: 3,  // Team Blue: 2 + 3 + 3 = 8 stars so far
         challenge_status: 'idle',
@@ -393,7 +387,6 @@ const territories = {
     t_07: {
         location_id: "loc_02",  // Reusing location
         name: "Speed Drawing",
-        location_image_url: "",
         owner_id: "team_blue",
         stars: 2,  // Team Blue: 2 + 3 + 3 + 2 = 10 stars total!
         challenge_status: 'idle',
@@ -432,7 +425,6 @@ const territories = {
     t_08: {
         location_id: "loc_03",
         name: "Karaoke Battle",
-        location_image_url: "",
         owner_id: "team_purple",
         stars: 3,
         challenge_status: 'idle',
@@ -470,7 +462,6 @@ const territories = {
     t_09: {
         location_id: "loc_04",
         name: "Fitness Challenge",
-        location_image_url: "",
         owner_id: "team_purple",
         stars: 3,
         challenge_status: 'idle',
@@ -508,7 +499,6 @@ const territories = {
     t_10: {
         location_id: "loc_05",
         name: "Swimming Race",
-        location_image_url: "",
         owner_id: "team_purple",
         stars: 2,
         challenge_status: 'idle',
@@ -546,7 +536,6 @@ const territories = {
     t_11: {
         location_id: "loc_06",
         name: "High Score",
-        location_image_url: "",
         owner_id: "team_purple",
         stars: 2,  // Team Purple: 3+3+2+2 = 10 stars total
         challenge_status: 'idle',
@@ -588,7 +577,6 @@ const worldTourGames = {
     game_japan: {
         location_id: "loc_05",
         name: "Bean Sort",
-        location_image_url: "",
         high_score: 45,
         high_score_holder_id: "team_blue",
         current_team_id: null,       // Team currently playing (null = available)
@@ -642,7 +630,6 @@ const worldTourGames = {
     game_usa: {
         location_id: "loc_07",
         name: "Hot Dog Stack",
-        location_image_url: "",
         high_score: 28,
         high_score_holder_id: "team_purple",
         current_team_id: null,

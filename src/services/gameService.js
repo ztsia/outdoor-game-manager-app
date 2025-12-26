@@ -192,3 +192,139 @@ export async function updateLocation(locationId, data) {
 export async function deleteLocation(locationId) {
     await deleteDoc(doc(db, 'locations', locationId))
 }
+
+// ==================== TERRITORY CRUD ====================
+
+/**
+ * Get the next available territory ID (e.g., t_12 if t_11 exists)
+ * @returns {Promise<string>} Next territory ID
+ */
+export async function getNextTerritoryId() {
+    const snapshot = await getDocs(collection(db, 'territories'))
+    let maxNum = 0
+
+    snapshot.docs.forEach((doc) => {
+        const match = doc.id.match(/^t_(\d+)$/)
+        if (match) {
+            const num = parseInt(match[1], 10)
+            if (num > maxNum) maxNum = num
+        }
+    })
+
+    const nextNum = maxNum + 1
+    return `t_${nextNum.toString().padStart(2, '0')}`
+}
+
+/**
+ * Create a new territory
+ * @param {Object} data - Territory data
+ * @returns {Promise<string>} Created territory ID
+ */
+export async function createTerritory(data) {
+    const territoryId = await getNextTerritoryId()
+    const defaultLiveState = {
+        attacker_score: 0,
+        defender_score: 0,
+        timer_started_at: null,
+        is_paused: false,
+        game_started: false,
+        attacker_elapsed_seconds: 0,
+        defender_elapsed_seconds: 0,
+        attacker_timer_started_at: null,
+        defender_timer_started_at: null,
+        end_game_requested_at: null,
+        end_game_requester_id: null,
+        attacker_vote: null,
+        defender_vote: null,
+        vote_mismatch: false
+    }
+
+    await setDoc(doc(db, 'territories', territoryId), {
+        location_id: data.location_id || null,
+        name: data.name || '',
+        owner_id: data.owner_id || null,
+        stars: data.stars || 1,
+        challenge_status: 'idle',
+        under_attack: false,
+        cooldown_ends_at: null,
+        current_attacker_id: null,
+        bet_amount: 0,
+        game_info: {
+            description_md: data.description_md || '',
+            win_condition: data.win_condition || '',
+            home_advantage: data.home_advantage || '',
+            has_timer: data.has_timer || false,
+            timer_duration_seconds: data.timer_duration_seconds || 60,
+            timer_mode: data.timer_mode || 'countdown',
+            has_scoreboard: data.has_scoreboard || false,
+            score_unit: data.score_unit || 'Points'
+        },
+        live_state: defaultLiveState
+    })
+    return territoryId
+}
+
+/**
+ * Update an existing territory
+ * @param {string} territoryId - Territory document ID
+ * @param {Object} data - Fields to update
+ */
+export async function updateTerritory(territoryId, data) {
+    // Build update object, handling nested game_info fields
+    const updateData = {}
+
+    if (data.location_id !== undefined) updateData.location_id = data.location_id
+    if (data.name !== undefined) updateData.name = data.name
+    if (data.stars !== undefined) updateData.stars = data.stars
+
+    // Handle game_info fields with dot notation
+    if (data.description_md !== undefined) updateData['game_info.description_md'] = data.description_md
+    if (data.win_condition !== undefined) updateData['game_info.win_condition'] = data.win_condition
+    if (data.home_advantage !== undefined) updateData['game_info.home_advantage'] = data.home_advantage
+    if (data.has_timer !== undefined) updateData['game_info.has_timer'] = data.has_timer
+    if (data.timer_duration_seconds !== undefined) updateData['game_info.timer_duration_seconds'] = data.timer_duration_seconds
+    if (data.timer_mode !== undefined) updateData['game_info.timer_mode'] = data.timer_mode
+    if (data.has_scoreboard !== undefined) updateData['game_info.has_scoreboard'] = data.has_scoreboard
+    if (data.score_unit !== undefined) updateData['game_info.score_unit'] = data.score_unit
+
+    await updateDoc(doc(db, 'territories', territoryId), updateData)
+}
+
+/**
+ * Delete a territory
+ * @param {string} territoryId - Territory document ID
+ */
+export async function deleteTerritory(territoryId) {
+    await deleteDoc(doc(db, 'territories', territoryId))
+}
+
+/**
+ * Reset a territory's game state (for stuck games)
+ * @param {string} territoryId - Territory document ID
+ */
+export async function resetTerritoryState(territoryId) {
+    await updateDoc(doc(db, 'territories', territoryId), {
+        challenge_status: 'idle',
+        under_attack: false,
+        cooldown_ends_at: null,
+        current_attacker_id: null,
+        bet_amount: 0,
+        live_state: {
+            attacker_score: 0,
+            defender_score: 0,
+            timer_started_at: null,
+            is_paused: false,
+            game_started: false,
+            attacker_elapsed_seconds: 0,
+            defender_elapsed_seconds: 0,
+            attacker_timer_started_at: null,
+            defender_timer_started_at: null,
+            end_game_requested_at: null,
+            end_game_requester_id: null,
+            attacker_vote: null,
+            defender_vote: null,
+            vote_mismatch: false
+        }
+    })
+}
+

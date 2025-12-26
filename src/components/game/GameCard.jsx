@@ -14,8 +14,9 @@ import { TerritoryStatusBadge } from '@/components/game/TerritoryStatusBadge'
  * @param {function} props.onAction - Callback when the card is clicked (if not disabled)
  * @param {boolean} [props.isWorldTour=false] - Whether this is a World Tour game
  * @param {string} [props.title] - Location name to display as card title (overrides territory.name in header)
+ * @param {string} [props.locationImage] - Image URL from location collection
  */
-export function GameCard({ territory, status, ownerTeam, onAction, isWorldTour = false, title }) {
+export function GameCard({ territory, status, ownerTeam, onAction, isWorldTour = false, title, locationImage }) {
     // Title (header) = Location Name, fallback to territory.name if not provided
     const displayTitle = title || territory.name
     // Game Name = territory.name (which is now the game name after schema change)
@@ -35,9 +36,9 @@ export function GameCard({ territory, status, ownerTeam, onAction, isWorldTour =
         >
             {/* Cover Image */}
             <div className="relative aspect-video w-full overflow-hidden bg-muted">
-                {territory.location_image_url ? (
+                {locationImage ? (
                     <img
-                        src={territory.location_image_url}
+                        src={locationImage}
                         alt={displayTitle}
                         className="h-full w-full object-cover"
                     />

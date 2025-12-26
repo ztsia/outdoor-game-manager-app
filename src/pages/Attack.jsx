@@ -215,6 +215,7 @@ export default function Attack() {
                             status={status}
                             ownerTeam={ownerTeam}
                             title={locationsMap[territory.location_id]?.name}
+                            locationImage={locationsMap[territory.location_id]?.image_url}
                             onAction={() => handleSelectTerritory(territory)}
                         />
                     )
