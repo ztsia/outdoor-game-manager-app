@@ -30,85 +30,84 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { RichTextEditor } from '@/components/ui/RichTextEditor'
-import { Trash2, Loader2, RotateCcw } from 'lucide-react'
+import { Trash2, Loader2, RotateCcw, Eraser } from 'lucide-react'
 import { toast } from 'sonner'
 
 /**
- * TerritoryModal - Create/Edit/Delete territory with game info configuration
+ * WorldTourModal - Create/Edit/Delete World Tour game with configuration
  */
-export function TerritoryModal({
+export function WorldTourModal({
     open,
     onOpenChange,
-    territory,
+    game,
     locations,
-    territories,
-    maxStars = 3,
     onSave,
     onDelete,
-    onReset
+    onReset,
+    onCleanup
 }) {
-    const isEditMode = !!territory
+    const isEditMode = !!game
 
     // Basic fields
     const [name, setName] = useState('')
     const [locationId, setLocationId] = useState('')
-    const [stars, setStars] = useState(0)
 
     // Game info fields
     const [descriptionMd, setDescriptionMd] = useState('')
-    const [winCondition, setWinCondition] = useState('')
-    const [homeAdvantage, setHomeAdvantage] = useState('')
     const [hasScoreboard, setHasScoreboard] = useState(false)
     const [scoreUnit, setScoreUnit] = useState('Points')
     const [hasTimer, setHasTimer] = useState(false)
     const [timerMode, setTimerMode] = useState('countdown')
     const [timerDuration, setTimerDuration] = useState(60)
 
+    // Multiplier config
+    const [normalMultiplier, setNormalMultiplier] = useState(1)
+    const [hardMultiplier, setHardMultiplier] = useState(2)
+    const [extremeMultiplier, setExtremeMultiplier] = useState(3)
+
     const [saving, setSaving] = useState(false)
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
     const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
+    const [cleanupConfirmOpen, setCleanupConfirmOpen] = useState(false)
 
-    // Filter available locations (territory type, not taken or current territory)
+    // Filter available locations (world_tour type, not taken or current game)
     const availableLocations = locations.filter(loc => {
-        if (loc.type !== 'territory') return false
-        // Available if no assigned_game_id OR it's assigned to current territory
+        if (loc.type !== 'world_tour') return false
+        // Available if no assigned_game_id OR it's assigned to current game
         if (!loc.assigned_game_id) return true
-        if (isEditMode && loc.assigned_game_id === territory.id) return true
+        if (isEditMode && loc.assigned_game_id === game.id) return true
         return false
     })
 
     // Populate form when editing
     useEffect(() => {
-        if (territory) {
-            setName(territory.name || '')
-            setLocationId(territory.location_id || '')
-            setStars(territory.stars ?? 0)
-            setDescriptionMd(territory.game_info?.description_md || '')
-            setWinCondition(territory.game_info?.win_condition || '')
-            setHomeAdvantage(territory.game_info?.home_advantage || '')
-            setHasScoreboard(territory.game_info?.has_scoreboard || false)
-            setScoreUnit(territory.game_info?.score_unit || 'Points')
-            setHasTimer(territory.game_info?.has_timer || false)
-            setTimerMode(territory.game_info?.timer_mode || 'countdown')
-            setTimerDuration(territory.game_info?.timer_duration_seconds || 60)
+        if (game) {
+            setName(game.name || '')
+            setLocationId(game.location_id || '')
+            setDescriptionMd(game.game_info?.description_md || '')
+            setHasScoreboard(game.game_info?.has_scoreboard || false)
+            setScoreUnit(game.game_info?.score_unit || 'Points')
+            setHasTimer(game.game_info?.has_timer || false)
+            setTimerMode(game.game_info?.timer_mode || 'countdown')
+            setTimerDuration(game.game_info?.timer_duration_seconds || 60)
+            setNormalMultiplier(game.multiplier_config?.normal ?? 1)
+            setHardMultiplier(game.multiplier_config?.hard ?? 2)
+            setExtremeMultiplier(game.multiplier_config?.extreme ?? 3)
         } else {
             // Reset for create mode
             setName('')
             setLocationId('')
-            setStars(0)
             setDescriptionMd('')
-            setWinCondition('')
-            setHomeAdvantage('')
             setHasScoreboard(false)
             setScoreUnit('Points')
             setHasTimer(false)
             setTimerMode('countdown')
             setTimerDuration(60)
+            setNormalMultiplier(1)
+            setHardMultiplier(2)
+            setExtremeMultiplier(3)
         }
-    }, [territory, open])
-
-    // Generate star options based on maxStars
-    const starOptions = Array.from({ length: maxStars + 1 }, (_, i) => i)
+    }, [game, open])
 
     const handleSave = async () => {
         if (!name.trim()) {
@@ -125,15 +124,17 @@ export function TerritoryModal({
             await onSave({
                 location_id: locationId,
                 name: name.trim(),
-                stars,
                 description_md: descriptionMd,
-                win_condition: winCondition.trim(),
-                home_advantage: homeAdvantage.trim(),
                 has_scoreboard: hasScoreboard,
                 score_unit: scoreUnit.trim() || 'Points',
                 has_timer: hasTimer,
                 timer_mode: timerMode,
-                timer_duration_seconds: parseInt(timerDuration, 10) || 60
+                timer_duration_seconds: parseInt(timerDuration, 10) || 60,
+                multiplier_config: {
+                    normal: parseFloat(normalMultiplier) || 1,
+                    hard: parseFloat(hardMultiplier) || 2,
+                    extreme: parseFloat(extremeMultiplier) || 3
+                }
             })
             onOpenChange(false)
         } finally {
@@ -157,7 +158,18 @@ export function TerritoryModal({
         setSaving(true)
         try {
             await onReset()
-            toast.success('Territory state reset!')
+            toast.success('Game state reset!')
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const handleCleanup = async () => {
+        setCleanupConfirmOpen(false)
+        setSaving(true)
+        try {
+            await onCleanup()
+            toast.success('Stats cleared!')
         } finally {
             setSaving(false)
         }
@@ -171,25 +183,37 @@ export function TerritoryModal({
                         <div className="flex items-center justify-between">
                             <div>
                                 <DialogTitle>
-                                    {isEditMode ? 'Edit Territory' : 'Add Territory'}
+                                    {isEditMode ? 'Edit World Tour Game' : 'Add World Tour Game'}
                                 </DialogTitle>
                                 <DialogDescription>
                                     {isEditMode
-                                        ? `Editing ${territory?.id}`
-                                        : 'Create a new territory game.'}
+                                        ? `Editing ${game?.id}`
+                                        : 'Create a new World Tour game.'}
                                 </DialogDescription>
                             </div>
                             {isEditMode && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setResetConfirmOpen(true)}
-                                    disabled={saving}
-                                    className="gap-1"
-                                >
-                                    <RotateCcw className="h-4 w-4" />
-                                    Reset State
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setResetConfirmOpen(true)}
+                                        disabled={saving}
+                                        className="gap-1"
+                                    >
+                                        <RotateCcw className="h-4 w-4" />
+                                        Reset
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCleanupConfirmOpen(true)}
+                                        disabled={saving}
+                                        className="gap-1"
+                                    >
+                                        <Eraser className="h-4 w-4" />
+                                        Clear Stats
+                                    </Button>
+                                </div>
                             )}
                         </div>
                     </DialogHeader>
@@ -202,7 +226,7 @@ export function TerritoryModal({
                                 id="name"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                placeholder="e.g., Football Brawl"
+                                placeholder="e.g., Bean Sort"
                             />
                         </div>
 
@@ -216,33 +240,16 @@ export function TerritoryModal({
                                 <SelectContent>
                                     {availableLocations.map(loc => (
                                         <SelectItem key={loc.id} value={loc.id}>
-                                            {loc.name} ({loc.id})
+                                            {loc.emoji || '🌍'} {loc.name} ({loc.id})
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                             {availableLocations.length === 0 && (
                                 <p className="text-sm text-muted-foreground">
-                                    No available territory locations. Create a new location first.
+                                    No available World Tour locations. Create a new location first.
                                 </p>
                             )}
-                        </div>
-
-                        {/* Stars */}
-                        <div className="space-y-2">
-                            <Label>Stars (0-{maxStars})</Label>
-                            <ToggleGroup
-                                type="single"
-                                value={String(stars)}
-                                onValueChange={(val) => val !== undefined && setStars(parseInt(val, 10))}
-                                className="justify-start flex-wrap"
-                            >
-                                {starOptions.map(n => (
-                                    <ToggleGroupItem key={n} value={String(n)}>
-                                        {'⭐'.repeat(n) || '0'} {n}
-                                    </ToggleGroupItem>
-                                ))}
-                            </ToggleGroup>
                         </div>
 
                         <hr className="my-4" />
@@ -254,28 +261,6 @@ export function TerritoryModal({
                                 value={descriptionMd}
                                 onChange={setDescriptionMd}
                                 placeholder="Type your game rules here..."
-                            />
-                        </div>
-
-                        {/* Win Condition */}
-                        <div className="space-y-2">
-                            <Label htmlFor="win-condition">Win Condition</Label>
-                            <Input
-                                id="win-condition"
-                                value={winCondition}
-                                onChange={(e) => setWinCondition(e.target.value)}
-                                placeholder="e.g., First to 2 goals."
-                            />
-                        </div>
-
-                        {/* Home Advantage */}
-                        <div className="space-y-2">
-                            <Label htmlFor="home-advantage">Home Advantage</Label>
-                            <Input
-                                id="home-advantage"
-                                value={homeAdvantage}
-                                onChange={(e) => setHomeAdvantage(e.target.value)}
-                                placeholder="e.g., Defender starts with ball possession."
                             />
                         </div>
 
@@ -298,7 +283,7 @@ export function TerritoryModal({
                                     id="score-unit"
                                     value={scoreUnit}
                                     onChange={(e) => setScoreUnit(e.target.value)}
-                                    placeholder="e.g., Goals, Points, Rounds"
+                                    placeholder="e.g., Beans, Points, Stacks"
                                 />
                             </div>
                         )}
@@ -325,7 +310,6 @@ export function TerritoryModal({
                                     >
                                         <ToggleGroupItem value="countdown">⏱️ Countdown</ToggleGroupItem>
                                         <ToggleGroupItem value="stopwatch">⏲️ Stopwatch</ToggleGroupItem>
-                                        <ToggleGroupItem value="split">🏁 Split</ToggleGroupItem>
                                     </ToggleGroup>
                                 </div>
 
@@ -342,6 +326,48 @@ export function TerritoryModal({
                                 </div>
                             </div>
                         )}
+
+                        <hr className="my-4" />
+
+                        {/* Difficulty Multipliers */}
+                        <div className="space-y-3">
+                            <Label>Difficulty Multipliers</Label>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="space-y-1">
+                                    <Label htmlFor="normal-mult" className="text-sm text-muted-foreground">Normal</Label>
+                                    <Input
+                                        id="normal-mult"
+                                        type="number"
+                                        step="0.1"
+                                        value={normalMultiplier}
+                                        onChange={(e) => setNormalMultiplier(e.target.value)}
+                                        placeholder="1"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="hard-mult" className="text-sm text-muted-foreground">Hard</Label>
+                                    <Input
+                                        id="hard-mult"
+                                        type="number"
+                                        step="0.1"
+                                        value={hardMultiplier}
+                                        onChange={(e) => setHardMultiplier(e.target.value)}
+                                        placeholder="2"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="extreme-mult" className="text-sm text-muted-foreground">Extreme</Label>
+                                    <Input
+                                        id="extreme-mult"
+                                        type="number"
+                                        step="0.1"
+                                        value={extremeMultiplier}
+                                        onChange={(e) => setExtremeMultiplier(e.target.value)}
+                                        placeholder="3"
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <DialogFooter className="flex-row justify-between sm:justify-between">
@@ -379,9 +405,9 @@ export function TerritoryModal({
             <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Territory?</AlertDialogTitle>
+                        <AlertDialogTitle>Delete World Tour Game?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete "{territory?.name}". This action cannot be undone.
+                            This will permanently delete "{game?.name}". This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -397,15 +423,33 @@ export function TerritoryModal({
             <AlertDialog open={resetConfirmOpen} onOpenChange={setResetConfirmOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Reset Territory State?</AlertDialogTitle>
+                        <AlertDialogTitle>Reset Game State?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will reset the game state to idle, clearing any active challenges, scores, and timers. Use this if the game is stuck.
+                            This will reset the live game state (clear cooldowns, current team, timers). Use this if the game is stuck.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleReset}>
                             Reset State
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Cleanup Confirmation */}
+            <AlertDialog open={cleanupConfirmOpen} onOpenChange={setCleanupConfirmOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Clear All Stats?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will clear all attempts, high scores, and remove the game from the high score holder's fan favourites. This cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleCleanup}>
+                            Clear Stats
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

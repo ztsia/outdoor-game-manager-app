@@ -150,6 +150,15 @@ export default function WorldTourGamePage() {
 
             const isNewHighScore = finalScore > (game?.high_score || 0)
 
+            // Calculate rank: count attempts with higher scores + 1
+            const currentAttempts = game?.attempts || []
+            const rank = currentAttempts.filter(a => a.score > finalScore).length + 1
+
+            // Get location details
+            const location = locationsMap[game?.location_id]
+            const locationName = location?.name || game?.name || 'Unknown Location'
+            const locationEmoji = location?.emoji || game?.country_emoji || ''
+
             // Submit score and end game
             await worldTourHost.submitScore(finalScore, teamId, difficulty, followersGained)
 
@@ -161,6 +170,10 @@ export default function WorldTourGamePage() {
                 finalScore,
                 followersGained,
                 isNewHighScore,
+                isFanFavourite: isNewHighScore,
+                rank,
+                locationName,
+                locationEmoji,
                 gameName: game?.name
             })
 

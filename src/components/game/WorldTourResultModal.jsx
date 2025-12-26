@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Trophy, Star, Users } from 'lucide-react'
+import { Trophy, Star, Users, Award, Hash } from 'lucide-react'
 import { formatNumber } from '@/lib/formatters'
 
 /**
@@ -34,6 +34,10 @@ export function WorldTourResultModal({
         finalScore = 0,
         followersGained = 0,
         isNewHighScore = false,
+        isFanFavourite = false,
+        rank = 1,
+        locationName = '',
+        locationEmoji = '',
         gameName = 'Game'
     } = result
 
@@ -66,12 +70,27 @@ export function WorldTourResultModal({
                             </>
                         )}
                     </DialogTitle>
-                    <DialogDescription>
-                        {gameName}
+                    <DialogDescription className="space-y-1">
+                        <div className="text-base">
+                            {locationEmoji && `${locationEmoji} `}{locationName || gameName}
+                        </div>
+                        {locationName && gameName && locationName !== gameName && (
+                            <div className="text-sm text-muted-foreground">{gameName}</div>
+                        )}
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="py-6 space-y-6">
+                {/* Fan Favourite Banner */}
+                {isFanFavourite && (
+                    <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-gradient-to-r from-yellow-400/20 via-amber-500/20 to-yellow-400/20 border border-yellow-500/30">
+                        <Award className="h-5 w-5 text-yellow-500" />
+                        <span className="font-semibold text-yellow-600 dark:text-yellow-400">
+                            You are now the Fan Favourite!
+                        </span>
+                    </div>
+                )}
+
+                <div className="py-4 space-y-6">
                     {/* Score Breakdown */}
                     <div className="space-y-3 text-left bg-muted rounded-lg p-4">
                         <div className="flex justify-between items-center">
@@ -88,6 +107,14 @@ export function WorldTourResultModal({
                         <div className="flex justify-between items-center text-lg">
                             <span className="font-semibold">Final Score</span>
                             <span className="font-mono font-bold text-primary">{finalScore}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground flex items-center gap-1">
+                                <Hash className="h-4 w-4" /> Rank
+                            </span>
+                            <Badge variant="outline" className="font-mono font-bold">
+                                #{rank}
+                            </Badge>
                         </div>
                     </div>
 
@@ -109,3 +136,4 @@ export function WorldTourResultModal({
         </Dialog>
     )
 }
+

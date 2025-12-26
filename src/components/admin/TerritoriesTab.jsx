@@ -3,6 +3,7 @@ import { Plus, Star, MapPin } from 'lucide-react'
 import { useAllTerritories } from '@/hooks/useAllTerritories'
 import { useLocations } from '@/hooks/useLocations'
 import { useTeams } from '@/hooks/useTeams'
+import { useSystemConfig } from '@/hooks/useSystemConfig'
 import {
     createTerritory,
     updateTerritory,
@@ -90,11 +91,13 @@ export function TerritoriesTab() {
     const { territories, loading: territoriesLoading } = useAllTerritories()
     const { locations, locationsMap, loading: locationsLoading } = useLocations()
     const { teamsMap, loading: teamsLoading } = useTeams()
+    const { config, loading: configLoading } = useSystemConfig()
 
     const [modalOpen, setModalOpen] = useState(false)
     const [selectedTerritory, setSelectedTerritory] = useState(null)
 
-    const loading = territoriesLoading || locationsLoading || teamsLoading
+    const loading = territoriesLoading || locationsLoading || teamsLoading || configLoading
+    const maxStars = config?.max_territory_stars ?? 3
 
     const handleCardClick = (territory) => {
         setSelectedTerritory(territory)
@@ -215,13 +218,13 @@ export function TerritoriesTab() {
                 </p>
             )}
 
-            {/* Modal */}
             <TerritoryModal
                 open={modalOpen}
                 onOpenChange={setModalOpen}
                 territory={selectedTerritory}
                 locations={locations}
                 territories={territories}
+                maxStars={maxStars}
                 onSave={handleSave}
                 onDelete={handleDelete}
                 onReset={handleReset}

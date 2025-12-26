@@ -1,7 +1,7 @@
 /**
  * Game Service - Centralized Firestore operations for game data
  */
-import { collection, doc, onSnapshot, getDoc, setDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore'
+import { collection, doc, onSnapshot, getDoc, setDoc, updateDoc, deleteDoc, getDocs, arrayRemove } from 'firebase/firestore'
 import { db } from '@/firebase'
 
 /**
@@ -325,6 +325,146 @@ export async function resetTerritoryState(territoryId) {
             defender_vote: null,
             vote_mismatch: false
         }
+    })
+}
+
+// ==================== WORLD TOUR CRUD ====================
+
+/**
+ * Get the next available World Tour game ID (e.g., game_03 if game_02 exists)
+ * @returns {Promise<string>} Next game ID
+ */
+export async function getNextWorldTourGameId() {
+    const snapshot = await getDocs(collection(db, 'world_tour_games'))
+    let maxNum = 0
+
+    snapshot.docs.forEach((docItem) => {
+        const match = docItem.id.match(/^game_(\w+)$/)
+        if (match) {
+            // Try to parse as number, otherwise use string length as fallback
+            const num = parseInt(match[1], 10)
+            if (!isNaN(num) && num > maxNum) maxNum = num
+        }
+    })
+
+    const nextNum = maxNum + 1
+    return `game_${nextNum.toString().padStart(2, '0')}`
+}
+
+/**
+ * Create a new World Tour game
+ * @param {Object} data - Game data
+ * @returns {Promise<string>} Created game ID
+ */
+export async function createWorldTourGame(data) {
+    const gameId = await getNextWorldTourGameId()
+    const defaultLiveState = {
+        game_started: false,
+        difficulty: null,
+        score: 0,
+        timer_started_at: null,
+        elapsed_seconds: 0,
+        is_paused: false
+    }
+
+    await setDoc(doc(db, 'world_tour_games', gameId), {
+        location_id: data.location_id || null,
+        name: data.name || '',
+        high_score: 0,
+        high_score_holder_id: null,
+        current_team_id: null,
+        cooldown_ends_at: null,
+        attempts: [],
+        multiplier_config: data.multiplier_config || { normal: 1, hard: 2, extreme: 3 },
+        game_info: {
+            description_md: data.description_md || '',
+            has_timer: data.has_timer || false,
+            timer_duration_seconds: data.timer_duration_seconds || 60,
+            timer_mode: data.timer_mode || 'countdown',
+            has_scoreboard: data.has_scoreboard || false,
+            score_unit: data.score_unit || 'Points'
+        },
+        live_state: defaultLiveState
+    })
+    return gameId
+}
+
+/**
+ * Update an existing World Tour game
+ * @param {string} gameId - Game document ID
+ * @param {Object} data - Fields to update
+ */
+export async function updateWorldTourGame(gameId, data) {
+    const updateData = {}
+
+    if (data.location_id !== undefined) updateData.location_id = data.location_id
+    if (data.name !== undefined) updateData.name = data.name
+    if (data.multiplier_config !== undefined) updateData.multiplier_config = data.multiplier_config
+
+    // Handle game_info fields with dot notation
+    if (data.description_md !== undefined) updateData['game_info.description_md'] = data.description_md
+    if (data.has_timer !== undefined) updateData['game_info.has_timer'] = data.has_timer
+    if (data.timer_duration_seconds !== undefined) updateData['game_info.timer_duration_seconds'] = data.timer_duration_seconds
+    if (data.timer_mode !== undefined) updateData['game_info.timer_mode'] = data.timer_mode
+    if (data.has_scoreboard !== undefined) updateData['game_info.has_scoreboard'] = data.has_scoreboard
+    if (data.score_unit !== undefined) updateData['game_info.score_unit'] = data.score_unit
+
+    await updateDoc(doc(db, 'world_tour_games', gameId), updateData)
+}
+
+/**
+ * Delete a World Tour game
+ * @param {string} gameId - Game document ID
+ */
+export async function deleteWorldTourGame(gameId) {
+    await deleteDoc(doc(db, 'world_tour_games', gameId))
+}
+
+/**
+ * Reset a World Tour game's live state (for stuck games)
+ * @param {string} gameId - Game document ID
+ */
+export async function resetWorldTourState(gameId) {
+    await updateDoc(doc(db, 'world_tour_games', gameId), {
+        current_team_id: null,
+        cooldown_ends_at: null,
+        live_state: {
+            game_started: false,
+            difficulty: null,
+            score: 0,
+            timer_started_at: null,
+            elapsed_seconds: 0,
+            is_paused: false
+        }
+    })
+}
+
+/**
+ * Cleanup World Tour stats (clear leaderboard and history)
+ * Also removes this game from the high score holder's fan_favourites
+ * @param {string} gameId - Game document ID
+ */
+export async function cleanupWorldTourStats(gameId) {
+    // First, get the current game to find the high score holder
+    const gameDoc = await getDoc(doc(db, 'world_tour_games', gameId))
+
+    if (gameDoc.exists()) {
+        const gameData = gameDoc.data()
+        const holderId = gameData.high_score_holder_id
+
+        // If there's a high score holder, remove this game from their fan_favourites
+        if (holderId) {
+            await updateDoc(doc(db, 'teams', holderId), {
+                fan_favourites: arrayRemove(gameId)
+            })
+        }
+    }
+
+    // Now reset the game stats
+    await updateDoc(doc(db, 'world_tour_games', gameId), {
+        attempts: [],
+        high_score: 0,
+        high_score_holder_id: null
     })
 }
 
