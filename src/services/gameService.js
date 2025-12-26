@@ -243,7 +243,7 @@ export async function createTerritory(data) {
         location_id: data.location_id || null,
         name: data.name || '',
         owner_id: data.owner_id || null,
-        stars: data.stars ?? 1,
+        stars: data.stars ?? 0,
         challenge_status: 'idle',
         under_attack: false,
         cooldown_ends_at: null,
