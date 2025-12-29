@@ -1,6 +1,7 @@
 import { useParams, useNavigate, useBlocker } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { subscribeToWorldTourGame } from '@/services/gameService'
+import { getAcceptedChallenge } from '@/services/challengeService'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useLocations } from '@/hooks/useLocations'
 import { useWorldTourHost } from '@/hooks/useWorldTourHost'
@@ -28,6 +29,7 @@ import { WorldTourToolTab } from '@/components/game/WorldTourToolTab'
 import { LeaderboardModal } from '@/components/game/LeaderboardModal'
 import { DifficultyModal } from '@/components/game/DifficultyModal'
 import { WorldTourResultModal } from '@/components/game/WorldTourResultModal'
+import { RedirectToChallengeModal } from '@/components/game/RedirectToChallengeModal'
 
 /**
  * WorldTourGamePage - Single-player World Tour Game Host Mode
@@ -47,6 +49,8 @@ export default function WorldTourGamePage() {
     const [endGameConfirmOpen, setEndGameConfirmOpen] = useState(false)
     const [resultModalOpen, setResultModalOpen] = useState(false)
     const [gameResult, setGameResult] = useState(null)
+    const [acceptedChallenge, setAcceptedChallenge] = useState(null)
+    const [redirectModalOpen, setRedirectModalOpen] = useState(false)
 
     // Locations for display
     const { locationsMap } = useLocations()
@@ -183,10 +187,18 @@ export default function WorldTourGamePage() {
         }
     }
 
-    // Handle result modal close - navigate to dashboard
-    const handleResultClose = () => {
+    // Handle result modal close - check for pending challenge or navigate to dashboard
+    const handleResultClose = async () => {
         setResultModalOpen(false)
-        navigate('/dashboard', { replace: true })
+
+        // Check if there's an accepted challenge waiting
+        const pendingChallenge = await getAcceptedChallenge(teamId)
+        if (pendingChallenge) {
+            setAcceptedChallenge(pendingChallenge)
+            setRedirectModalOpen(true)
+        } else {
+            navigate('/dashboard', { replace: true })
+        }
     }
 
     // Difficulty badge colors
@@ -399,6 +411,12 @@ export default function WorldTourGamePage() {
                 attempts={game?.attempts || []}
                 gameName={game?.name}
                 teamsMap={teamsMap}
+            />
+
+            {/* Redirect to Challenge Modal */}
+            <RedirectToChallengeModal
+                open={redirectModalOpen}
+                territory={acceptedChallenge}
             />
         </div>
     )

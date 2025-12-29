@@ -264,3 +264,33 @@ export async function cancelChallenge(territoryId) {
     // Reuse declineChallenge logic - same effect
     return declineChallenge(territoryId)
 }
+
+/**
+ * Get an accepted challenge where the team is the defender
+ * Used after World Tour games to check if there's a pending battle
+ * @param {string} teamId - Defending team ID
+ * @returns {Promise<Object|null>} Territory object or null
+ */
+export async function getAcceptedChallenge(teamId) {
+    try {
+        const q = query(
+            collection(db, 'territories'),
+            where('owner_id', '==', teamId),
+            where('challenge_status', '==', 'accepted')
+        )
+        const snapshot = await getDocs(q)
+
+        if (!snapshot.empty) {
+            const docSnap = snapshot.docs[0]
+            return {
+                id: docSnap.id,
+                ...docSnap.data()
+            }
+        }
+        return null
+    } catch (err) {
+        console.error('[challengeService] Error fetching accepted challenge:', err)
+        return null
+    }
+}
+
