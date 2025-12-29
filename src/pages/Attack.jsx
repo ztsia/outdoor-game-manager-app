@@ -22,7 +22,7 @@ import { PageHeader } from '@/components/ui/page-header'
 
 export default function Attack() {
     const { teamId } = useAuth()
-    const { territories, defendingTeams, loading: territoriesLoading } = useGameData()
+    const { territories, defendingTeams, attackingTeams, loading: territoriesLoading } = useGameData()
     const { team, loading: teamLoading } = useTeamData(teamId)
     const { teamsMap, loading: teamsLoading } = useAllTeams()
     const { locationsMap, loading: locationsLoading } = useLocations()
@@ -205,7 +205,7 @@ export default function Attack() {
             {/* Territory List */}
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {sortedTerritories.map((territory) => {
-                    const status = getTerritoryStatus(territory, teamId, defendingTeams, now, challengeTimeout)
+                    const status = getTerritoryStatus(territory, teamId, defendingTeams, attackingTeams, now, challengeTimeout)
                     const ownerTeam = teamsMap[territory.owner_id]
 
                     return (

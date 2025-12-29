@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { CircleCheck } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 /**
  * TerritoryStatusBadge - Displays the status of a territory
@@ -11,7 +12,10 @@ export function TerritoryStatusBadge({ status }) {
     if (status?.badge) {
         const IconComponent = status.badge.icon
         return (
-            <Badge variant={status.badge.variant} className="gap-1">
+            <Badge
+                variant={status.badge.variant}
+                className={cn("gap-1", status.badge.className)}
+            >
                 <IconComponent className="h-3 w-3" />
                 <span className="text-xs">{status.badge.text}</span>
             </Badge>

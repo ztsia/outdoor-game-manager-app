@@ -133,7 +133,7 @@ export async function initiateAttack(territoryId, teamId, cost) {
 /**
  * Subscribe to incoming challenges on territories owned by a team
  * @param {string} teamId - Defending team ID
- * @param {Function} callback - Called with challenge object or null
+ * @param {Function} callback - Called with array of challenge objects (empty if none)
  * @param {Function} onError - Called on error
  * @returns {Function} Unsubscribe function
  */
@@ -156,15 +156,12 @@ export function subscribeToIncomingChallenges(teamId, callback, onError) {
                 fromCache
             })
 
-            if (!snapshot.empty) {
-                const docSnap = snapshot.docs[0]
-                callback({
-                    id: docSnap.id,
-                    ...docSnap.data()
-                })
-            } else {
-                callback(null)
-            }
+            // Return all challenges as an array
+            const challenges = snapshot.docs.map(docSnap => ({
+                id: docSnap.id,
+                ...docSnap.data()
+            }))
+            callback(challenges)
         },
         (err) => {
             console.error('[challengeService] Query error:', err)

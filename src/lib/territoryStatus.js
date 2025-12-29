@@ -1,15 +1,16 @@
-import { Home, Swords, Clock, Shield } from 'lucide-react'
+import { Home, Swords, Clock, Shield, Rocket } from 'lucide-react'
 
 /**
  * Calculate the status of a territory for display purposes
  * @param {object} territory - The territory object
  * @param {string} myTeamId - The current user's team ID
  * @param {Set} defendingTeams - Set of team IDs currently defending
+ * @param {Set} attackingTeams - Set of team IDs currently attacking
  * @param {number} now - Current timestamp in ms
  * @param {number} challengeTimeout - Timeout duration in seconds
  * @returns {object} Status object { disabled, reason, badge }
  */
-export function getTerritoryStatus(territory, myTeamId, defendingTeams, now, challengeTimeout) {
+export function getTerritoryStatus(territory, myTeamId, defendingTeams, attackingTeams, now, challengeTimeout) {
     // Own territory - can't attack yourself
     if (territory.owner_id === myTeamId) {
         return {
@@ -64,12 +65,31 @@ export function getTerritoryStatus(territory, myTeamId, defendingTeams, now, cha
         }
     }
 
+    // Team attack lock - owner is attacking elsewhere
+    if (attackingTeams && attackingTeams.has(territory.owner_id)) {
+        return {
+            disabled: true,
+            reason: 'attack_lock',
+            badge: {
+                icon: Rocket,
+                text: 'ATTACKING ELSEWHERE',
+                variant: 'outline',
+                className: 'bg-background/95 backdrop-blur shadow-sm'
+            }
+        }
+    }
+
     // Team defense lock - owner is defending elsewhere
     if (defendingTeams.has(territory.owner_id)) {
         return {
             disabled: true,
             reason: 'defense_lock',
-            badge: { icon: Shield, text: 'DEFENDING ELSEWHERE', variant: 'outline' }
+            badge: {
+                icon: Shield,
+                text: 'DEFENDING ELSEWHERE',
+                variant: 'outline',
+                className: 'bg-background/95 backdrop-blur shadow-sm'
+            }
         }
     }
 

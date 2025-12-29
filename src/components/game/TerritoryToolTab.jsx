@@ -132,7 +132,7 @@ export function TerritoryToolTab({
                         )}
 
                         {/* Timer Display */}
-                        <p className={`text-6xl font-mono font-bold mb-4 ${isCountdownFinished ? 'text-destructive' : ''}`}>
+                        <p className={`text-6xl font-mono font-bold mb-4 ${isCountdownFinished ? 'text-destructive animate-pulse' : ''}`}>
                             {timerMode === 'countdown'
                                 ? formatTime(countdownRemaining)
                                 : formatTime(sharedElapsed)

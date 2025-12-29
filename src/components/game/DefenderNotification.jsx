@@ -5,28 +5,28 @@ import { useChallengeResponse } from '@/hooks/useChallengeResponse'
 import { useActiveWorldTourGame } from '@/hooks/useActiveWorldTourGame'
 import { useTeamData } from '@/hooks/useTeamData'
 import { getGameRules } from '@/services/challengeService'
+import { MultipleAttacksModal } from '@/components/game/MultipleAttacksModal'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { TeamChip } from '@/components/ui/TeamChip'
-import { AlertTriangle, Shield, Swords, Eye, Clock } from 'lucide-react'
+import { AlertTriangle, Shield, Swords, Eye, Clock, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 
 /**
  * DefenderNotification - Global component that listens for incoming challenges
  * Shows Modal when idle, Banner when playing
- * Includes countdown timer and implicit decline on modal close
+ * Supports multiple simultaneous challenges with auto-decline on accept
  */
 export function DefenderNotification() {
     const { teamId, role } = useAuth()
     const navigate = useNavigate()
     const location = useLocation()
-    const { incomingChallenge, acceptChallenge, declineChallenge, loading } = useChallengeResponse(teamId)
+    const { incomingChallenges, acceptChallenge, declineChallenge, loading } = useChallengeResponse(teamId)
     const { activeGame: activeWorldTourGame } = useActiveWorldTourGame(teamId)
 
-    // Fetch attacker team data for the chip
-    const { team: attackerTeam } = useTeamData(incomingChallenge?.current_attacker_id)
-
+    // State for which challenge is selected (when viewing single challenge from list)
+    const [selectedChallenge, setSelectedChallenge] = useState(null)
     // State for dismissing banner temporarily
     const [bannerDismissed, setBannerDismissed] = useState(false)
     const [showModal, setShowModal] = useState(false)
@@ -36,6 +36,12 @@ export function DefenderNotification() {
     const timerRef = useRef(null)
     const hasDeclined = useRef(false)
 
+    // Current challenge to display (selected or first/only one)
+    const currentChallenge = selectedChallenge || (incomingChallenges.length === 1 ? incomingChallenges[0] : null)
+
+    // Fetch attacker team data for the chip
+    const { team: attackerTeam } = useTeamData(currentChallenge?.current_attacker_id)
+
     // Fetch game rules for timeout duration
     useEffect(() => {
         getGameRules().then(rules => {
@@ -43,15 +49,15 @@ export function DefenderNotification() {
         })
     }, [])
 
-    // Calculate and update countdown
+    // Calculate and update countdown for current challenge
     useEffect(() => {
-        if (!incomingChallenge?.challenged_at) {
+        if (!currentChallenge?.challenged_at) {
             setTimeRemaining(null)
             return
         }
 
-        const challengedAt = incomingChallenge.challenged_at.toDate?.()
-            || new Date(incomingChallenge.challenged_at)
+        const challengedAt = currentChallenge.challenged_at.toDate?.()
+            || new Date(currentChallenge.challenged_at)
         const expiresAt = new Date(challengedAt.getTime() + timeoutSeconds * 1000)
 
         const updateTimer = () => {
@@ -67,6 +73,7 @@ export function DefenderNotification() {
                 toast.info('Challenge expired')
                 setBannerDismissed(true)
                 setShowModal(false)
+                setSelectedChallenge(null)
             }
         }
 
@@ -78,15 +85,19 @@ export function DefenderNotification() {
                 clearInterval(timerRef.current)
             }
         }
-    }, [incomingChallenge?.challenged_at, incomingChallenge?.id, timeoutSeconds])
+    }, [currentChallenge?.challenged_at, currentChallenge?.id, timeoutSeconds])
 
-    // Reset hasDeclined when challenge changes
+    // Reset states when challenges change
     useEffect(() => {
         hasDeclined.current = false
-    }, [incomingChallenge?.id])
+        // If selected challenge is no longer in the list, clear selection
+        if (selectedChallenge && !incomingChallenges.find(c => c.id === selectedChallenge.id)) {
+            setSelectedChallenge(null)
+        }
+    }, [incomingChallenges, selectedChallenge])
 
-    // Only show for managers
-    if (role !== 'MANAGER' || !incomingChallenge) {
+    // Only show for managers with incoming challenges
+    if (role !== 'MANAGER' || incomingChallenges.length === 0) {
         return null
     }
 
@@ -95,46 +106,73 @@ export function DefenderNotification() {
     const isWorldTourInProgress = !!activeWorldTourGame
     const isPlaying = isInTerritoryGame || isWorldTourInProgress
 
+    // Handle accept - also decline all other challenges
     const handleAccept = async () => {
+        if (!currentChallenge) return
         if (timerRef.current) clearInterval(timerRef.current)
-        const result = await acceptChallenge(incomingChallenge.id)
+
+        const result = await acceptChallenge(currentChallenge.id)
         if (result.success) {
-            toast.success('Challenge accepted!')
+            // Race condition mitigation: fetch latest challenges before declining
+            const otherChallenges = incomingChallenges.filter(c => c.id !== currentChallenge.id)
+
+            // Decline all other challenges
+            if (otherChallenges.length > 0) {
+                for (const other of otherChallenges) {
+                    await declineChallenge(other.id)
+                }
+                toast.success(`Challenge accepted! ${otherChallenges.length} other challenge(s) declined.`)
+            } else {
+                toast.success('Challenge accepted!')
+            }
+
             setShowModal(false)
-            navigate(`/game/${incomingChallenge.id}`)
+            setSelectedChallenge(null)
+            navigate(`/game/${currentChallenge.id}`)
         } else {
             toast.error(result.error || 'Failed to accept challenge')
         }
     }
 
     const handleDecline = async () => {
+        if (!currentChallenge) return
         if (hasDeclined.current) return
         hasDeclined.current = true
         if (timerRef.current) clearInterval(timerRef.current)
 
-        const result = await declineChallenge(incomingChallenge.id)
+        const result = await declineChallenge(currentChallenge.id)
         if (result.success) {
             toast.success('Challenge declined. Attacker refunded.')
             setShowModal(false)
+            setSelectedChallenge(null)
         } else {
             toast.error(result.error || 'Failed to decline challenge')
             hasDeclined.current = false
         }
     }
 
-    // Handle modal close = implicit decline
+    // Handle modal close = implicit decline (only for single challenge view)
     const handleModalClose = (open) => {
-        if (!open) {
+        if (!open && currentChallenge) {
             handleDecline()
         }
+    }
+
+    // Handle back to list (for multiple challenges)
+    const handleBack = () => {
+        setSelectedChallenge(null)
     }
 
     const handleWait = () => {
         setBannerDismissed(true)
         setShowModal(false)
+        setSelectedChallenge(null)
     }
 
-    const territoryName = incomingChallenge.name || 'Unknown Territory'
+    const handleSelectChallenge = (challenge) => {
+        setSelectedChallenge(challenge)
+        hasDeclined.current = false
+    }
 
     const formatTime = (seconds) => {
         if (seconds === null) return '--:--'
@@ -145,8 +183,27 @@ export function DefenderNotification() {
 
     const isLowTime = timeRemaining !== null && timeRemaining <= 30
 
-    // Show Modal when idle/dashboard OR when user clicks VIEW
-    if (!isPlaying || showModal) {
+    // Multiple challenges - show list modal first
+    if (incomingChallenges.length > 1 && !selectedChallenge && (!isPlaying || showModal)) {
+        return (
+            <MultipleAttacksModal
+                challenges={incomingChallenges}
+                onSelect={handleSelectChallenge}
+                open={true}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setShowModal(false)
+                    }
+                }}
+            />
+        )
+    }
+
+    // Show single challenge modal when idle/dashboard OR when user clicks VIEW OR selected from list
+    if (currentChallenge && (!isPlaying || showModal)) {
+        const territoryName = currentChallenge.name || 'Unknown Territory'
+        const showBackButton = incomingChallenges.length > 1
+
         return (
             <Dialog open={true} onOpenChange={handleModalClose}>
                 <DialogContent className="sm:max-w-md">
@@ -170,10 +227,10 @@ export function DefenderNotification() {
                         <p className="text-lg font-bold">{territoryName}</p>
                         <div className="mt-2 flex items-center justify-center gap-2">
                             <Badge variant="outline">
-                                {incomingChallenge.stars} ⭐
+                                {currentChallenge.stars} ⭐
                             </Badge>
                             <Badge variant="secondary">
-                                {incomingChallenge.bet_amount?.toLocaleString() || 0} Followers at stake
+                                {currentChallenge.bet_amount?.toLocaleString() || 0} Followers at stake
                             </Badge>
                         </div>
 
@@ -192,6 +249,16 @@ export function DefenderNotification() {
                         </p>
                     </div>
 
+                    {/* Warning about other challenges being declined */}
+                    {incomingChallenges.length > 1 && (
+                        <div className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 p-3 text-sm text-amber-800 dark:text-amber-200">
+                            <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                            <span>
+                                Accepting this will decline {incomingChallenges.length - 1} other challenge(s).
+                            </span>
+                        </div>
+                    )}
+
                     <DialogFooter className="flex-col gap-2 sm:flex-col">
                         <Button
                             className="w-full"
@@ -209,7 +276,17 @@ export function DefenderNotification() {
                         >
                             DECLINE
                         </Button>
-                        {isPlaying && !isWorldTourInProgress && (
+                        {showBackButton && (
+                            <Button
+                                variant="outline"
+                                className="w-full"
+                                onClick={handleBack}
+                            >
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back to List
+                            </Button>
+                        )}
+                        {isPlaying && !isWorldTourInProgress && !showBackButton && (
                             <Button
                                 variant="outline"
                                 className="w-full"
@@ -226,6 +303,7 @@ export function DefenderNotification() {
 
     // Show Banner when playing World Tour (and not dismissed)
     if (isWorldTourInProgress && !bannerDismissed) {
+        const territoryName = currentChallenge?.name || `${incomingChallenges.length} territories`
         return (
             <div className="fixed top-0 left-0 right-0 z-50 bg-destructive p-3 text-destructive-foreground shadow-lg animate-[pop-shrink_2s_ease-in-out_infinite]">
                 <div className="container mx-auto flex items-center justify-between gap-4">

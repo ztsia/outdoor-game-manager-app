@@ -11,7 +11,7 @@ import { subscribeToTerritory } from '@/services/gameService'
  * Used by defenders to Accept/Decline incoming attacks
  */
 export function useChallengeResponse(myTeamId) {
-    const [incomingChallenge, setIncomingChallenge] = useState(null)
+    const [incomingChallenges, setIncomingChallenges] = useState([])
     const [loading, setLoading] = useState(false)
 
     // Listen for incoming challenges on territories owned by myTeamId
@@ -20,13 +20,13 @@ export function useChallengeResponse(myTeamId) {
 
         const unsubscribe = subscribeToIncomingChallenges(
             myTeamId,
-            (challengeData) => {
-                if (challengeData) {
-                    console.log('[useChallengeResponse] Incoming challenge:', challengeData)
+            (challengesData) => {
+                if (challengesData && challengesData.length > 0) {
+                    console.log('[useChallengeResponse] Incoming challenges:', challengesData)
                 } else {
                     console.log('[useChallengeResponse] No incoming challenges')
                 }
-                setIncomingChallenge(challengeData)
+                setIncomingChallenges(challengesData || [])
             },
             (error) => {
                 console.error('[useChallengeResponse] Query error:', error)
@@ -59,7 +59,7 @@ export function useChallengeResponse(myTeamId) {
     }
 
     return {
-        incomingChallenge,
+        incomingChallenges,
         acceptChallenge,
         declineChallenge,
         loading

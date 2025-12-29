@@ -38,5 +38,17 @@ export function useGameData() {
         return teamsUnderAttack
     }, [territories])
 
-    return { territories, defendingTeams, loading, error }
+    // Compute attacking teams - teams that have initiated an attack (requesting or accepted)
+    const attackingTeams = useMemo(() => {
+        const teamsAttacking = new Set()
+        territories.forEach((territory) => {
+            const status = territory.challenge_status
+            if ((status === 'requesting' || status === 'accepted') && territory.current_attacker_id) {
+                teamsAttacking.add(territory.current_attacker_id)
+            }
+        })
+        return teamsAttacking
+    }, [territories])
+
+    return { territories, defendingTeams, attackingTeams, loading, error }
 }
