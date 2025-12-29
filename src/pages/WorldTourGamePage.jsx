@@ -22,8 +22,7 @@ import { toast } from 'sonner'
 
 // Tab components
 import { RulesTab } from '@/components/game/RulesTab'
-import { ScoreboardTab } from '@/components/game/ScoreboardTab'
-import { TimerTab } from '@/components/game/TimerTab'
+import { WorldTourToolTab } from '@/components/game/WorldTourToolTab'
 
 // World Tour specific components
 import { LeaderboardModal } from '@/components/game/LeaderboardModal'
@@ -303,20 +302,15 @@ export default function WorldTourGamePage() {
                     // Not playing - Rules only
                     <RulesTab gameInfo={gameInfo} />
                 ) : (
-                    // Playing - All tabs based on game_info
-                    <Tabs defaultValue="rules" className="w-full">
+                    // Playing - Rules + Tool tabs
+                    <Tabs defaultValue="tool" className="w-full h-full flex flex-col">
                         <TabsList className="flex w-auto mx-4 my-2">
                             <TabsTrigger value="rules">
                                 Rules
                             </TabsTrigger>
-                            {gameInfo.has_scoreboard && (
-                                <TabsTrigger value="scoreboard">
-                                    Scoreboard
-                                </TabsTrigger>
-                            )}
-                            {gameInfo.has_timer && (
-                                <TabsTrigger value="timer">
-                                    Timer
+                            {(gameInfo.has_scoreboard || gameInfo.has_timer) && (
+                                <TabsTrigger value="tool">
+                                    Tool
                                 </TabsTrigger>
                             )}
                         </TabsList>
@@ -325,29 +319,13 @@ export default function WorldTourGamePage() {
                             <RulesTab gameInfo={gameInfo} />
                         </TabsContent>
 
-                        {gameInfo.has_scoreboard && (
-                            <TabsContent value="scoreboard" className="mt-0">
-                                <ScoreboardTab
-                                    territory={game}
-                                    role="player"
-                                    mode="single"
-                                    onIncrement={() => worldTourHost.incrementScore()}
-                                    onDecrement={() => worldTourHost.decrementScore()}
-                                    onScoreChange={(newScore) => worldTourHost.setScore(newScore)}
-                                    playerColor={team?.color}
-                                    playerName={team?.name?.toUpperCase() || 'PLAYER'}
-                                />
-                            </TabsContent>
-                        )}
-
-                        {gameInfo.has_timer && (
-                            <TabsContent value="timer" className="mt-0">
-                                <TimerTab
-                                    territory={game}
-                                    role="player"
-                                    onStartSharedTimer={() => worldTourHost.startTimer()}
-                                    onPauseSharedTimer={(elapsed) => worldTourHost.pauseTimer(elapsed)}
-                                    onResetSharedTimer={() => worldTourHost.resetTimer()}
+                        {(gameInfo.has_scoreboard || gameInfo.has_timer) && (
+                            <TabsContent value="tool" className="mt-0 flex-1">
+                                <WorldTourToolTab
+                                    game={game}
+                                    host={worldTourHost}
+                                    teamColor={team?.color}
+                                    teamName={team?.name?.toUpperCase() || 'PLAYER'}
                                 />
                             </TabsContent>
                         )}

@@ -16,8 +16,7 @@ export function useGameHost(territoryId) {
             startSharedTimer: async () => { },
             pauseSharedTimer: async () => { },
             resetSharedTimer: async () => { },
-            startSplitTimer: async () => { },
-            pauseSplitTimer: async () => { },
+            setCountdownDuration: async () => { },
             requestEndGame: async () => { },
             submitVote: async () => { },
             setVoteMismatch: async () => { },
@@ -105,13 +104,14 @@ export function useGameHost(territoryId) {
     }
 
     /**
-     * Reset shared timer
+     * Reset shared timer (also clears countdown duration)
      */
     const resetSharedTimer = async () => {
         try {
             await updateDoc(territoryRef, {
                 'live_state.shared_elapsed_seconds': 0,
-                'live_state.timer_started_at': null
+                'live_state.timer_started_at': null,
+                'live_state.countdown_duration': 0
             })
             console.log('[useGameHost] Shared timer reset')
         } catch (err) {
@@ -133,48 +133,6 @@ export function useGameHost(territoryId) {
         } catch (err) {
             console.error('[useGameHost] Failed to set countdown duration:', err)
             toast.error('Failed to set timer duration')
-        }
-    }
-
-    /**
-     * Start split timer for a specific role
-     */
-    const startSplitTimer = async (role) => {
-        try {
-            const timerField = role === 'attacker'
-                ? 'live_state.attacker_timer_started_at'
-                : 'live_state.defender_timer_started_at'
-
-            await updateDoc(territoryRef, {
-                [timerField]: Timestamp.now()
-            })
-            console.log(`[useGameHost] ${role} timer started`)
-        } catch (err) {
-            console.error('[useGameHost] Failed to start split timer:', err)
-            toast.error('Failed to start timer')
-        }
-    }
-
-    /**
-     * Pause split timer for a specific role
-     */
-    const pauseSplitTimer = async (role, currentElapsed) => {
-        try {
-            const elapsedField = role === 'attacker'
-                ? 'live_state.attacker_elapsed_seconds'
-                : 'live_state.defender_elapsed_seconds'
-            const timerField = role === 'attacker'
-                ? 'live_state.attacker_timer_started_at'
-                : 'live_state.defender_timer_started_at'
-
-            await updateDoc(territoryRef, {
-                [elapsedField]: currentElapsed,
-                [timerField]: null
-            })
-            console.log(`[useGameHost] ${role} timer paused at ${currentElapsed}s`)
-        } catch (err) {
-            console.error('[useGameHost] Failed to pause split timer:', err)
-            toast.error('Failed to pause timer')
         }
     }
 
@@ -363,9 +321,6 @@ export function useGameHost(territoryId) {
         pauseSharedTimer,
         resetSharedTimer,
         setCountdownDuration,
-        // Split timer
-        startSplitTimer,
-        pauseSplitTimer,
         // Voting
         requestEndGame,
         submitVote,

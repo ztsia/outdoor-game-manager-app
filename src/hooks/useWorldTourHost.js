@@ -18,7 +18,8 @@ export function useWorldTourHost(gameId) {
             setScore: async () => { },
             startTimer: async () => { },
             pauseTimer: async () => { },
-            resetTimer: async () => { }
+            resetTimer: async () => { },
+            setCountdownDuration: async () => { }
         }
     }
 
@@ -226,10 +227,26 @@ export function useWorldTourHost(gameId) {
         try {
             await updateDoc(gameRef, {
                 'live_state.timer_started_at': null,
-                'live_state.elapsed_seconds': 0
+                'live_state.elapsed_seconds': 0,
+                'live_state.countdown_duration': 0
             })
         } catch (err) {
             console.error('[useWorldTourHost] Failed to reset timer:', err)
+        }
+    }
+
+    /**
+     * Set countdown duration
+     * @param {number} seconds - Duration in seconds
+     */
+    const setCountdownDuration = async (seconds) => {
+        try {
+            await updateDoc(gameRef, {
+                'live_state.countdown_duration': seconds
+            })
+            console.log(`[useWorldTourHost] Countdown duration set to ${seconds}s`)
+        } catch (err) {
+            console.error('[useWorldTourHost] Failed to set countdown duration:', err)
         }
     }
 
@@ -242,7 +259,8 @@ export function useWorldTourHost(gameId) {
         setScore,
         startTimer,
         pauseTimer,
-        resetTimer
+        resetTimer,
+        setCountdownDuration
     }
 }
 

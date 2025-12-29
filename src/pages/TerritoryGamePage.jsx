@@ -20,8 +20,7 @@ import { toast } from 'sonner'
 
 // Tab components
 import { RulesTab } from '@/components/game/RulesTab'
-import { ScoreboardTab } from '@/components/game/ScoreboardTab'
-import { TimerTab } from '@/components/game/TimerTab'
+import { TerritoryToolTab } from '@/components/game/TerritoryToolTab'
 
 // Helper function for text contrast on colored backgrounds
 function getContrastTextColor(hexColor) {
@@ -374,20 +373,15 @@ export default function TerritoryGamePage() {
                     // View Mode - Rules only
                     <RulesTab gameInfo={gameInfo} defenderColor={defenderTeam?.color} />
                 ) : (
-                    // Battle Mode - All tabs
-                    <Tabs defaultValue="rules" className="w-full">
+                    // Battle Mode - Rules + Tool tabs
+                    <Tabs defaultValue={gameStarted ? 'tool' : 'rules'} className="w-full h-full flex flex-col">
                         <TabsList className="flex w-auto mx-4 my-2">
                             <TabsTrigger value="rules">
                                 Rules
                             </TabsTrigger>
-                            {gameStarted && gameInfo.has_scoreboard && (
-                                <TabsTrigger value="scoreboard">
-                                    Scoreboard
-                                </TabsTrigger>
-                            )}
-                            {gameStarted && gameInfo.has_timer && (
-                                <TabsTrigger value="timer">
-                                    Timer
+                            {gameStarted && (gameInfo.has_scoreboard || gameInfo.has_timer) && (
+                                <TabsTrigger value="tool">
+                                    Tool
                                 </TabsTrigger>
                             )}
                         </TabsList>
@@ -396,33 +390,21 @@ export default function TerritoryGamePage() {
                             <RulesTab gameInfo={gameInfo} defenderColor={defenderTeam?.color} />
                         </TabsContent>
 
-                        {gameStarted && gameInfo.has_scoreboard && (
-                            <TabsContent value="scoreboard" className="mt-0">
-                                <ScoreboardTab
-                                    territory={territory}
-                                    role={role}
-                                    onIncrement={gameHost.incrementScore}
-                                    onDecrement={gameHost.decrementScore}
-                                    attackerColor={attackerTeam?.color}
-                                    defenderColor={defenderTeam?.color}
-                                />
-                            </TabsContent>
-                        )}
-
-                        {gameStarted && gameInfo.has_timer && (
-                            <TabsContent value="timer" className="mt-0">
-                                <TimerTab
+                        {gameStarted && (gameInfo.has_scoreboard || gameInfo.has_timer) && (
+                            <TabsContent value="tool" className="mt-0 flex-1">
+                                <TerritoryToolTab
                                     territory={territory}
                                     role={role}
                                     attackerColor={attackerTeam?.color}
                                     defenderColor={defenderTeam?.color}
+                                    attackerName={attackerName}
+                                    defenderName={defenderName}
                                     onStartSharedTimer={gameHost.startSharedTimer}
                                     onPauseSharedTimer={gameHost.pauseSharedTimer}
                                     onResetSharedTimer={gameHost.resetSharedTimer}
                                     onSetCountdownDuration={gameHost.setCountdownDuration}
-                                    onStartSplitTimer={gameHost.startSplitTimer}
-                                    onPauseSplitTimer={gameHost.pauseSplitTimer}
-                                    onVictory={handleVictory}
+                                    onIncrement={gameHost.incrementScore}
+                                    onDecrement={gameHost.decrementScore}
                                 />
                             </TabsContent>
                         )}
