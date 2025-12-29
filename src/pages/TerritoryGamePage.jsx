@@ -1,6 +1,7 @@
 import { useParams, useNavigate, useBlocker } from 'react-router-dom'
 import { useEffect, useState, useRef } from 'react'
 import { subscribeToTerritory, getTeam } from '@/services/gameService'
+import { getGameRules } from '@/services/challengeService'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useLocations } from '@/hooks/useLocations'
 import { useGameHost } from '@/hooks/useGameHost'
@@ -55,14 +56,21 @@ export default function TerritoryGamePage() {
     // Track previous challenge status for passive game end detection
     const prevChallengeStatus = useRef(null)
 
-    // Max stars constant
-    const MAX_STARS = 3
+    // Max stars from config (with fallback)
+    const [maxStars, setMaxStars] = useState(3)
 
     // Locations for display
     const { locationsMap } = useLocations()
 
     // Game host controls
     const gameHost = useGameHost(territoryId)
+
+    // Fetch game rules config on mount
+    useEffect(() => {
+        getGameRules().then(rules => {
+            setMaxStars(rules.max_territory_stars || 3)
+        })
+    }, [])
 
     console.log('[TerritoryGamePage] Mounted with territoryId:', territoryId)
 
@@ -169,7 +177,7 @@ export default function TerritoryGamePage() {
                     (winner === 'defender' && isDefender)
 
                 const currentStars = territory.stars || 1
-                const canAddStar = currentStars < MAX_STARS
+                const canAddStar = currentStars < maxStars
                 const starsAdded = isWinner && canAddStar
                 const newStars = canAddStar ? currentStars + 1 : currentStars
 
@@ -204,7 +212,7 @@ export default function TerritoryGamePage() {
                 gameHost.setVoteMismatch()
             }
         }
-    }, [attackerVote, defenderVote, endGameRequested, territory, gameHost, navigate, isAttacker, isDefender, territoryId, hasResolved, MAX_STARS])
+    }, [attackerVote, defenderVote, endGameRequested, territory, gameHost, navigate, isAttacker, isDefender, territoryId, hasResolved, maxStars])
 
     // PASSIVE game end watcher - detects when another client resolved the game
     useEffect(() => {

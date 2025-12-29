@@ -55,7 +55,7 @@ export function GameResultModal({ result, onClose }) {
                                 <Star key={i} className="h-5 w-5 fill-current" />
                             ))}
                         </div>
-                        {result.starsAdded !== false && (
+                        {result.starsAdded === true && (
                             <p className="text-xs text-muted-foreground mt-1">
                                 +1 star added
                             </p>

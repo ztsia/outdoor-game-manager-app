@@ -37,7 +37,7 @@ export function AttackChallengeModal({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className="sm:max-w-md gap-0"
+                className="sm:max-w-md gap-0 max-h-[85vh] overflow-y-auto"
                 onOpenAutoFocus={(e) => e.preventDefault()}
             >
                 {/* Header */}
@@ -92,10 +92,15 @@ export function AttackChallengeModal({
                                     <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 w-52 p-3 rounded-lg bg-popover border shadow-lg text-xs animate-in fade-in zoom-in-95 duration-200">
                                         <p className="font-semibold mb-2">Cost by Territory Stars:</p>
                                         <div className="space-y-1 mb-3">
-                                            <div className="flex justify-between"><span>0 ⭐</span><span>{formatNumber(starCosts?.[0] || 10000)}</span></div>
-                                            <div className="flex justify-between"><span>1 ⭐</span><span>{formatNumber(starCosts?.[1] || 50000)}</span></div>
-                                            <div className="flex justify-between"><span>2 ⭐</span><span>{formatNumber(starCosts?.[2] || 100000)}</span></div>
-                                            <div className="flex justify-between"><span>3 ⭐</span><span>{formatNumber(starCosts?.[3] || 500000)}</span></div>
+                                            {starCosts && Object.entries(starCosts)
+                                                .sort(([a], [b]) => Number(a) - Number(b))
+                                                .map(([stars, cost]) => (
+                                                    <div key={stars} className="flex justify-between">
+                                                        <span>{stars} ⭐</span>
+                                                        <span>{formatNumber(cost)}</span>
+                                                    </div>
+                                                ))
+                                            }
                                         </div>
                                         <Separator className="my-2" />
                                         <p className="text-muted-foreground">
