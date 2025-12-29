@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
-import { Loader2, Save, MapPin, Globe, Trophy } from 'lucide-react'
+import { Loader2, Save, MapPin, Globe, Trophy, Calculator } from 'lucide-react'
 import { toast } from 'sonner'
 
 // Time options for selectors
@@ -43,6 +43,11 @@ export function SystemConfigTab() {
             rookie: { min_followers: 10000, min_stars: 0 },
             rising_star: { min_followers: 100000, min_stars: 3 },
             legend: { min_followers: 1000000, min_stars: 10, min_fan_favourites: 1 }
+        },
+        rank_weights: {
+            followers: 1,
+            star: 20000,
+            fan_favourite: 100000
         }
     })
 
@@ -67,7 +72,8 @@ export function SystemConfigTab() {
                         world_tour_cooldown_minutes: data.world_tour_cooldown_minutes ?? prev.world_tour_cooldown_minutes,
                         max_territory_stars: data.max_territory_stars ?? prev.max_territory_stars,
                         star_costs: data.star_costs ?? prev.star_costs,
-                        rank_thresholds: data.rank_thresholds ?? prev.rank_thresholds
+                        rank_thresholds: data.rank_thresholds ?? prev.rank_thresholds,
+                        rank_weights: data.rank_weights ?? prev.rank_weights
                     }))
 
                     // Determine enabled state from existing data
@@ -186,7 +192,8 @@ export function SystemConfigTab() {
                 world_tour_cooldown_minutes: formData.world_tour_cooldown_minutes,
                 max_territory_stars: formData.max_territory_stars,
                 star_costs: formData.star_costs,
-                rank_thresholds: cleanThresholds
+                rank_thresholds: cleanThresholds,
+                rank_weights: formData.rank_weights
             }
 
             await updateDoc(doc(db, 'system_config', 'game_rules'), updates)
@@ -422,6 +429,68 @@ export function SystemConfigTab() {
                             {key !== 'legend' && <Separator />}
                         </div>
                     ))}
+                </CardContent>
+            </Card>
+
+            {/* Rank Calculation Weights Section */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Calculator className="h-5 w-5" />
+                        Rank Calculation Weights
+                    </CardTitle>
+                    <CardDescription>
+                        Configure point values for calculating team scores
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                            <Label>Follower Weight</Label>
+                            <Input
+                                type="text"
+                                value={formatNumber(formData.rank_weights.followers)}
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value.replace(/,/g, ''), 10) || 0
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        rank_weights: { ...prev.rank_weights, followers: val }
+                                    }))
+                                }}
+                            />
+                            <p className="text-xs text-muted-foreground">Points per follower</p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Star Weight</Label>
+                            <Input
+                                type="text"
+                                value={formatNumber(formData.rank_weights.star)}
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value.replace(/,/g, ''), 10) || 0
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        rank_weights: { ...prev.rank_weights, star: val }
+                                    }))
+                                }}
+                            />
+                            <p className="text-xs text-muted-foreground">Points per star owned</p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Fan Favourite Weight</Label>
+                            <Input
+                                type="text"
+                                value={formatNumber(formData.rank_weights.fan_favourite)}
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value.replace(/,/g, ''), 10) || 0
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        rank_weights: { ...prev.rank_weights, fan_favourite: val }
+                                    }))
+                                }}
+                            />
+                            <p className="text-xs text-muted-foreground">Points per fan favourite title</p>
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
 
