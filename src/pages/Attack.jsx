@@ -49,7 +49,7 @@ export default function Attack() {
     // Fetch game rules for timeout duration
     useEffect(() => {
         getGameRules().then(rules => {
-            setChallengeTimeout(rules.challengeTimeoutSeconds || 120)
+            setChallengeTimeout(rules.challenge_timeout_seconds || 120)
         })
     }, [])
 
