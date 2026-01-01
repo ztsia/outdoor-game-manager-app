@@ -176,7 +176,7 @@ export default function TerritoryGamePage() {
                     (winner === 'attacker' && isAttacker) ||
                     (winner === 'defender' && isDefender)
 
-                const currentStars = territory.stars || 1
+                const currentStars = territory.stars ?? 0
                 const canAddStar = currentStars < maxStars
                 const starsAdded = isWinner && canAddStar
                 const newStars = canAddStar ? currentStars + 1 : currentStars
@@ -240,7 +240,7 @@ export default function TerritoryGamePage() {
             const winner = iAmWinner ? (wasAttacker ? 'attacker' : 'defender') : (wasAttacker ? 'defender' : 'attacker')
 
             const betAmount = territory.bet_amount || 0
-            const currentStars = territory.stars || 1
+            const currentStars = territory.stars ?? 0
 
             const resultData = {
                 winner,

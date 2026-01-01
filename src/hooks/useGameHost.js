@@ -240,7 +240,7 @@ export function useGameHost(territoryId) {
                 const defenderData = defenderDoc.data()
 
                 // Check if we can add stars
-                const currentStars = currentTerritoryData.stars || 1
+                const currentStars = currentTerritoryData.stars ?? 0
                 const canAddStar = currentStars < maxStars
 
                 if (winner === 'attacker') {
