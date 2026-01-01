@@ -36,7 +36,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { RichTextEditor } from '@/components/ui/RichTextEditor'
-import { Trash2, Loader2, RotateCcw, Eraser, ChevronsUpDown, Check } from 'lucide-react'
+import { Trash2, Loader2, RotateCcw, Eraser, ChevronsUpDown, Check, Info } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { validateFormula } from '@/lib/formulaEvaluator'
@@ -80,6 +80,7 @@ export function WorldTourModal({
     const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
     const [cleanupConfirmOpen, setCleanupConfirmOpen] = useState(false)
     const [locationPopoverOpen, setLocationPopoverOpen] = useState(false)
+    const [formulaHelpOpen, setFormulaHelpOpen] = useState(false)
 
     // Filter available locations (world_tour type, not taken or current game)
     const availableLocations = locations.filter(loc => {
@@ -397,10 +398,20 @@ export function WorldTourModal({
                                     placeholder="e.g., SCORE * 10 or IF(SCORE > 5, SCORE * 2, SCORE)"
                                     rows={2}
                                 />
-                                <p className="text-xs text-muted-foreground">
-                                    Use <code className="bg-muted px-1 rounded">SCORE</code> for the raw value ({hasScoreboard ? 'scoreboard count' : 'elapsed seconds'}).
-                                    Supports: SUM, IF, ABS, ROUND, etc.
-                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <p className="text-xs text-muted-foreground">
+                                        Use <code className="bg-muted px-1 rounded">SCORE</code> for the raw value.
+                                    </p>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-5 px-2 text-xs"
+                                        onClick={() => setFormulaHelpOpen(true)}
+                                    >
+                                        <Info className="h-3 w-3 mr-1" /> Help
+                                    </Button>
+                                </div>
                             </div>
                         )}
 
@@ -531,6 +542,101 @@ export function WorldTourModal({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Score Formula Help Modal */}
+            <Dialog open={formulaHelpOpen} onOpenChange={setFormulaHelpOpen}>
+                <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>📐 Score Formula Help</DialogTitle>
+                        <DialogDescription>
+                            Write an Excel-like formula to process the raw score before difficulty multipliers are applied.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 text-sm">
+                        {/* Quick Start */}
+                        <div className="space-y-2">
+                            <h4 className="font-semibold">Quick Start</h4>
+                            <p className="text-muted-foreground">
+                                Use <code className="bg-muted px-1 rounded">SCORE</code> to reference the raw input value.
+                            </p>
+                            <div className="bg-muted p-2 rounded font-mono text-xs">
+                                SCORE * 10 + 5
+                            </div>
+                        </div>
+
+                        {/* Operators */}
+                        <div className="space-y-2">
+                            <h4 className="font-semibold">Operators</h4>
+                            <div className="grid grid-cols-2 gap-1 text-xs">
+                                <div><code className="font-mono">+</code> Addition</div>
+                                <div><code className="font-mono">-</code> Subtraction</div>
+                                <div><code className="font-mono">*</code> Multiplication</div>
+                                <div><code className="font-mono">/</code> Division</div>
+                                <div><code className="font-mono">^</code> Power</div>
+                                <div><code className="font-mono">%</code> Modulo</div>
+                            </div>
+                        </div>
+
+                        {/* Common Functions */}
+                        <div className="space-y-2">
+                            <h4 className="font-semibold">Common Functions</h4>
+                            <div className="grid grid-cols-1 gap-1 text-xs">
+                                <div><code className="font-mono">IF(cond, then, else)</code> — Conditional</div>
+                                <div><code className="font-mono">SUM(a, b, ...)</code> — Sum values</div>
+                                <div><code className="font-mono">ROUND(num, digits)</code> — Round number</div>
+                                <div><code className="font-mono">FLOOR(num)</code> — Round down</div>
+                                <div><code className="font-mono">CEILING(num)</code> — Round up</div>
+                                <div><code className="font-mono">ABS(num)</code> — Absolute value</div>
+                                <div><code className="font-mono">MIN(a, b, ...)</code> — Minimum</div>
+                                <div><code className="font-mono">MAX(a, b, ...)</code> — Maximum</div>
+                                <div><code className="font-mono">AVERAGE(a, b, ...)</code> — Average</div>
+                                <div><code className="font-mono">MOD(num, divisor)</code> — Modulo</div>
+                                <div><code className="font-mono">POWER(base, exp)</code> — Power</div>
+                                <div><code className="font-mono">SQRT(num)</code> — Square root</div>
+                            </div>
+                        </div>
+
+                        {/* Comparisons */}
+                        <div className="space-y-2">
+                            <h4 className="font-semibold">Comparisons (for IF)</h4>
+                            <div className="grid grid-cols-2 gap-1 text-xs">
+                                <div><code className="font-mono">=</code> Equal</div>
+                                <div><code className="font-mono">{`<>`}</code> Not equal</div>
+                                <div><code className="font-mono">{`>`}</code> Greater than</div>
+                                <div><code className="font-mono">{`>=`}</code> Greater or equal</div>
+                                <div><code className="font-mono">{`<`}</code> Less than</div>
+                                <div><code className="font-mono">{`<=`}</code> Less or equal</div>
+                            </div>
+                        </div>
+
+                        {/* Examples */}
+                        <div className="space-y-2">
+                            <h4 className="font-semibold">Examples</h4>
+                            <div className="space-y-1 text-xs text-muted-foreground">
+                                <div><code className="bg-muted px-1 rounded">SCORE * 1000</code> — 1 bean = 1000 followers</div>
+                                <div><code className="bg-muted px-1 rounded">{`IF(SCORE > 10, SCORE * 2, SCORE)`}</code> — Bonus if {`>`}10</div>
+                                <div><code className="bg-muted px-1 rounded">SUM(SCORE * 1000, SCORE * 2000, SCORE * 5000)</code> — Tiered scoring</div>
+                            </div>
+                        </div>
+
+                        {/* AI Help */}
+                        <div className="space-y-2 bg-muted/50 p-3 rounded-lg">
+                            <h4 className="font-semibold">🤖 Need Help?</h4>
+                            <p className="text-xs text-muted-foreground">
+                                Copy this prompt and ask an AI (ChatGPT, Claude, etc.):
+                            </p>
+                            <div className="bg-background p-2 rounded text-xs select-all border">
+                                Write an Excel formula to calculate [describe your scoring rule]. Use the variable SCORE as the raw input value. Only return the formula, no explanation.
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button onClick={() => setFormulaHelpOpen(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     )
 }
