@@ -626,8 +626,25 @@ export function WorldTourModal({
                             <p className="text-xs text-muted-foreground">
                                 Copy this prompt and ask an AI (ChatGPT, Claude, etc.):
                             </p>
-                            <div className="bg-background p-2 rounded text-xs select-all border">
-                                Write an Excel formula to calculate [describe your scoring rule]. Use the variable SCORE as the raw input value. Only return the formula, no explanation.
+                            <div className="bg-background p-2 rounded text-xs select-all border whitespace-pre-wrap font-mono">
+                                {`# Task
+Write an Excel-style formula for a game scoring system.
+
+# Important
+- This is NOT a spreadsheet. There are NO cell references (A1, B2, etc.)
+- You have ONE variable: SCORE (the raw input number)
+- Use ONLY: SCORE, numbers, operators, and the functions listed below
+
+# Supported
+- Functions: IF, SUM, ROUND, FLOOR, CEILING, ABS, MIN, MAX, AVERAGE, MOD, POWER, SQRT
+- Operators: + - * / ^ %
+- Comparisons: = <> > >= < <=
+
+# My Scoring Rule
+[Describe your rule here, e.g., "Double the score if over 10, otherwise keep it the same"]
+
+# Output
+Return ONLY the formula. No explanation. Example: IF(SCORE > 10, SCORE * 2, SCORE)`}
                             </div>
                         </div>
                     </div>
