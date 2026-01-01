@@ -382,7 +382,8 @@ export async function createWorldTourGame(data) {
             timer_duration_seconds: data.timer_duration_seconds || 60,
             timer_mode: data.timer_mode || 'countdown',
             has_scoreboard: data.has_scoreboard || false,
-            score_unit: data.score_unit || 'Points'
+            score_unit: data.score_unit || 'Points',
+            score_formula: data.score_formula || ''
         },
         live_state: defaultLiveState
     })
@@ -408,6 +409,7 @@ export async function updateWorldTourGame(gameId, data) {
     if (data.timer_mode !== undefined) updateData['game_info.timer_mode'] = data.timer_mode
     if (data.has_scoreboard !== undefined) updateData['game_info.has_scoreboard'] = data.has_scoreboard
     if (data.score_unit !== undefined) updateData['game_info.score_unit'] = data.score_unit
+    if (data.score_formula !== undefined) updateData['game_info.score_formula'] = data.score_formula
 
     await updateDoc(doc(db, 'world_tour_games', gameId), updateData)
 }
