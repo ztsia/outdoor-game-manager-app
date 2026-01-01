@@ -15,7 +15,7 @@ import { GameCard } from '@/components/game/GameCard'
 import { AttackChallengeModal } from '@/components/game/AttackChallengeModal'
 import { getTerritoryStatus } from '@/lib/territoryStatus'
 import { formatNumber } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
+import { cn, hexToRgb } from '@/lib/utils'
 import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/page-header'
 
@@ -100,16 +100,6 @@ export default function Attack() {
 
     // Calculate cost for selected territory
     const attackCost = selectedTerritory ? calculateCost(selectedTerritory.stars) : 0
-
-    // Helper: hex to RGB
-    const hexToRgb = (hexColor) => {
-        if (!hexColor) return { r: 107, g: 114, b: 128 }
-        const hex = hexColor.replace('#', '')
-        const r = parseInt(hex.substring(0, 2), 16)
-        const g = parseInt(hex.substring(2, 4), 16)
-        const b = parseInt(hex.substring(4, 6), 16)
-        return { r, g, b }
-    }
 
     // Toggle team in filter
     const toggleTeamFilter = (teamId) => {

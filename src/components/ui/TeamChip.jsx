@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { cn } from '@/lib/utils'
+import { cn, hexToRgb } from '@/lib/utils'
 
 /**
  * TeamChip - A pill-shaped badge displaying a team's name with the team's color.
@@ -9,16 +9,6 @@ import { cn } from '@/lib/utils'
  * @param {string} [props.className] - Optional additional class names.
  */
 export function TeamChip({ name, color, className }) {
-    // Parse hex color to RGB for transparent background
-    const hexToRgb = (hexColor) => {
-        if (!hexColor) return { r: 107, g: 114, b: 128 } // Default gray
-        const hex = hexColor.replace('#', '')
-        const r = parseInt(hex.substring(0, 2), 16)
-        const g = parseInt(hex.substring(2, 4), 16)
-        const b = parseInt(hex.substring(4, 6), 16)
-        return { r, g, b }
-    }
-
     const { r, g, b } = hexToRgb(color)
     const solidColor = color || '#6B7280'
 

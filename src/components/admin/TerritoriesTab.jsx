@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Star, MapPin } from 'lucide-react'
+import { Plus, Star, MapPin, Search } from 'lucide-react'
 import { useAllTerritories } from '@/hooks/useAllTerritories'
 import { useLocations } from '@/hooks/useLocations'
 import { useTeams } from '@/hooks/useTeams'
@@ -12,10 +12,12 @@ import {
     updateLocation
 } from '@/services/gameService'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { TeamChip } from '@/components/ui/TeamChip'
 import { TerritoryModal } from '@/components/admin/TerritoryModal'
+import { cn, hexToRgb } from '@/lib/utils'
 import { toast } from 'sonner'
 
 /**
@@ -95,6 +97,8 @@ export function TerritoriesTab() {
 
     const [modalOpen, setModalOpen] = useState(false)
     const [selectedTerritory, setSelectedTerritory] = useState(null)
+    const [searchQuery, setSearchQuery] = useState('')
+    const [filterTeams, setFilterTeams] = useState([])
 
     const loading = territoriesLoading || locationsLoading || teamsLoading || configLoading
     const maxStars = config?.max_territory_stars ?? 3
@@ -177,6 +181,15 @@ export function TerritoriesTab() {
         }
     }
 
+    // Toggle team in filter
+    const toggleTeamFilter = (teamId) => {
+        setFilterTeams(prev =>
+            prev.includes(teamId)
+                ? prev.filter(id => id !== teamId)
+                : [...prev, teamId]
+        )
+    }
+
     if (loading) {
         return (
             <div className="p-4 text-center text-muted-foreground">
@@ -199,24 +212,84 @@ export function TerritoriesTab() {
                 </Button>
             </div>
 
-            {/* Territories Grid */}
-            {territories.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {territories.map((territory) => (
-                        <AdminTerritoryCard
-                            key={territory.id}
-                            territory={territory}
-                            location={locationsMap[territory.location_id]}
-                            ownerTeam={teamsMap[territory.owner_id]}
-                            onClick={() => handleCardClick(territory)}
-                        />
-                    ))}
+            {/* Search */}
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Search territories or locations..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                />
+            </div>
+
+            {/* Filter Section */}
+            <div className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-muted-foreground">Filter by Team:</span>
+                <div className="flex flex-wrap gap-2">
+                    <Badge
+                        variant="outline"
+                        className={cn(
+                            "cursor-pointer",
+                            filterTeams.length === 0 && "bg-primary text-primary-foreground"
+                        )}
+                        onClick={() => setFilterTeams([])}
+                    >
+                        All
+                    </Badge>
+                    {Object.values(teamsMap).map(tm => {
+                        const isSelected = filterTeams.includes(tm.id)
+                        const { r, g, b } = hexToRgb(tm.color)
+                        return (
+                            <Badge
+                                key={tm.id}
+                                variant="outline"
+                                className={cn("cursor-pointer transition-all", isSelected ? "border-2 font-bold shadow-sm" : "border opacity-80")}
+                                style={isSelected
+                                    ? { backgroundColor: `rgba(${r}, ${g}, ${b}, 0.20)`, borderColor: tm.color, color: tm.color }
+                                    : { backgroundColor: 'white', borderColor: '#e5e7eb', color: '#6b7280' }
+                                }
+                                onClick={() => toggleTeamFilter(tm.id)}
+                            >
+                                {tm.name}
+                            </Badge>
+                        )
+                    })}
                 </div>
-            ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                    No territories yet. Click "Add Territory" to create one.
-                </p>
-            )}
+            </div>
+
+            {/* Territories Grid */}
+            {(() => {
+                // Filter logic
+                const query = searchQuery.toLowerCase()
+                const filteredTerritories = territories.filter(t => {
+                    const location = locationsMap[t.location_id]
+                    const matchesSearch =
+                        t.name?.toLowerCase().includes(query) ||
+                        location?.name?.toLowerCase().includes(query)
+                    const matchesTeam =
+                        filterTeams.length === 0 || filterTeams.includes(t.owner_id)
+                    return matchesSearch && matchesTeam
+                })
+
+                return filteredTerritories.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredTerritories.map((territory) => (
+                            <AdminTerritoryCard
+                                key={territory.id}
+                                territory={territory}
+                                location={locationsMap[territory.location_id]}
+                                ownerTeam={teamsMap[territory.owner_id]}
+                                onClick={() => handleCardClick(territory)}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                        No territories match your search.
+                    </p>
+                )
+            })()}
 
             <TerritoryModal
                 open={modalOpen}

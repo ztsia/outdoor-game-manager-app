@@ -29,6 +29,8 @@ export function WorldTourResultModal({
 
     const {
         baseScore = 0,
+        preprocessedScore = 0,
+        hasFormula = false,
         difficulty = 'normal',
         multiplier = 1,
         finalScore = 0,
@@ -94,16 +96,26 @@ export function WorldTourResultModal({
                     {/* Score Breakdown */}
                     <div className="space-y-3 text-left bg-muted rounded-lg p-4">
                         <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Base Score</span>
+                            <span className="text-muted-foreground">Raw Score</span>
                             <span className="font-mono font-bold">{baseScore}</span>
                         </div>
+
+                        {hasFormula && (
+                            <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">After Formula</span>
+                                <span className="font-mono font-bold">{preprocessedScore}</span>
+                            </div>
+                        )}
+
                         <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Difficulty</span>
                             <Badge className={`${difficultyColors[difficulty]} text-white`}>
-                                {difficultyEmojis[difficulty]} {difficulty.toUpperCase()} ({multiplier}x)
+                                {difficultyEmojis[difficulty]} {difficulty.toUpperCase()} (×{multiplier})
                             </Badge>
                         </div>
+
                         <hr className="border-border" />
+
                         <div className="flex justify-between items-center text-lg">
                             <span className="font-semibold">Final Score</span>
                             <span className="font-mono font-bold text-primary">{finalScore}</span>

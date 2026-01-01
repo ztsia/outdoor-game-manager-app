@@ -33,3 +33,17 @@ export function getGoogleDriveDirectLink(url) {
   // Not a recognized Drive link, return as-is
   return url;
 }
+
+/**
+ * Converts a hex color to RGB values
+ * @param {string} hexColor - Hex color string (e.g., "#EF4444")
+ * @returns {{r: number, g: number, b: number}} RGB values
+ */
+export function hexToRgb(hexColor) {
+  if (!hexColor) return { r: 107, g: 114, b: 128 } // Default gray
+  const hex = hexColor.replace('#', '')
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
+  return { r, g, b }
+}

@@ -39,6 +39,8 @@ import { RichTextEditor } from '@/components/ui/RichTextEditor'
 import { Trash2, Loader2, RotateCcw, Eraser, ChevronsUpDown, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { validateFormula } from '@/lib/formulaEvaluator'
+import { Textarea } from '@/components/ui/textarea'
 
 /**
  * WorldTourModal - Create/Edit/Delete World Tour game with configuration
@@ -66,6 +68,7 @@ export function WorldTourModal({
     const [hasTimer, setHasTimer] = useState(false)
     const [timerMode, setTimerMode] = useState('countdown')
     const [timerDuration, setTimerDuration] = useState(60)
+    const [scoreFormula, setScoreFormula] = useState('')
 
     // Multiplier config
     const [normalMultiplier, setNormalMultiplier] = useState(1)
@@ -98,6 +101,7 @@ export function WorldTourModal({
             setHasTimer(game.game_info?.has_timer || false)
             setTimerMode(game.game_info?.timer_mode || 'countdown')
             setTimerDuration(game.game_info?.timer_duration_seconds || 60)
+            setScoreFormula(game.game_info?.score_formula || '')
             setNormalMultiplier(game.multiplier_config?.normal ?? 1)
             setHardMultiplier(game.multiplier_config?.hard ?? 2)
             setExtremeMultiplier(game.multiplier_config?.extreme ?? 3)
@@ -111,6 +115,7 @@ export function WorldTourModal({
             setHasTimer(false)
             setTimerMode('countdown')
             setTimerDuration(60)
+            setScoreFormula('')
             setNormalMultiplier(1)
             setHardMultiplier(2)
             setExtremeMultiplier(3)
@@ -126,6 +131,17 @@ export function WorldTourModal({
             toast.error('Location is required')
             return
         }
+        if (!hasScoreboard && !hasTimer) {
+            toast.error('At least one tool (Scoreboard or Timer) must be enabled')
+            return
+        }
+        if (scoreFormula.trim()) {
+            const { valid, error } = validateFormula(scoreFormula)
+            if (!valid) {
+                toast.error(`Invalid formula: ${error}`)
+                return
+            }
+        }
 
         setSaving(true)
         try {
@@ -138,6 +154,7 @@ export function WorldTourModal({
                 has_timer: hasTimer,
                 timer_mode: timerMode,
                 timer_duration_seconds: parseInt(timerDuration, 10) || 60,
+                score_formula: scoreFormula.trim(),
                 multiplier_config: {
                     normal: parseFloat(normalMultiplier) || 1,
                     hard: parseFloat(hardMultiplier) || 2,
@@ -366,6 +383,24 @@ export function WorldTourModal({
                                         min={1}
                                     />
                                 </div>
+                            </div>
+                        )}
+
+                        {/* Score Formula (visible when any tool is enabled) */}
+                        {(hasScoreboard || hasTimer) && (
+                            <div className="space-y-2">
+                                <Label htmlFor="score-formula">Score Formula (optional)</Label>
+                                <Textarea
+                                    id="score-formula"
+                                    value={scoreFormula}
+                                    onChange={(e) => setScoreFormula(e.target.value)}
+                                    placeholder="e.g., SCORE * 10 or IF(SCORE > 5, SCORE * 2, SCORE)"
+                                    rows={2}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Use <code className="bg-muted px-1 rounded">SCORE</code> for the raw value ({hasScoreboard ? 'scoreboard count' : 'elapsed seconds'}).
+                                    Supports: SUM, IF, ABS, ROUND, etc.
+                                </p>
                             </div>
                         )}
 

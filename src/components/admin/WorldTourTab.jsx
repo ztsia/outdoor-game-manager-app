@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, MapPin, Trophy } from 'lucide-react'
+import { Plus, MapPin, Trophy, Search } from 'lucide-react'
 import { useWorldTourGames } from '@/hooks/useWorldTourGames'
 import { useLocations } from '@/hooks/useLocations'
 import { useTeams } from '@/hooks/useTeams'
@@ -12,6 +12,7 @@ import {
     updateLocation
 } from '@/services/gameService'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { TeamChip } from '@/components/ui/TeamChip'
@@ -93,6 +94,7 @@ export function WorldTourTab() {
 
     const [modalOpen, setModalOpen] = useState(false)
     const [selectedGame, setSelectedGame] = useState(null)
+    const [searchQuery, setSearchQuery] = useState('')
 
     const loading = gamesLoading || locationsLoading || teamsLoading
 
@@ -207,24 +209,47 @@ export function WorldTourTab() {
                 </Button>
             </div>
 
+            {/* Search */}
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Search games or locations..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                />
+            </div>
+
             {/* Games Grid */}
-            {games.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {games.map((game) => (
-                        <AdminWorldTourCard
-                            key={game.id}
-                            game={game}
-                            location={locationsMap[game.location_id]}
-                            highScoreTeam={teamsMap[game.high_score_holder_id]}
-                            onClick={() => handleCardClick(game)}
-                        />
-                    ))}
-                </div>
-            ) : (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                    No World Tour games yet. Click "Add World Tour" to create one.
-                </p>
-            )}
+            {(() => {
+                // Filter logic
+                const query = searchQuery.toLowerCase()
+                const filteredGames = games.filter(game => {
+                    const location = locationsMap[game.location_id]
+                    return (
+                        game.name?.toLowerCase().includes(query) ||
+                        location?.name?.toLowerCase().includes(query)
+                    )
+                })
+
+                return filteredGames.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredGames.map((game) => (
+                            <AdminWorldTourCard
+                                key={game.id}
+                                game={game}
+                                location={locationsMap[game.location_id]}
+                                highScoreTeam={teamsMap[game.high_score_holder_id]}
+                                onClick={() => handleCardClick(game)}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                        No games match your search.
+                    </p>
+                )
+            })()}
 
             <WorldTourModal
                 open={modalOpen}

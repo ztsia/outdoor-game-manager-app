@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { useLocations } from '@/hooks/useLocations'
 import { createLocation, updateLocation, deleteLocation } from '@/services/gameService'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { LocationCard } from '@/components/admin/LocationCard'
 import { LocationModal } from '@/components/admin/LocationModal'
 import { toast } from 'sonner'
@@ -11,10 +12,16 @@ export function LocationsTab() {
     const { locations, loading } = useLocations()
     const [modalOpen, setModalOpen] = useState(false)
     const [selectedLocation, setSelectedLocation] = useState(null)
+    const [searchQuery, setSearchQuery] = useState('')
 
-    // Separate locations by type
-    const territories = locations.filter((loc) => loc.type === 'territory')
-    const worldTourLocations = locations.filter((loc) => loc.type === 'world_tour')
+    // Separate and filter locations by type
+    const query = searchQuery.toLowerCase()
+    const territories = locations
+        .filter((loc) => loc.type === 'territory')
+        .filter((loc) => loc.name?.toLowerCase().includes(query))
+    const worldTourLocations = locations
+        .filter((loc) => loc.type === 'world_tour')
+        .filter((loc) => loc.name?.toLowerCase().includes(query))
 
     const handleCardClick = (location) => {
         setSelectedLocation(location)
@@ -76,6 +83,17 @@ export function LocationsTab() {
                     <Plus className="h-4 w-4 mr-2" />
                     Add Location
                 </Button>
+            </div>
+
+            {/* Search */}
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Search locations..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                />
             </div>
 
             {/* Territories Section */}

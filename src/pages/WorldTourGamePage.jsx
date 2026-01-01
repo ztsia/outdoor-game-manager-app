@@ -2,6 +2,7 @@ import { useParams, useNavigate, useBlocker } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { subscribeToWorldTourGame } from '@/services/gameService'
 import { getAcceptedChallenge } from '@/services/challengeService'
+import { evaluateScoreFormula } from '@/lib/formulaEvaluator'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useLocations } from '@/hooks/useLocations'
 import { useWorldTourHost } from '@/hooks/useWorldTourHost'
@@ -146,7 +147,16 @@ export default function WorldTourGamePage() {
             const baseScore = liveState.score || 0
             const difficulty = liveState.difficulty || 'normal'
             const multiplier = game?.multiplier_config?.[difficulty] || 1
-            const finalScore = baseScore * multiplier
+
+            // Apply formula preprocessing
+            const formula = game?.game_info?.score_formula || ''
+            const { result: preprocessedScore, error: formulaError } = evaluateScoreFormula(formula, baseScore)
+
+            if (formulaError) {
+                console.warn('[WorldTourGamePage] Formula error, using raw score:', formulaError)
+            }
+
+            const finalScore = Math.floor(preprocessedScore * multiplier)
 
             // Calculate followers (configurable - using 1 follower per 10 points for now)
             const followersGained = Math.floor(finalScore / 10)
@@ -168,6 +178,8 @@ export default function WorldTourGamePage() {
             // Prepare result for modal
             setGameResult({
                 baseScore,
+                preprocessedScore,
+                hasFormula: !!formula.trim(),
                 difficulty,
                 multiplier,
                 finalScore,

@@ -12,6 +12,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-icon.png'],
+      workbox: {
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024 // 3 MiB
+      },
       manifest: {
         name: 'Outdoor Game',
         short_name: 'Outdoor Game',
