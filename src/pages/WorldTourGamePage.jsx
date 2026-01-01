@@ -158,8 +158,8 @@ export default function WorldTourGamePage() {
 
             const finalScore = Math.floor(preprocessedScore * multiplier)
 
-            // Calculate followers (configurable - using 1 follower per 10 points for now)
-            const followersGained = Math.floor(finalScore / 10)
+            // Followers gained = final score (1:1 ratio)
+            const followersGained = finalScore
 
             const isNewHighScore = finalScore > (game?.high_score || 0)
 
