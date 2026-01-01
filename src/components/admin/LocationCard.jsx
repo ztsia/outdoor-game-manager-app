@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { FlagDisplay } from '@/components/ui/FlagDisplay'
 import { MapPin } from 'lucide-react'
 
 /**
@@ -39,8 +40,8 @@ export function LocationCard({ location, onClick }) {
             </div>
 
             <CardContent className="p-4">
-                <h3 className="font-semibold text-lg line-clamp-1">
-                    {isWorldTour && location.emoji && `${location.emoji} `}
+                <h3 className="font-semibold text-lg line-clamp-1 flex items-center gap-1">
+                    {isWorldTour && location.emoji && <FlagDisplay value={location.emoji} size={20} />}
                     {location.name}
                 </h3>
                 <p className="text-sm text-muted-foreground mt-1">

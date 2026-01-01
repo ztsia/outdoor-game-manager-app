@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { FlagDisplay } from '@/components/ui/FlagDisplay'
 import { Trophy, Star, Users, Award, Hash } from 'lucide-react'
 import { formatNumber } from '@/lib/formatters'
 
@@ -73,8 +74,9 @@ export function WorldTourResultModal({
                         )}
                     </DialogTitle>
                     <DialogDescription className="space-y-1">
-                        <div className="text-base">
-                            {locationEmoji && `${locationEmoji} `}{locationName || gameName}
+                        <div className="text-base flex items-center justify-center gap-1">
+                            {locationEmoji && <FlagDisplay value={locationEmoji} size={20} />}
+                            {locationName || gameName}
                         </div>
                         {locationName && gameName && locationName !== gameName && (
                             <div className="text-sm text-muted-foreground">{gameName}</div>

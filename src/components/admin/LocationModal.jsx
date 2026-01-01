@@ -24,6 +24,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Info, Trash2, Loader2, ChevronDown, ChevronUp, ImageOff } from 'lucide-react'
 import EmojiPicker from 'emoji-picker-react'
+import { FlagDisplay } from '@/components/ui/FlagDisplay'
 import { getGoogleDriveDirectLink } from '@/lib/utils'
 
 /**
@@ -157,7 +158,7 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
                                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                                     type="button"
                                 >
-                                    <span>{emoji || 'Select flag 🏳️'}</span>
+                                    <span>{emoji ? <FlagDisplay value={emoji} size={24} /> : 'Select flag 🏳️'}</span>
                                     {showEmojiPicker ? (
                                         <ChevronUp className="h-4 w-4 ml-2" />
                                     ) : (

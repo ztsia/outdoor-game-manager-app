@@ -36,6 +36,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { RichTextEditor } from '@/components/ui/RichTextEditor'
+import { FlagDisplay } from '@/components/ui/FlagDisplay'
 import { Trash2, Loader2, RotateCcw, Eraser, ChevronsUpDown, Check, Info } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -270,7 +271,7 @@ export function WorldTourModal({
                                         {locationId
                                             ? (() => {
                                                 const loc = availableLocations.find(l => l.id === locationId)
-                                                return loc ? `${loc.emoji || '🌍'} ${loc.name}` : 'Select location...'
+                                                return loc ? <span className="flex items-center gap-2"><FlagDisplay value={loc.emoji} size={20} /> {loc.name}</span> : 'Select location...'
                                             })()
                                             : 'Select location...'}
                                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -297,7 +298,7 @@ export function WorldTourModal({
                                                                 locationId === loc.id ? "opacity-100" : "opacity-0"
                                                             )}
                                                         />
-                                                        {loc.emoji || '🌍'} {loc.name}
+                                                        <FlagDisplay value={loc.emoji} size={20} /> {loc.name}
                                                     </CommandItem>
                                                 ))}
                                             </CommandGroup>

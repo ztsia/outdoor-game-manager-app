@@ -62,7 +62,8 @@ export default function WorldTour() {
                             status={status}
                             ownerTeam={highScoreTeam}
                             isWorldTour={true}
-                            title={`${locationsMap[game.location_id]?.emoji || ''} ${locationsMap[game.location_id]?.name || game.name}`.trim()}
+                            title={locationsMap[game.location_id]?.name || game.name}
+                            emoji={locationsMap[game.location_id]?.emoji}
                             locationImage={locationsMap[game.location_id]?.image_url}
                             onAction={() => navigate(`/world-tour/${game.id}`)}
                         />

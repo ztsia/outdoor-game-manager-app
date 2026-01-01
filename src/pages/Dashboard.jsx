@@ -9,6 +9,7 @@ import { useTeams } from '@/hooks/useTeams'
 import { useRank } from '@/hooks/useRank'
 import { subscribeToWorldTourGame } from '@/services/gameService'
 import { RankBadge } from '@/components/game/RankBadge'
+import { FlagDisplay } from '@/components/ui/FlagDisplay'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -224,10 +225,10 @@ export default function Dashboard() {
                                         <Badge
                                             key={gameId}
                                             variant="outline"
-                                            className="shrink-0 cursor-pointer hover:bg-muted transition-colors"
+                                            className="shrink-0 cursor-pointer hover:bg-muted transition-colors flex items-center gap-1"
                                             onClick={() => handleBadgeClick(gameId)}
                                         >
-                                            {locationEmoji || '🏆'} {game?.name || gameId.replace('game_', '').toUpperCase()}
+                                            {locationEmoji ? <FlagDisplay value={locationEmoji} size={16} /> : '🏆'} {game?.name || gameId.replace('game_', '').toUpperCase()}
                                         </Badge>
                                     )
                                 })}

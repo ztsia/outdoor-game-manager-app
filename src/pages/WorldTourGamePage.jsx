@@ -33,6 +33,7 @@ import { DifficultyModal } from '@/components/game/DifficultyModal'
 import { WorldTourResultModal } from '@/components/game/WorldTourResultModal'
 import { RedirectToChallengeModal } from '@/components/game/RedirectToChallengeModal'
 import { RankNotification } from '@/components/game/RankNotification'
+import { FlagDisplay } from '@/components/ui/FlagDisplay'
 
 /**
  * WorldTourGamePage - Single-player World Tour Game Host Mode
@@ -284,8 +285,8 @@ export default function WorldTourGamePage() {
 
             {/* Title & Status */}
             <div className="p-4 border-b">
-                <h1 className="text-xl font-bold">
-                    {locationsMap[game.location_id]?.emoji && `${locationsMap[game.location_id].emoji} `}
+                <h1 className="text-xl font-bold flex items-center gap-2">
+                    {locationsMap[game.location_id]?.emoji && <FlagDisplay value={locationsMap[game.location_id].emoji} size={24} />}
                     {locationName}
                 </h1>
                 <p className="text-sm text-muted-foreground mb-3">{game.name}</p>

@@ -1,6 +1,7 @@
 import { Star, MapPin, Trophy } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { TeamChip } from '@/components/ui/TeamChip'
+import { FlagDisplay } from '@/components/ui/FlagDisplay'
 import { TerritoryStatusBadge } from '@/components/game/TerritoryStatusBadge'
 
 /**
@@ -14,9 +15,10 @@ import { TerritoryStatusBadge } from '@/components/game/TerritoryStatusBadge'
  * @param {function} props.onAction - Callback when the card is clicked (if not disabled)
  * @param {boolean} [props.isWorldTour=false] - Whether this is a World Tour game
  * @param {string} [props.title] - Location name to display as card title (overrides territory.name in header)
+ * @param {string} [props.emoji] - Flag emoji to display next to title
  * @param {string} [props.locationImage] - Image URL from location collection
  */
-export function GameCard({ territory, status, ownerTeam, onAction, isWorldTour = false, title, locationImage }) {
+export function GameCard({ territory, status, ownerTeam, onAction, isWorldTour = false, title, emoji, locationImage }) {
     // Title (header) = Location Name, fallback to territory.name if not provided
     const displayTitle = title || territory.name
     // Game Name = territory.name (which is now the game name after schema change)
@@ -57,7 +59,10 @@ export function GameCard({ territory, status, ownerTeam, onAction, isWorldTour =
             <CardContent className="p-5">
                 {/* Header: Location Name + Stars (Territory) or Location Name only (World Tour) */}
                 <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-xl line-clamp-1">{displayTitle}</h3>
+                    <h3 className="font-semibold text-xl line-clamp-1 flex items-center gap-1">
+                        {emoji && <FlagDisplay value={emoji} size={24} />}
+                        {displayTitle}
+                    </h3>
                     {!isWorldTour && (
                         <div className="flex items-center gap-1 text-yellow-500 shrink-0">
                             <Star className="h-5 w-5 fill-current" />

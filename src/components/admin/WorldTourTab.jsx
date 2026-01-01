@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { TeamChip } from '@/components/ui/TeamChip'
+import { FlagDisplay } from '@/components/ui/FlagDisplay'
 import { WorldTourModal } from '@/components/admin/WorldTourModal'
 import { toast } from 'sonner'
 
@@ -62,8 +63,8 @@ function AdminWorldTourCard({ game, location, highScoreTeam, onClick }) {
 
             <CardContent className="p-4">
                 {/* Location Name with Emoji */}
-                <h3 className="font-semibold text-lg line-clamp-1">
-                    {location?.emoji && `${location.emoji} `}
+                <h3 className="font-semibold text-lg line-clamp-1 flex items-center gap-1">
+                    {location?.emoji && <FlagDisplay value={location.emoji} size={20} />}
                     {location?.name || 'Unknown Location'}
                 </h3>
 

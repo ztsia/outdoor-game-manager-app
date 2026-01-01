@@ -47,3 +47,33 @@ export function hexToRgb(hexColor) {
   const b = parseInt(hex.substring(4, 6), 16)
   return { r, g, b }
 }
+
+/**
+ * Check if a string is a flag emoji (Regional Indicator Symbol sequence)
+ * Flag emojis are two Regional Indicator symbols (U+1F1E6 to U+1F1FF)
+ * @param {string} emoji - The string to check
+ * @returns {boolean} True if it's a flag emoji
+ */
+export function isFlagEmoji(emoji) {
+  if (!emoji || typeof emoji !== 'string') return false
+  // Flag emojis consist of two Regional Indicator Symbol Letter characters
+  // These are in the range U+1F1E6 (🇦) to U+1F1FF (🇿)
+  const codePoints = [...emoji].map(char => char.codePointAt(0))
+  if (codePoints.length !== 2) return false
+  return codePoints.every(cp => cp >= 0x1F1E6 && cp <= 0x1F1FF)
+}
+
+/**
+ * Convert a flag emoji to its ISO 3166-1 alpha-2 country code
+ * e.g., 🇫🇷 → "fr", 🇺🇸 → "us"
+ * @param {string} emoji - Flag emoji
+ * @returns {string|null} Lowercase country code or null if not a flag
+ */
+export function getCountryCodeFromFlag(emoji) {
+  if (!isFlagEmoji(emoji)) return null
+  const codePoints = [...emoji].map(char => char.codePointAt(0))
+  // Convert Regional Indicator to ASCII letter (A=0x1F1E6, so subtract to get 0-25, then add 97 for 'a')
+  const letters = codePoints.map(cp => String.fromCharCode(cp - 0x1F1E6 + 97))
+  return letters.join('')
+}
+
