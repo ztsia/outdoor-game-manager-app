@@ -8,6 +8,7 @@ import { useLocations } from '@/hooks/useLocations'
 import { useWorldTourHost } from '@/hooks/useWorldTourHost'
 import { useTeamData } from '@/hooks/useTeamData'
 import { useTeams } from '@/hooks/useTeams'
+import { useRank } from '@/hooks/useRank'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -31,6 +32,7 @@ import { LeaderboardModal } from '@/components/game/LeaderboardModal'
 import { DifficultyModal } from '@/components/game/DifficultyModal'
 import { WorldTourResultModal } from '@/components/game/WorldTourResultModal'
 import { RedirectToChallengeModal } from '@/components/game/RedirectToChallengeModal'
+import { RankNotification } from '@/components/game/RankNotification'
 
 /**
  * WorldTourGamePage - Single-player World Tour Game Host Mode
@@ -61,6 +63,9 @@ export default function WorldTourGamePage() {
 
     // Game host controls
     const worldTourHost = useWorldTourHost(gameId)
+
+    // Rank tracking for notifications
+    const { rank, isLivingIcon, loading: rankLoading } = useRank(teamId)
 
     console.log('[WorldTourGamePage] Mounted with gameId:', gameId)
 
@@ -246,6 +251,9 @@ export default function WorldTourGamePage() {
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
+            {/* Rank Change Notification Banner */}
+            <RankNotification mode="banner" rank={rank} isLivingIcon={isLivingIcon} loading={rankLoading} />
+
             {/* Hero Header */}
             <div className="relative">
                 {/* Hero Image */}

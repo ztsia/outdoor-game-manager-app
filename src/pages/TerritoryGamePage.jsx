@@ -5,6 +5,7 @@ import { getGameRules } from '@/services/challengeService'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useLocations } from '@/hooks/useLocations'
 import { useGameHost } from '@/hooks/useGameHost'
+import { useRank } from '@/hooks/useRank'
 import { Button } from '@/components/ui/button'
 import { TeamChip } from '@/components/ui/TeamChip'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -22,6 +23,7 @@ import { toast } from 'sonner'
 // Tab components
 import { RulesTab } from '@/components/game/RulesTab'
 import { TerritoryToolTab } from '@/components/game/TerritoryToolTab'
+import { RankNotification } from '@/components/game/RankNotification'
 
 // Helper function for text contrast on colored backgrounds
 function getContrastTextColor(hexColor) {
@@ -64,6 +66,9 @@ export default function TerritoryGamePage() {
 
     // Game host controls
     const gameHost = useGameHost(territoryId)
+
+    // Rank tracking for notifications
+    const { rank, isLivingIcon, loading: rankLoading } = useRank(teamId)
 
     // Fetch game rules config on mount
     useEffect(() => {
@@ -314,6 +319,9 @@ export default function TerritoryGamePage() {
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
+            {/* Rank Change Notification Banner */}
+            <RankNotification mode="banner" rank={rank} isLivingIcon={isLivingIcon} loading={rankLoading} />
+
             {/* Hero Header */}
             <div className="relative">
                 {/* Hero Image */}

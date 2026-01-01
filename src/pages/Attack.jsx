@@ -8,11 +8,13 @@ import { useAllTeams } from '@/hooks/useAllTeams'
 import { useLocations } from '@/hooks/useLocations'
 import { useAttackTransaction } from '@/hooks/useAttackTransaction'
 import { useActiveWorldTourGame } from '@/hooks/useActiveWorldTourGame'
+import { useRank } from '@/hooks/useRank'
 import { getGameRules } from '@/services/challengeService'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { GameCard } from '@/components/game/GameCard'
 import { AttackChallengeModal } from '@/components/game/AttackChallengeModal'
+import { RankNotification } from '@/components/game/RankNotification'
 import { getTerritoryStatus } from '@/lib/territoryStatus'
 import { formatNumber } from '@/lib/formatters'
 import { cn, hexToRgb } from '@/lib/utils'
@@ -27,6 +29,7 @@ export default function Attack() {
     const { teamsMap, loading: teamsLoading } = useAllTeams()
     const { locationsMap, loading: locationsLoading } = useLocations()
     const { starCosts, calculateCost, initiateAttack, loading: attackLoading } = useAttackTransaction()
+    const { rank, isLivingIcon, loading: rankLoading } = useRank(teamId)
     const navigate = useNavigate()
 
     // Modal state
@@ -133,6 +136,9 @@ export default function Attack() {
 
     return (
         <div className="min-h-screen bg-background pb-4">
+            {/* Rank Change Notification Modal */}
+            <RankNotification mode="modal" rank={rank} isLivingIcon={isLivingIcon} loading={rankLoading} />
+
             {/* Header */}
             <PageHeader
                 title="Attack Territory"

@@ -3,15 +3,20 @@ import { useNavigate } from 'react-router-dom'
 import { useWorldTourGames } from '@/hooks/useWorldTourGames'
 import { useAllTeams } from '@/hooks/useAllTeams'
 import { useLocations } from '@/hooks/useLocations'
+import { useAuth } from '@/contexts/AuthProvider'
+import { useRank } from '@/hooks/useRank'
 import { getWorldTourStatus } from '@/lib/territoryStatus'
 import { GameCard } from '@/components/game/GameCard'
+import { RankNotification } from '@/components/game/RankNotification'
 import { PageHeader } from '@/components/ui/page-header'
 
 export default function WorldTour() {
     const navigate = useNavigate()
+    const { teamId } = useAuth()
     const { games, loading: gamesLoading } = useWorldTourGames()
     const { teamsMap, loading: teamsLoading } = useAllTeams()
     const { locationsMap, loading: locationsLoading } = useLocations()
+    const { rank, isLivingIcon, loading: rankLoading } = useRank(teamId)
 
     // Real-time ticker for countdown timers
     const [now, setNow] = useState(() => Date.now())
@@ -35,6 +40,9 @@ export default function WorldTour() {
 
     return (
         <div className="min-h-screen bg-background pb-4">
+            {/* Rank Change Notification Modal */}
+            <RankNotification mode="modal" rank={rank} isLivingIcon={isLivingIcon} loading={rankLoading} />
+
             {/* Header */}
             <PageHeader
                 title="World Tour 🌍"

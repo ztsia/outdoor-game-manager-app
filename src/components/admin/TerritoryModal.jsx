@@ -371,17 +371,19 @@ export function TerritoryModal({
                                     </ToggleGroup>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="timer-duration">Timer Duration (seconds)</Label>
-                                    <Input
-                                        id="timer-duration"
-                                        type="number"
-                                        value={timerDuration}
-                                        onChange={(e) => setTimerDuration(e.target.value)}
-                                        placeholder="60"
-                                        min={1}
-                                    />
-                                </div>
+                                {timerMode !== 'stopwatch' && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="timer-duration">Timer Duration (seconds)</Label>
+                                        <Input
+                                            id="timer-duration"
+                                            type="number"
+                                            value={timerDuration}
+                                            onChange={(e) => setTimerDuration(e.target.value)}
+                                            placeholder="60"
+                                            min={1}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

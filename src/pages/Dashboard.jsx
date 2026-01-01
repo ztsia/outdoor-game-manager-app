@@ -26,6 +26,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { GameResultModal } from '@/components/dashboard/GameResultModal'
 import { LeaderboardModal } from '@/components/game/LeaderboardModal'
+import { RankNotification } from '@/components/game/RankNotification'
 import { NavFooter } from '@/components/ui/nav-footer'
 
 export default function Dashboard() {
@@ -34,7 +35,7 @@ export default function Dashboard() {
     const { locationsMap, loading: locationsLoading } = useLocations()
     const { gamesMap, loading: gamesLoading } = useWorldTourGames()
     const { teamsMap } = useTeams()
-    const { rank, isLivingIcon } = useRank(teamId)
+    const { rank, isLivingIcon, loading: rankLoading } = useRank(teamId)
     const navigate = useNavigate()
     const location = useLocation()
 
@@ -139,6 +140,9 @@ export default function Dashboard() {
 
     return (
         <div className="min-h-screen bg-background pb-24">
+            {/* Rank Change Notification Modal */}
+            <RankNotification mode="modal" rank={rank} isLivingIcon={isLivingIcon} loading={rankLoading} />
+
             {/* Team Card */}
             <div className="bg-primary p-6 text-primary-foreground">
                 <div className="flex items-center justify-between">
