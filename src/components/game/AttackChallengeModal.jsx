@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Swords, HelpCircle, ArrowRight, Star, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -13,6 +12,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover'
 import { formatNumber } from '@/lib/formatters'
 
 /**
@@ -32,7 +36,6 @@ export function AttackChallengeModal({
 }) {
     const hasEnoughFunds = team ? team.followers >= attackCost : false
     const remaining = team ? Math.max(0, team.followers - attackCost) : 0
-    const [showCostTooltip, setShowCostTooltip] = useState(false)
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -41,7 +44,7 @@ export function AttackChallengeModal({
                 onOpenAutoFocus={(e) => e.preventDefault()}
             >
                 {/* Header */}
-                <DialogHeader className="p-6 pb-4">
+                <DialogHeader className="p-4 pb-2">
                     <DialogTitle className="text-center flex items-center justify-center gap-2">
                         <Swords className="h-5 w-5" />
                         Confirm Challenge
@@ -71,44 +74,41 @@ export function AttackChallengeModal({
                 )}
 
                 {/* Hero Section */}
-                <div className="flex flex-col items-center justify-center py-6 px-6 space-y-6">
+                <div className="flex flex-col items-center justify-center py-4 px-4 space-y-4">
                     {/* Wager Amount */}
                     <div className="text-center space-y-2">
                         <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs uppercase tracking-wider font-medium">
                             Wager Amount
-                            {/* Mobile-friendly tooltip */}
-                            <div className="relative">
-                                <button
-                                    type="button"
-                                    className="cursor-help focus:outline-none p-2 -m-2 opacity-70 hover:opacity-100 transition-opacity"
-                                    onClick={() => setShowCostTooltip(!showCostTooltip)}
-                                    onMouseEnter={() => setShowCostTooltip(true)}
-                                    onMouseLeave={() => setShowCostTooltip(false)}
-                                >
-                                    <HelpCircle className="h-4 w-4" />
-                                </button>
-
-                                {showCostTooltip && (
-                                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 w-52 p-3 rounded-lg bg-popover border shadow-lg text-xs animate-in fade-in zoom-in-95 duration-200">
-                                        <p className="font-semibold mb-2">Cost by Territory Stars:</p>
-                                        <div className="space-y-1 mb-3">
-                                            {starCosts && Object.entries(starCosts)
-                                                .sort(([a], [b]) => Number(a) - Number(b))
-                                                .map(([stars, cost]) => (
-                                                    <div key={stars} className="flex justify-between">
-                                                        <span>{stars} ⭐</span>
-                                                        <span>{formatNumber(cost)}</span>
-                                                    </div>
-                                                ))
-                                            }
-                                        </div>
-                                        <Separator className="my-2" />
-                                        <p className="text-muted-foreground">
-                                            💡 <strong>Refunded</strong> if you win!
-                                        </p>
+                            {/* PWA-friendly Popover tooltip */}
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <button
+                                        type="button"
+                                        className="cursor-help focus:outline-none p-2 -m-2 opacity-70 hover:opacity-100 transition-opacity"
+                                        aria-label="View cost breakdown"
+                                    >
+                                        <HelpCircle className="h-4 w-4" />
+                                    </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-52 p-3 text-xs" align="center" side="top">
+                                    <p className="font-semibold mb-2">Cost by Territory Stars:</p>
+                                    <div className="space-y-1 mb-3">
+                                        {starCosts && Object.entries(starCosts)
+                                            .sort(([a], [b]) => Number(a) - Number(b))
+                                            .map(([stars, cost]) => (
+                                                <div key={stars} className="flex justify-between">
+                                                    <span>{stars} ⭐</span>
+                                                    <span>{formatNumber(cost)}</span>
+                                                </div>
+                                            ))
+                                        }
                                     </div>
-                                )}
-                            </div>
+                                    <Separator className="my-2" />
+                                    <p className="text-muted-foreground">
+                                        💡 <strong>Refunded</strong> if you win!
+                                    </p>
+                                </PopoverContent>
+                            </Popover>
                         </div>
 
                         {/* Big Number */}
@@ -139,7 +139,7 @@ export function AttackChallengeModal({
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 pt-0 space-y-4">
+                <div className="p-4 pt-0 space-y-3">
                     {/* Game Info Card */}
                     <Card className="bg-muted/30 border-none shadow-none">
                         <CardContent className="p-3 text-center text-xs">
