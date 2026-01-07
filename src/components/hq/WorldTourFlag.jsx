@@ -184,7 +184,7 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap, imageBound
                             style={{
                                 position: 'absolute',
                                 top: '50%',
-                                right: -10,
+                                left: scaledFlagSize * 1.5 + 4,  // Position after flag width
                                 transform: 'translateY(-50%)'
                             }}
                         >
@@ -199,7 +199,7 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap, imageBound
                             style={{
                                 position: 'absolute',
                                 top: '50%',
-                                right: -8,
+                                left: scaledFlagSize * 1.5 + 4,  // Position after flag width
                                 transform: 'translateY(-50%)',
                                 fontSize: 10,
                                 fontFamily: 'monospace',
