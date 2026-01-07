@@ -8,6 +8,12 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { TeamChip } from '@/components/ui/TeamChip'
 
+const DIFFICULTY_CONFIG = {
+    normal: { emoji: '🌱', label: 'NORMAL', color: 'bg-green-500' },
+    hard: { emoji: '🔥', label: 'HARD', color: 'bg-orange-500' },
+    extreme: { emoji: '💀', label: 'EXTREME', color: 'bg-red-500' }
+}
+
 /**
  * LeaderboardModal - Displays global charts for World Tour games
  * @param {object} props
@@ -72,6 +78,11 @@ export function LeaderboardModal({ open, onOpenChange, attempts = [], gameName, 
                                                 </div>
                                                 <div className="col-span-8 flex items-center gap-2 flex-wrap">
                                                     <TeamChip name={team.name || 'Unknown'} color={team.color} />
+                                                    {attempt.difficulty && DIFFICULTY_CONFIG[attempt.difficulty] && (
+                                                        <Badge className={`${DIFFICULTY_CONFIG[attempt.difficulty].color} text-white text-xs`}>
+                                                            {DIFFICULTY_CONFIG[attempt.difficulty].emoji} {DIFFICULTY_CONFIG[attempt.difficulty].label}
+                                                        </Badge>
+                                                    )}
                                                 </div>
                                                 <div className="col-span-3 text-right font-mono font-bold">
                                                     {attempt.score}

@@ -395,7 +395,7 @@ export default function TerritoryGamePage() {
                             <TabsTrigger value="rules">
                                 Rules
                             </TabsTrigger>
-                            {gameStarted && (gameInfo.has_scoreboard || gameInfo.has_timer) && (
+                            {gameStarted && (gameInfo.has_scoreboard || gameInfo.has_timer || gameInfo.has_qa) && (
                                 <TabsTrigger value="tool">
                                     Tool
                                 </TabsTrigger>
@@ -406,7 +406,7 @@ export default function TerritoryGamePage() {
                             <RulesTab gameInfo={gameInfo} defenderColor={defenderTeam?.color} />
                         </TabsContent>
 
-                        {gameStarted && (gameInfo.has_scoreboard || gameInfo.has_timer) && (
+                        {gameStarted && (gameInfo.has_scoreboard || gameInfo.has_timer || gameInfo.has_qa) && (
                             <TabsContent value="tool" className="mt-0 flex-1">
                                 <TerritoryToolTab
                                     territory={territory}
@@ -421,6 +421,10 @@ export default function TerritoryGamePage() {
                                     onSetCountdownDuration={gameHost.setCountdownDuration}
                                     onIncrement={gameHost.incrementScore}
                                     onDecrement={gameHost.decrementScore}
+                                    onSelectQuestionSet={gameHost.selectQuestionSet}
+                                    onNextQuestion={gameHost.nextQuestion}
+                                    onSkipQuestion={gameHost.skipQuestion}
+                                    onResetQA={gameHost.resetQA}
                                 />
                             </TabsContent>
                         )}

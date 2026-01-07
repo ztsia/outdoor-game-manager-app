@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Play, Pause, RotateCcw, Plus, Minus } from 'lucide-react'
+import { Play, Pause, RotateCcw, Plus, Minus, SkipForward, CheckCircle } from 'lucide-react'
 
 // Helper for text contrast on colored backgrounds
 function getContrastColor(hexColor) {
@@ -30,15 +30,33 @@ export function TerritoryToolTab({
     onResetSharedTimer,
     onSetCountdownDuration,
     onIncrement,
-    onDecrement
+    onDecrement,
+    // Q&A props
+    onSelectQuestionSet,
+    onNextQuestion,
+    onSkipQuestion,
+    onResetQA
 }) {
     const gameInfo = territory?.game_info || {}
     const liveState = territory?.live_state || {}
 
     const hasTimer = gameInfo.has_timer
     const hasScoreboard = gameInfo.has_scoreboard
+    const hasQA = gameInfo.has_qa
+    const questionSets = gameInfo.question_sets || []
     const timerMode = gameInfo.timer_mode || 'stopwatch'
     const defaultDuration = gameInfo.timer_duration_seconds || 60
+
+    // Q&A state from live_state
+    const qaActiveSetId = liveState.qa_active_set_id
+    const qaCurrentIndex = liveState.qa_current_index || 0
+    const qaSkippedIndices = liveState.qa_skipped_indices || []
+
+    // Get active question set and current question
+    const activeQuestionSet = questionSets.find(s => s.id === qaActiveSetId)
+    const questions = activeQuestionSet?.questions || []
+    const totalQuestions = questions.length
+    const isQAFinished = qaCurrentIndex >= totalQuestions && totalQuestions > 0
 
     // Timer state
     const [sharedElapsed, setSharedElapsed] = useState(0)
@@ -99,8 +117,10 @@ export function TerritoryToolTab({
         }
     }
 
-    // Determine layout - center single item, split both
-    const layoutClass = hasTimer && hasScoreboard
+    // Determine layout
+    const hasAnyTool = hasTimer || hasScoreboard || hasQA
+    const multipleTools = [hasTimer, hasScoreboard, hasQA].filter(Boolean).length > 1
+    const layoutClass = multipleTools
         ? 'flex flex-col h-full gap-2 p-4'
         : 'flex flex-col h-full gap-2 p-4 justify-center'
 
@@ -263,6 +283,137 @@ export function TerritoryToolTab({
                                 )}
                             </div>
                         </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Q&A Section */}
+            {hasQA && (
+                <Card className={multipleTools ? 'flex-1 flex flex-col' : ''}>
+                    <CardHeader className="text-center pb-2">
+                        <CardTitle className="text-sm text-muted-foreground">
+                            🎯 Q&A Mode
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-1 flex flex-col items-center justify-center">
+                        {/* Phase 1: Select Question Set */}
+                        {!qaActiveSetId && questionSets.length > 0 && (
+                            <div className="space-y-3 w-full">
+                                <p className="text-sm text-muted-foreground text-center">Select Question Set</p>
+                                {questionSets.map((set, idx) => (
+                                    <Button
+                                        key={set.id}
+                                        variant="outline"
+                                        className="w-full justify-between"
+                                        onClick={() => onSelectQuestionSet?.(set.id)}
+                                        disabled={role === 'spectator'}
+                                    >
+                                        <span>Set {idx + 1}</span>
+                                        <span className="text-muted-foreground">{set.questions?.length || 0} questions</span>
+                                    </Button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* No question sets */}
+                        {!qaActiveSetId && questionSets.length === 0 && (
+                            <p className="text-sm text-muted-foreground text-center">
+                                No question sets available.
+                            </p>
+                        )}
+
+                        {/* Phase 2: Show Questions */}
+                        {qaActiveSetId && !isQAFinished && questions[qaCurrentIndex] && (
+                            <div className="space-y-4 w-full">
+                                <div className="text-center">
+                                    <p className="text-xs text-muted-foreground mb-2">
+                                        Question {qaCurrentIndex + 1} of {totalQuestions}
+                                    </p>
+                                    <p className="text-lg font-medium mb-2">
+                                        {questions[qaCurrentIndex].question}
+                                    </p>
+                                    <p className="text-sm bg-muted rounded-lg p-3">
+                                        <span className="font-medium">Answer:</span> {questions[qaCurrentIndex].answer}
+                                    </p>
+                                </div>
+
+                                {/* Team Buttons */}
+                                {role !== 'spectator' && (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <Button
+                                            className="h-16 text-lg font-bold flex flex-col gap-1"
+                                            style={{ backgroundColor: attackerColor, color: getContrastColor(attackerColor) }}
+                                            onClick={() => onNextQuestion?.('attacker')}
+                                        >
+                                            <span>⚔️ {attackerName}</span>
+                                            <span className="text-2xl">{liveState.attacker_score || 0}</span>
+                                        </Button>
+                                        <Button
+                                            className="h-16 text-lg font-bold flex flex-col gap-1"
+                                            style={{ backgroundColor: defenderColor, color: getContrastColor(defenderColor) }}
+                                            onClick={() => onNextQuestion?.('defender')}
+                                        >
+                                            <span>🛡️ {defenderName}</span>
+                                            <span className="text-2xl">{liveState.defender_score || 0}</span>
+                                        </Button>
+                                    </div>
+                                )}
+
+                                {/* Spectator View */}
+                                {role === 'spectator' && (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="h-16 rounded-md flex flex-col items-center justify-center" style={{ backgroundColor: `${attackerColor}20` }}>
+                                            <span className="text-sm" style={{ color: attackerColor }}>⚔️ {attackerName}</span>
+                                            <span className="text-2xl font-bold">{liveState.attacker_score || 0}</span>
+                                        </div>
+                                        <div className="h-16 rounded-md flex flex-col items-center justify-center" style={{ backgroundColor: `${defenderColor}20` }}>
+                                            <span className="text-sm" style={{ color: defenderColor }}>🛡️ {defenderName}</span>
+                                            <span className="text-2xl font-bold">{liveState.defender_score || 0}</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Skip Button */}
+                                {role !== 'spectator' && (
+                                    <Button
+                                        variant="outline"
+                                        className="w-full gap-2"
+                                        onClick={() => onSkipQuestion?.(qaCurrentIndex)}
+                                    >
+                                        <SkipForward className="h-4 w-4" />
+                                        Skip Question
+                                    </Button>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Phase 3: Q&A Finished */}
+                        {qaActiveSetId && isQAFinished && (
+                            <div className="space-y-4 w-full text-center">
+                                <CheckCircle className="h-12 w-12 mx-auto text-green-500" />
+                                <p className="text-lg font-medium">Q&A Complete!</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="p-4 rounded-md" style={{ backgroundColor: `${attackerColor}20` }}>
+                                        <p className="text-sm" style={{ color: attackerColor }}>⚔️ {attackerName}</p>
+                                        <p className="text-3xl font-bold">{liveState.attacker_score || 0}</p>
+                                    </div>
+                                    <div className="p-4 rounded-md" style={{ backgroundColor: `${defenderColor}20` }}>
+                                        <p className="text-sm" style={{ color: defenderColor }}>🛡️ {defenderName}</p>
+                                        <p className="text-3xl font-bold">{liveState.defender_score || 0}</p>
+                                    </div>
+                                </div>
+                                {role !== 'spectator' && (
+                                    <Button
+                                        variant="outline"
+                                        className="w-full gap-2"
+                                        onClick={onResetQA}
+                                    >
+                                        <RotateCcw className="h-4 w-4" />
+                                        Reset Quiz
+                                    </Button>
+                                )}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             )}

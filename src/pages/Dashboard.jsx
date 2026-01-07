@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Pencil, Star, Trophy, LogOut } from 'lucide-react'
+import { Pencil, Star, Trophy, LogOut, Gift } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useTeamData } from '@/hooks/useTeamData'
 import { useLocations } from '@/hooks/useLocations'
@@ -188,29 +188,30 @@ export default function Dashboard() {
                             </DialogContent>
                         </Dialog>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-primary-foreground hover:bg-primary-foreground/20"
-                            onClick={() => setRedeemModalOpen(true)}
-                        >
-                            🎁 Redeem Code
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
-                            onClick={logout}
-                        >
-                            <LogOut className="h-4 w-4" />
-                        </Button>
-                    </div>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+                        onClick={logout}
+                    >
+                        <LogOut className="h-4 w-4" />
+                    </Button>
                 </div>
 
-                <div className="mt-4">
-                    <p className="text-5xl font-bold">{formatFollowers(team.followers)}</p>
-                    <p className="text-sm opacity-80">Followers</p>
+                <div className="mt-4 flex items-center justify-between gap-4">
+                    <div>
+                        <p className="text-5xl font-bold">{formatFollowers(team.followers)}</p>
+                        <p className="text-sm opacity-80">Followers</p>
+                    </div>
+                    <Button
+                        size="lg"
+                        variant="outline"
+                        className="gap-2 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
+                        onClick={() => setRedeemModalOpen(true)}
+                    >
+                        <Gift className="h-5 w-5" />
+                        Redeem Code
+                    </Button>
                 </div>
 
                 <div className="mt-4">

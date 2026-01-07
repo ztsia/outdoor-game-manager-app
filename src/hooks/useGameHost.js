@@ -20,7 +20,12 @@ export function useGameHost(territoryId) {
             requestEndGame: async () => { },
             submitVote: async () => { },
             setVoteMismatch: async () => { },
-            resolveGame: async () => false
+            resolveGame: async () => false,
+            // Q&A functions
+            selectQuestionSet: async () => { },
+            nextQuestion: async () => { },
+            skipQuestion: async () => { },
+            resetQA: async () => { }
         }
     }
 
@@ -310,6 +315,76 @@ export function useGameHost(territoryId) {
         }
     }
 
+    /**
+     * Select a question set for Q&A mode
+     * @param {string} setId - ID of the question set to use
+     */
+    const selectQuestionSet = async (setId) => {
+        try {
+            await updateDoc(territoryRef, {
+                'live_state.qa_active_set_id': setId,
+                'live_state.qa_current_index': 0,
+                'live_state.qa_skipped_indices': []
+            })
+        } catch (err) {
+            console.error('[useGameHost] Failed to select question set:', err)
+            toast.error('Failed to select question set')
+        }
+    }
+
+    /**
+     * Move to next question (called after awarding a point)
+     * @param {string} role - 'attacker' or 'defender' - who answered correctly
+     */
+    const nextQuestion = async (role) => {
+        try {
+            const scoreField = role === 'attacker' ? 'live_state.attacker_score' : 'live_state.defender_score'
+            await updateDoc(territoryRef, {
+                [scoreField]: increment(1),
+                'live_state.qa_current_index': increment(1)
+            })
+        } catch (err) {
+            console.error('[useGameHost] Failed to advance question:', err)
+            toast.error('Failed to advance question')
+        }
+    }
+
+    /**
+     * Skip current question
+     * @param {number} currentIndex - Current question index to add to skipped list
+     */
+    const skipQuestion = async (currentIndex) => {
+        try {
+            const doc = await getDoc(territoryRef)
+            const currentSkipped = doc.data()?.live_state?.qa_skipped_indices || []
+            await updateDoc(territoryRef, {
+                'live_state.qa_skipped_indices': [...currentSkipped, currentIndex],
+                'live_state.qa_current_index': increment(1)
+            })
+        } catch (err) {
+            console.error('[useGameHost] Failed to skip question:', err)
+            toast.error('Failed to skip question')
+        }
+    }
+
+    /**
+     * Reset Q&A state
+     */
+    const resetQA = async () => {
+        try {
+            await updateDoc(territoryRef, {
+                'live_state.qa_active_set_id': null,
+                'live_state.qa_current_index': 0,
+                'live_state.qa_skipped_indices': [],
+                'live_state.attacker_score': 0,
+                'live_state.defender_score': 0
+            })
+        } catch (err) {
+            console.error('[useGameHost] Failed to reset Q&A:', err)
+            toast.error('Failed to reset Q&A')
+        }
+    }
+
     return {
         // Score
         incrementScore,
@@ -325,6 +400,11 @@ export function useGameHost(territoryId) {
         requestEndGame,
         submitVote,
         setVoteMismatch,
-        resolveGame
+        resolveGame,
+        // Q&A
+        selectQuestionSet,
+        nextQuestion,
+        skipQuestion,
+        resetQA
     }
 }

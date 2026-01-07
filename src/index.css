@@ -222,3 +222,18 @@
     transform: scale(1.02);
   }
 }
+
+/* Marquee animation for HQ message panel */
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}

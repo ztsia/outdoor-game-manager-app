@@ -37,9 +37,10 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { RichTextEditor } from '@/components/ui/RichTextEditor'
-import { Trash2, Loader2, RotateCcw, ChevronsUpDown, Check, X } from 'lucide-react'
+import { Trash2, Loader2, RotateCcw, ChevronsUpDown, Check, X, Pencil, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { QuestionSetEditModal } from '@/components/admin/QuestionSetEditModal'
 
 /**
  * TerritoryModal - Create/Edit/Delete territory with game info configuration
@@ -72,6 +73,12 @@ export function TerritoryModal({
     const [timerMode, setTimerMode] = useState('countdown')
     const [timerDuration, setTimerDuration] = useState(60)
 
+    // Q&A fields
+    const [hasQA, setHasQA] = useState(false)
+    const [questionSets, setQuestionSets] = useState([])
+    const [editingQuestionSet, setEditingQuestionSet] = useState(null)
+    const [questionSetModalOpen, setQuestionSetModalOpen] = useState(false)
+
     const [saving, setSaving] = useState(false)
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
     const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
@@ -100,6 +107,8 @@ export function TerritoryModal({
             setHasTimer(territory.game_info?.has_timer || false)
             setTimerMode(territory.game_info?.timer_mode || 'countdown')
             setTimerDuration(territory.game_info?.timer_duration_seconds || 60)
+            setHasQA(territory.game_info?.has_qa || false)
+            setQuestionSets(territory.game_info?.question_sets || [])
         } else {
             // Reset for create mode
             setName('')
@@ -113,6 +122,8 @@ export function TerritoryModal({
             setHasTimer(false)
             setTimerMode('countdown')
             setTimerDuration(60)
+            setHasQA(false)
+            setQuestionSets([])
         }
     }, [territory, open])
 
@@ -142,7 +153,9 @@ export function TerritoryModal({
                 score_unit: scoreUnit.trim() || 'Points',
                 has_timer: hasTimer,
                 timer_mode: timerMode,
-                timer_duration_seconds: parseInt(timerDuration, 10) || 60
+                timer_duration_seconds: parseInt(timerDuration, 10) || 60,
+                has_qa: hasQA,
+                question_sets: questionSets
             })
             onOpenChange(false)
         } finally {
@@ -341,9 +354,15 @@ export function TerritoryModal({
                             <Checkbox
                                 id="has-scoreboard"
                                 checked={hasScoreboard}
-                                onCheckedChange={setHasScoreboard}
+                                onCheckedChange={(checked) => {
+                                    setHasScoreboard(checked)
+                                    if (checked) setHasQA(false) // Mutual exclusion
+                                }}
+                                disabled={hasQA}
                             />
-                            <Label htmlFor="has-scoreboard">Enable Scoreboard</Label>
+                            <Label htmlFor="has-scoreboard" className={hasQA ? 'text-muted-foreground' : ''}>
+                                Enable Scoreboard {hasQA && '(disable Q&A first)'}
+                            </Label>
                         </div>
 
                         {hasScoreboard && (
@@ -395,6 +414,84 @@ export function TerritoryModal({
                                             placeholder="60"
                                             min={1}
                                         />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Q&A Toggle */}
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="has-qa"
+                                checked={hasQA}
+                                onCheckedChange={(checked) => {
+                                    setHasQA(checked)
+                                    if (checked) setHasScoreboard(false) // Mutual exclusion
+                                }}
+                                disabled={hasScoreboard}
+                            />
+                            <Label htmlFor="has-qa" className={hasScoreboard ? 'text-muted-foreground' : ''}>
+                                Enable Q&A Mode {hasScoreboard && '(disable scoreboard first)'}
+                            </Label>
+                        </div>
+
+                        {hasQA && (
+                            <div className="space-y-3 pl-6">
+                                <div className="flex items-center justify-between">
+                                    <Label>Question Sets</Label>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1"
+                                        onClick={() => {
+                                            setEditingQuestionSet(null)
+                                            setQuestionSetModalOpen(true)
+                                        }}
+                                    >
+                                        <Plus className="h-3 w-3" />
+                                        Add Set
+                                    </Button>
+                                </div>
+
+                                {questionSets.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground text-center py-4">
+                                        No question sets yet. Add one to get started.
+                                    </p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {questionSets.map((set, index) => (
+                                            <div
+                                                key={set.id}
+                                                className="flex items-center justify-between p-3 rounded-md border bg-muted/50"
+                                            >
+                                                <span className="text-sm">
+                                                    Set {index + 1}: {set.questions?.length || 0} questions
+                                                </span>
+                                                <div className="flex gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8"
+                                                        onClick={() => {
+                                                            setEditingQuestionSet(set)
+                                                            setQuestionSetModalOpen(true)
+                                                        }}
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-destructive hover:text-destructive"
+                                                        onClick={() => {
+                                                            setQuestionSets(questionSets.filter(s => s.id !== set.id))
+                                                        }}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>
@@ -467,6 +564,24 @@ export function TerritoryModal({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Question Set Edit Modal */}
+            <QuestionSetEditModal
+                open={questionSetModalOpen}
+                onOpenChange={setQuestionSetModalOpen}
+                questionSet={editingQuestionSet}
+                onSave={(savedSet) => {
+                    if (editingQuestionSet) {
+                        // Update existing set
+                        setQuestionSets(questionSets.map(s =>
+                            s.id === savedSet.id ? savedSet : s
+                        ))
+                    } else {
+                        // Add new set
+                        setQuestionSets([...questionSets, savedSet])
+                    }
+                }}
+            />
         </>
     )
 }
