@@ -157,29 +157,8 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap, imageBound
                     </div>
                 )}
 
-                {/* Status/cooldown badge */}
-                {(status.disabled || (hasCooldown && !isActive && countdown)) && (
-                    <div
-                        style={{
-                            position: 'absolute',
-                            top: -36,
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            whiteSpace: 'nowrap'
-                        }}
-                    >
-                        {status.disabled && <TerritoryStatusBadge status={status} />}
-                        {hasCooldown && !isActive && countdown && (
-                            <div className="flex items-center gap-1 bg-white/90 rounded px-1.5 py-0.5 text-xs font-mono shadow">
-                                <Clock className="h-3 w-3 text-gray-500" />
-                                {countdown}
-                            </div>
-                        )}
-                    </div>
-                )}
-
                 {/* Flag + Pole wrapper - flag hangs LEFT of pole */}
-                <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', position: 'relative' }}>
                     {/* Flag image with 2.5D effect */}
                     <div style={{ perspective: '300px', marginRight: -1 }}>
                         <div
@@ -197,6 +176,41 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap, imageBound
                             <FlagDisplay value={location?.emoji} size={scaledFlagSize * 1.3} />
                         </div>
                     </div>
+
+                    {/* PLAYING indicator - swords icon on right */}
+                    {isActive && (
+                        <div
+                            className="flex items-center justify-center bg-red-500 rounded-full p-1 shadow-md animate-pulse"
+                            style={{
+                                position: 'absolute',
+                                top: '50%',
+                                right: -10,
+                                transform: 'translateY(-50%)'
+                            }}
+                        >
+                            <Swords className="h-3.5 w-3.5 text-white" />
+                        </div>
+                    )}
+
+                    {/* Cooldown timer - small clock on right of flag */}
+                    {hasCooldown && !isActive && countdown && (
+                        <div
+                            className="flex items-center gap-0.5 bg-white/95 rounded-full px-1.5 py-0.5 shadow-md"
+                            style={{
+                                position: 'absolute',
+                                top: '50%',
+                                right: -8,
+                                transform: 'translateY(-50%)',
+                                fontSize: 10,
+                                fontFamily: 'monospace',
+                                fontWeight: 600,
+                                color: '#666'
+                            }}
+                        >
+                            <Clock className="h-3 w-3 text-gray-500" />
+                            <span>{countdown}</span>
+                        </div>
+                    )}
 
                     {/* Flag pole */}
                     <div
