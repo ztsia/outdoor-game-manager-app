@@ -54,11 +54,11 @@ function LeaderboardRow({ team, rank, index, isLivingIcon }) {
                 isRankChanged && 'ring-2 ring-yellow-400'
             )}
         >
-            <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-background/80 flex items-center justify-center font-bold text-sm">
+            <div className="flex items-center gap-2 min-w-0">
+                <div className="w-6 h-6 rounded-full bg-background/80 flex items-center justify-center font-bold text-sm shrink-0">
                     {index + 1}
                 </div>
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0">
                     <p className="font-medium text-sm truncate">{team.name}</p>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Users className="h-3 w-3" />
@@ -66,7 +66,9 @@ function LeaderboardRow({ team, rank, index, isLivingIcon }) {
                     </div>
                 </div>
             </div>
-            <RankBadge rank={rank} isLivingIcon={isLivingIcon} />
+            <div className="shrink-0">
+                <RankBadge rank={rank} isLivingIcon={isLivingIcon} />
+            </div>
         </motion.div>
     )
 }
@@ -95,20 +97,27 @@ export default function HQ() {
         fetchConfig()
     }, [])
 
-    // Track map image dimensions and calculate rendered bounds
+    // Track map image dimensions and calculate rendered bounds with polling
     useEffect(() => {
-        const updateDimensions = () => {
+        let animationFrameId = null
+        let attempts = 0
+        const maxAttempts = 100 // ~1.6 seconds max wait
+
+        const calculateBounds = () => {
             const img = mapRef.current
-            if (!img) return
+            if (!img) return false
 
-            const naturalWidth = img.naturalWidth || img.width
-            const naturalHeight = img.naturalHeight || img.height
-            setMapDimensions({ width: naturalWidth, height: naturalHeight })
-
-            // Calculate actual rendered image bounds (accounting for object-contain)
+            const naturalWidth = img.naturalWidth
+            const naturalHeight = img.naturalHeight
             const containerWidth = img.clientWidth
             const containerHeight = img.clientHeight
-            if (!containerWidth || !containerHeight || !naturalWidth || !naturalHeight) return
+
+            // If dimensions not ready, return false to retry
+            if (!containerWidth || !containerHeight || !naturalWidth || !naturalHeight) {
+                return false
+            }
+
+            setMapDimensions({ width: naturalWidth, height: naturalHeight })
 
             const imgRatio = naturalWidth / naturalHeight
             const containerRatio = containerWidth / containerHeight
@@ -136,33 +145,44 @@ export default function HQ() {
                 offsetY,
                 scale: renderedWidth / naturalWidth
             })
+            return true
+        }
+
+        const tryCalculate = () => {
+            if (calculateBounds()) return // Success
+
+            attempts++
+            if (attempts < maxAttempts) {
+                animationFrameId = requestAnimationFrame(tryCalculate)
+            }
+        }
+
+        const startCalculation = () => {
+            attempts = 0
+            animationFrameId = requestAnimationFrame(tryCalculate)
         }
 
         const img = mapRef.current
         if (img) {
             if (img.complete) {
-                // Delay to ensure CSS layout is complete
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(updateDimensions)
-                })
+                startCalculation()
             } else {
-                img.onload = () => {
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(updateDimensions)
-                    })
-                }
+                img.onload = startCalculation
             }
         }
 
-        // Use ResizeObserver for more reliable resize detection
-        const resizeObserver = new ResizeObserver(updateDimensions)
+        // Use ResizeObserver for resize detection
+        const resizeObserver = new ResizeObserver(() => {
+            calculateBounds()
+        })
         if (img) {
             resizeObserver.observe(img)
         }
 
-        window.addEventListener('resize', updateDimensions)
+        window.addEventListener('resize', calculateBounds)
         return () => {
-            window.removeEventListener('resize', updateDimensions)
+            if (animationFrameId) cancelAnimationFrame(animationFrameId)
+            window.removeEventListener('resize', calculateBounds)
             resizeObserver.disconnect()
         }
     }, [])
@@ -340,9 +360,7 @@ export default function HQ() {
                             left: imageBounds.offsetX,
                             top: imageBounds.offsetY,
                             width: imageBounds.renderedWidth,
-                            height: imageBounds.renderedHeight,
-                            transform: `scale(${imageBounds.scale})`,
-                            transformOrigin: 'top left'
+                            height: imageBounds.renderedHeight
                         }}
                     >
                         {worldTourGames.map(game => {
@@ -356,6 +374,8 @@ export default function HQ() {
                                     location={location}
                                     fanFavTeam={fanFavTeam}
                                     teamsMap={teamsMap}
+                                    imageBounds={imageBounds}
+                                    mapDimensions={mapDimensions}
                                 />
                             )
                         })}
@@ -363,7 +383,7 @@ export default function HQ() {
                 )}
 
                 {/* Floating Leaderboard */}
-                <div className="absolute top-3 right-3 w-auto min-w-56 max-w-80 max-h-[50vh] overflow-y-auto overflow-x-hidden bg-background/80 backdrop-blur-sm rounded-lg shadow-lg p-3 z-20">
+                <div className="absolute top-3 right-3 w-auto min-w-64 max-w-[400px] max-h-[50vh] overflow-y-auto overflow-x-hidden bg-background/80 backdrop-blur-sm rounded-lg shadow-lg p-3 z-20">
                     <h2 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
                         <Trophy className="h-4 w-4 text-amber-500" /> Leaderboard
                     </h2>

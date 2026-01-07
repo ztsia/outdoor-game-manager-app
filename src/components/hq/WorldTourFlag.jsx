@@ -75,8 +75,10 @@ function getWorldTourStatus(game) {
  * @param {Object} props.location - Location data with map_coords and emoji
  * @param {Object} props.fanFavTeam - Fan favourite team object { name, color }
  * @param {Object} props.teamsMap - Map of team_id to team object
+ * @param {Object} props.imageBounds - Rendered image bounds with scale
+ * @param {Object} props.mapDimensions - Natural map dimensions
  */
-export function WorldTourFlag({ game, location, fanFavTeam, teamsMap }) {
+export function WorldTourFlag({ game, location, fanFavTeam, teamsMap, imageBounds, mapDimensions }) {
     const [leaderboardOpen, setLeaderboardOpen] = useState(false)
     const [countdown, setCountdown] = useState(null)
 
@@ -107,17 +109,24 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap }) {
         return () => clearInterval(interval)
     }, [game?.cooldown_ends_at])
 
-    // Flag pole height
-    const poleHeight = 50
-    const poleWidth = 3
+    // Flag pole dimensions
+    const basePoleHeight = 50
+    const basePoleWidth = 3
+
+    // Calculate scale for positioning
+    const scale = imageBounds?.scale || 1
+    const scaledX = x * scale
+    const scaledY = y * scale
+    const scaledPoleHeight = basePoleHeight * scale
+    const scaledPoleWidth = basePoleWidth * scale
 
     return (
         <>
             <div
                 className="absolute cursor-pointer transition-transform hover:scale-110"
                 style={{
-                    left: x,
-                    top: y - poleHeight,
+                    left: scaledX,
+                    top: scaledY - scaledPoleHeight,
                     transformOrigin: 'bottom center',
                     zIndex: 10
                 }}
@@ -176,8 +185,8 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap }) {
                     <div
                         className="rounded-b"
                         style={{
-                            width: poleWidth,
-                            height: poleHeight,
+                            width: scaledPoleWidth,
+                            height: scaledPoleHeight,
                             backgroundColor: teamColor,
                             boxShadow: '1px 1px 2px rgba(0,0,0,0.3)'
                         }}
