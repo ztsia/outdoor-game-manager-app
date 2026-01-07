@@ -118,55 +118,26 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap, imageBound
     const scaledX = x * scale
     const scaledY = y * scale
     const scaledPoleHeight = basePoleHeight * scale
-    const scaledPoleWidth = basePoleWidth * scale
-
-    // Debug: log coordinates
-    console.log('WorldTourFlag:', { x, y, scale, scaledX, scaledY, location: location?.name })
+    const scaledPoleWidth = Math.max(basePoleWidth * scale, 2)
+    const scaledFlagSize = Math.max(20 * scale, 16)
 
     return (
         <>
-            {/* Simple debug marker - bright red circle at scaled coordinates */}
+            {/* Main flag container */}
             <div
                 style={{
                     position: 'absolute',
-                    left: scaledX - 15,
-                    top: scaledY - 15,
-                    width: 30,
-                    height: 30,
-                    backgroundColor: 'red',
-                    borderRadius: '50%',
-                    border: '3px solid white',
-                    zIndex: 100,
+                    left: scaledX,
+                    top: scaledY,
+                    transform: 'translate(-50%, -100%)',
+                    zIndex: 20,
                     cursor: 'pointer'
                 }}
                 onClick={() => setLeaderboardOpen(true)}
-                title={location?.name}
-            />
-
-            <div
-                className="absolute cursor-pointer transition-transform hover:scale-110"
-                style={{
-                    left: scaledX,
-                    top: scaledY - scaledPoleHeight,
-                    transformOrigin: 'bottom center',
-                    zIndex: 10
-                }}
-                onClick={() => setLeaderboardOpen(true)}
             >
-                {/* Status badge */}
-                <div className="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                    {status.disabled && <TerritoryStatusBadge status={status} />}
-                    {hasCooldown && !isActive && countdown && (
-                        <div className="flex items-center gap-1 bg-white/90 rounded px-1.5 py-0.5 text-xs font-mono shadow">
-                            <Clock className="h-3 w-3 text-gray-500" />
-                            {countdown}
-                        </div>
-                    )}
-                </div>
-
-                {/* Team chip (fan favourite) */}
+                {/* Team chip above flag */}
                 {fanFavTeam && (
-                    <div className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full whitespace-nowrap">
+                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap">
                         <TeamChip
                             name={fanFavTeam.name}
                             color={fanFavTeam.color}
@@ -175,67 +146,65 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap, imageBound
                     </div>
                 )}
 
-                {/* Flag with 2.5D effect */}
+                {/* Status/cooldown badge */}
+                {(status.disabled || (hasCooldown && !isActive && countdown)) && (
+                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                        {status.disabled && <TerritoryStatusBadge status={status} />}
+                        {hasCooldown && !isActive && countdown && (
+                            <div className="flex items-center gap-1 bg-white/90 rounded px-1.5 py-0.5 text-xs font-mono shadow">
+                                <Clock className="h-3 w-3 text-gray-500" />
+                                {countdown}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Flag image */}
                 <div
-                    className="relative"
+                    className="rounded shadow-lg"
                     style={{
-                        transformStyle: 'preserve-3d',
-                        perspective: '200px'
+                        backgroundColor: `rgba(${r}, ${g}, ${b}, 0.3)`,
+                        border: `2px solid ${teamColor}`,
+                        padding: 2
                     }}
                 >
-                    {/* Flag emoji with tilt */}
-                    <div
-                        className="absolute bottom-full left-1 mb-0.5"
-                        style={{
-                            transform: 'rotateY(-15deg) rotateX(5deg)',
-                            transformOrigin: 'left bottom'
-                        }}
-                    >
-                        <div
-                            className="rounded shadow-md p-0.5"
-                            style={{
-                                backgroundColor: `rgba(${r}, ${g}, ${b}, 0.15)`,
-                                border: `1px solid ${teamColor}`
-                            }}
-                        >
-                            <FlagDisplay value={location?.emoji} size={24} />
-                        </div>
-                    </div>
-
-                    {/* Flag pole */}
-                    <div
-                        className="rounded-b"
-                        style={{
-                            width: scaledPoleWidth,
-                            height: scaledPoleHeight,
-                            backgroundColor: teamColor,
-                            boxShadow: '1px 1px 2px rgba(0,0,0,0.3)'
-                        }}
-                    />
-
-                    {/* Pole anchor point (ground marker) */}
-                    <div
-                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full"
-                        style={{
-                            width: 8,
-                            height: 8,
-                            backgroundColor: teamColor,
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.3)'
-                        }}
-                    />
+                    <FlagDisplay value={location?.emoji} size={scaledFlagSize} />
                 </div>
 
-                {/* Active game indicator */}
+                {/* Flag pole */}
+                <div
+                    style={{
+                        width: scaledPoleWidth,
+                        height: scaledPoleHeight,
+                        backgroundColor: teamColor,
+                        margin: '0 auto',
+                        borderRadius: '0 0 2px 2px',
+                        boxShadow: '1px 1px 2px rgba(0,0,0,0.3)'
+                    }}
+                />
+
+                {/* Ground marker */}
+                <div
+                    style={{
+                        width: 8,
+                        height: 8,
+                        backgroundColor: teamColor,
+                        borderRadius: '50%',
+                        margin: '-4px auto 0',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                    }}
+                />
+
+                {/* Active game pulsing border */}
                 {isActive && (
-                    <div className="absolute inset-0 animate-pulse">
-                        <div
-                            className="absolute -top-2 -left-2 -right-2 -bottom-2 rounded-lg"
-                            style={{
-                                border: '2px solid #ef4444',
-                                backgroundColor: 'rgba(239, 68, 68, 0.1)'
-                            }}
-                        />
-                    </div>
+                    <div
+                        className="absolute inset-0 animate-pulse rounded"
+                        style={{
+                            border: '2px solid #ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            margin: -4
+                        }}
+                    />
                 )}
             </div>
 
