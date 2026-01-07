@@ -6,6 +6,7 @@ import { TerritoriesTab } from '@/components/admin/TerritoriesTab'
 import { WorldTourTab } from '@/components/admin/WorldTourTab'
 import { TeamsTab } from '@/components/admin/TeamsTab'
 import { SystemConfigTab } from '@/components/admin/SystemConfigTab'
+import { BlindBoxTab } from '@/components/admin/BlindBoxTab'
 
 export default function Admin() {
     const { role, logout } = useAuth()
@@ -28,12 +29,13 @@ export default function Admin() {
             {/* Tabs */}
             <div className="max-w-6xl mx-auto p-4">
                 <Tabs defaultValue="locations" className="w-full">
-                    <TabsList className="grid w-full grid-cols-5">
+                    <TabsList className="grid w-full grid-cols-6">
                         <TabsTrigger value="locations">Locations</TabsTrigger>
                         <TabsTrigger value="territories">Territories</TabsTrigger>
                         <TabsTrigger value="worldtour">World Tour</TabsTrigger>
                         <TabsTrigger value="teams">Teams</TabsTrigger>
                         <TabsTrigger value="config">Config</TabsTrigger>
+                        <TabsTrigger value="blindbox">Blind Box</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="locations" className="mt-4">
@@ -54,6 +56,10 @@ export default function Admin() {
 
                     <TabsContent value="config" className="mt-4">
                         <SystemConfigTab />
+                    </TabsContent>
+
+                    <TabsContent value="blindbox" className="mt-4">
+                        <BlindBoxTab />
                     </TabsContent>
                 </Tabs>
             </div>

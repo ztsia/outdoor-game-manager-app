@@ -253,7 +253,7 @@ export default function WorldTourGamePage() {
     return (
         <div className="min-h-screen bg-background flex flex-col">
             {/* Rank Change Notification Banner */}
-            <RankNotification mode="banner" rank={rank} isLivingIcon={isLivingIcon} loading={rankLoading} />
+            <RankNotification mode="banner" rank={rank} isLivingIcon={isLivingIcon} loading={rankLoading} isGameActive={isPlaying} />
 
             {/* Hero Header */}
             <div className="relative">

@@ -28,6 +28,7 @@ import { toast } from 'sonner'
 import { GameResultModal } from '@/components/dashboard/GameResultModal'
 import { LeaderboardModal } from '@/components/game/LeaderboardModal'
 import { RankNotification } from '@/components/game/RankNotification'
+import { RedeemCodeModal } from '@/components/game/RedeemCodeModal'
 import { NavFooter } from '@/components/ui/nav-footer'
 
 export default function Dashboard() {
@@ -46,6 +47,7 @@ export default function Dashboard() {
     const [leaderboardOpen, setLeaderboardOpen] = useState(false)
     const [selectedGameId, setSelectedGameId] = useState(null)
     const [selectedGameData, setSelectedGameData] = useState(null)
+    const [redeemModalOpen, setRedeemModalOpen] = useState(false)
 
     // Check for game result from navigation state
     useEffect(() => {
@@ -186,14 +188,24 @@ export default function Dashboard() {
                             </DialogContent>
                         </Dialog>
                     </div>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
-                        onClick={logout}
-                    >
-                        <LogOut className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-primary-foreground hover:bg-primary-foreground/20"
+                            onClick={() => setRedeemModalOpen(true)}
+                        >
+                            🎁 Redeem Code
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/20"
+                            onClick={logout}
+                        >
+                            <LogOut className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="mt-4">
@@ -303,6 +315,17 @@ export default function Dashboard() {
                 attempts={selectedGameData?.attempts || []}
                 gameName={selectedGameData?.name}
                 teamsMap={teamsMap}
+            />
+
+            {/* Redeem Code Modal */}
+            <RedeemCodeModal
+                open={redeemModalOpen}
+                onOpenChange={setRedeemModalOpen}
+                teamId={teamId}
+                onSuccess={() => {
+                    // Data will auto-refresh via real-time listeners
+                    toast.success('Followers updated!')
+                }}
             />
         </div>
     )

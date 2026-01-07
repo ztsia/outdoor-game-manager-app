@@ -75,8 +75,9 @@ const NOTIFICATION_CONFIG = {
  * @param {string} props.rank - Current rank
  * @param {boolean} props.isLivingIcon - Living Icon status
  * @param {boolean} props.loading - Loading state
+ * @param {boolean} props.isGameActive - Whether game is actively in progress (for banner mode)
  */
-export function RankNotification({ mode = 'modal', rank, isLivingIcon, loading }) {
+export function RankNotification({ mode = 'modal', rank, isLivingIcon, loading, isGameActive }) {
     const [notification, setNotification] = useState(null)
     const [showBanner, setShowBanner] = useState(false)
     const [showModal, setShowModal] = useState(false)
@@ -85,6 +86,24 @@ export function RankNotification({ mode = 'modal', rank, isLivingIcon, loading }
     const prevIsLivingIcon = useRef(null)
     const isInitialized = useRef(false)
     const autoDismissTimer = useRef(null)
+
+    // Check for pending notification from sessionStorage (modal mode only)
+    useEffect(() => {
+        if (mode === 'modal' && !isInitialized.current) {
+            const pending = sessionStorage.getItem('pendingRankNotification')
+            if (pending) {
+                try {
+                    const pendingNotification = JSON.parse(pending)
+                    setNotification(pendingNotification)
+                    setShowModal(true)
+                    sessionStorage.removeItem('pendingRankNotification')
+                } catch (e) {
+                    console.error('[RankNotification] Failed to parse pending notification:', e)
+                    sessionStorage.removeItem('pendingRankNotification')
+                }
+            }
+        }
+    }, [mode])
 
     useEffect(() => {
         // Skip if still loading
@@ -132,30 +151,40 @@ export function RankNotification({ mode = 'modal', rank, isLivingIcon, loading }
 
         // Trigger notification if type was determined
         if (notificationType) {
-            setNotification({
+            const notificationData = {
                 type: notificationType,
                 oldRank: oldRankForDisplay,
                 newRank,
                 newIcon
-            })
+            }
 
-            if (mode === 'banner') {
-                setShowBanner(true)
-                // Auto-dismiss after 5 seconds
-                if (autoDismissTimer.current) clearTimeout(autoDismissTimer.current)
-                autoDismissTimer.current = setTimeout(() => {
-                    setShowBanner(false)
-                    setNotification(null)
-                }, 5000)
+            // Determine if we should show the notification now
+            const shouldShowNow = mode === 'modal' || (mode === 'banner' && isGameActive !== false)
+
+            if (shouldShowNow) {
+                setNotification(notificationData)
+
+                if (mode === 'banner') {
+                    setShowBanner(true)
+                    // Auto-dismiss after 5 seconds
+                    if (autoDismissTimer.current) clearTimeout(autoDismissTimer.current)
+                    autoDismissTimer.current = setTimeout(() => {
+                        setShowBanner(false)
+                        setNotification(null)
+                    }, 5000)
+                } else {
+                    setShowModal(true)
+                }
             } else {
-                setShowModal(true)
+                // Banner mode but game not active - queue for later (modal on Dashboard)
+                sessionStorage.setItem('pendingRankNotification', JSON.stringify(notificationData))
             }
         }
 
         return () => {
             if (autoDismissTimer.current) clearTimeout(autoDismissTimer.current)
         }
-    }, [rank, isLivingIcon, loading, mode])
+    }, [rank, isLivingIcon, loading, mode, isGameActive])
 
     const handleClose = () => {
         setShowBanner(false)

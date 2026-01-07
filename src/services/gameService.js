@@ -171,7 +171,8 @@ export async function createLocation(locationData) {
         type: locationData.type || 'territory',
         emoji: locationData.emoji || '',
         image_url: locationData.image_url || '',
-        assigned_game_id: locationData.assigned_game_id || null
+        assigned_game_id: locationData.assigned_game_id || null,
+        map_coords: locationData.map_coords || ''
     })
     return locationId
 }

@@ -43,6 +43,7 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
     const [type, setType] = useState('territory')
     const [emoji, setEmoji] = useState('')
     const [imageUrl, setImageUrl] = useState('')
+    const [mapCoords, setMapCoords] = useState('')
     const [saving, setSaving] = useState(false)
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
     const [showEmojiPicker, setShowEmojiPicker] = useState(false)
@@ -55,12 +56,14 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
             setType(location.type || 'territory')
             setEmoji(location.emoji || '')
             setImageUrl(location.image_url || '')
+            setMapCoords(location.map_coords || '')
         } else {
             // Reset for create mode
             setName('')
             setType('territory')
             setEmoji('')
             setImageUrl('')
+            setMapCoords('')
         }
         setShowEmojiPicker(false)
         setImageError(false)
@@ -82,7 +85,8 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
                 name: name.trim(),
                 type,
                 emoji: type === 'world_tour' ? emoji : '',
-                image_url: processedImageUrl
+                image_url: processedImageUrl,
+                map_coords: mapCoords.trim()
             })
             onOpenChange(false)
         } finally {
@@ -184,6 +188,28 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
                                 )}
                             </div>
                         )}
+
+                        {/* Map Coordinates (Optional) */}
+                        <div className="space-y-2">
+                            <Label htmlFor="mapCoords">
+                                Map Coordinates (Optional)
+                            </Label>
+                            <Input
+                                id="mapCoords"
+                                value={mapCoords}
+                                onChange={(e) => setMapCoords(e.target.value)}
+                                placeholder={
+                                    type === 'territory'
+                                        ? 'e.g., 110,679,197,678 (topLeftX,topLeftY,bottomRightX,bottomRightY)'
+                                        : 'e.g., 158,538 (x,y)'
+                                }
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                {type === 'territory'
+                                    ? 'Four values for rectangle corners: topLeftX, topLeftY, bottomRightX, bottomRightY'
+                                    : 'Two values for flag position: x, y'}
+                            </p>
+                        </div>
 
                         {/* Image URL */}
                         <div className="space-y-2">

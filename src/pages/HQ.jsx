@@ -1,124 +1,28 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useAuth } from '@/contexts/AuthProvider'
 import { useAllTeams } from '@/hooks/useAllTeams'
 import { useAllTerritories } from '@/hooks/useAllTerritories'
 import { useAllWorldTourGames } from '@/hooks/useAllWorldTourGames'
-import { getTeamRankInfo, RANKS, calculateTeamScore } from '@/services/rankService'
+import { useAllLocations } from '@/hooks/useAllLocations'
+import { getTeamRankInfo, RANKS } from '@/services/rankService'
 import { getGameRules } from '@/services/challengeService'
 import { RankBadge } from '@/components/game/RankBadge'
+import { TerritoryRect } from '@/components/hq/TerritoryRect'
+import { WorldTourFlag } from '@/components/hq/WorldTourFlag'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Swords, Clock, Trophy, Users, Star, Globe, MapPin, LogOut } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Trophy, Users, LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-/**
- * Format a countdown from a future timestamp
- */
-function formatCountdown(endTime) {
-    if (!endTime) return null
-    const end = endTime.toDate ? endTime.toDate() : new Date(endTime)
-    const now = new Date()
-    const diff = end - now
-    if (diff <= 0) return null
-    const mins = Math.floor(diff / 60000)
-    const secs = Math.floor((diff % 60000) / 1000)
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-}
-
-/**
- * Territory/Game Card for War Room
- */
-function BattleCard({ item, teamsMap, type = 'territory' }) {
-    const [countdown, setCountdown] = useState(null)
-    const isUnderAttack = item.under_attack === true
-    const hasCooldown = item.cooldown_ends_at && formatCountdown(item.cooldown_ends_at)
-    const hasLiveScore = item.live_state?.attacker_score > 0 || item.live_state?.defender_score > 0
-    const owner = teamsMap[item.owner_id]
-    const attacker = teamsMap[item.current_attacker_id]
-
-    // Update countdown every second
-    useEffect(() => {
-        if (!item.cooldown_ends_at) return
-        const interval = setInterval(() => {
-            setCountdown(formatCountdown(item.cooldown_ends_at))
-        }, 1000)
-        return () => clearInterval(interval)
-    }, [item.cooldown_ends_at])
-
-    return (
-        <Card className={cn(
-            'relative overflow-hidden transition-all duration-300',
-            isUnderAttack && 'ring-2 ring-red-500 animate-pulse'
-        )}>
-            {/* Cooldown Overlay */}
-            {hasCooldown && !isUnderAttack && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
-                    <div className="text-center text-white">
-                        <Clock className="h-6 w-6 mx-auto mb-1" />
-                        <p className="text-sm font-mono">{countdown || '...'}</p>
-                    </div>
-                </div>
-            )}
-
-            <CardHeader className="p-3 pb-1">
-                <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium flex items-center gap-1">
-                        {type === 'worldtour' ? <Globe className="h-4 w-4 text-blue-500" /> : <MapPin className="h-4 w-4 text-muted-foreground" />}
-                        {item.name || item.id}
-                    </CardTitle>
-                    {isUnderAttack && (
-                        <Badge variant="destructive" className="text-xs">
-                            <Swords className="h-3 w-3 mr-1" /> Battle!
-                        </Badge>
-                    )}
-                </div>
-            </CardHeader>
-            <CardContent className="p-3 pt-1 space-y-1">
-                {/* Owner */}
-                {owner && (
-                    <div className="flex items-center gap-1 text-xs">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: owner.color }} />
-                        <span className="text-muted-foreground">{owner.name}</span>
-                    </div>
-                )}
-                {/* Stars */}
-                {item.stars > 0 && (
-                    <div className="flex items-center gap-1 text-xs text-amber-500">
-                        <Star className="h-3 w-3 fill-current" />
-                        <span>{item.stars} Stars</span>
-                    </div>
-                )}
-                {/* Live Score */}
-                {hasLiveScore && (
-                    <div className="text-center font-bold text-lg">
-                        <span className="text-red-500">{item.live_state.attacker_score}</span>
-                        <span className="text-muted-foreground mx-1">-</span>
-                        <span className="text-blue-500">{item.live_state.defender_score}</span>
-                    </div>
-                )}
-                {/* Attacker info during battle */}
-                {isUnderAttack && attacker && (
-                    <div className="text-xs text-muted-foreground flex items-center gap-1">
-                        <span>Attacker:</span>
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: attacker.color }} />
-                        <span>{attacker.name}</span>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    )
-}
+import mapImage from '@/assets/map.png'
 
 /**
  * Animated Leaderboard Row with rank change detection
  */
-function LeaderboardRow({ team, rank, index, isLivingIcon, score }) {
+function LeaderboardRow({ team, rank, index, isLivingIcon }) {
     const prevRankRef = useRef(rank)
     const [isRankChanged, setIsRankChanged] = useState(false)
 
-    // Detect rank changes and trigger flash animation
     useEffect(() => {
         if (prevRankRef.current !== rank && prevRankRef.current !== null) {
             setIsRankChanged(true)
@@ -145,26 +49,24 @@ function LeaderboardRow({ team, rank, index, isLivingIcon, score }) {
                 backgroundColor: { duration: 1.5 }
             }}
             className={cn(
-                'flex items-center justify-between p-3 rounded-lg',
+                'flex items-center justify-between p-2 rounded-lg',
                 index === 0 && 'bg-amber-500/10',
                 index % 2 === 1 && !isRankChanged && 'bg-muted/50'
             )}
         >
-            <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg" style={{ backgroundColor: team.color, color: 'white' }}>
+            <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm" style={{ backgroundColor: team.color, color: 'white' }}>
                     {index + 1}
                 </div>
                 <div>
-                    <p className="font-medium">{team.name}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <p className="font-medium text-sm">{team.name}</p>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Users className="h-3 w-3" />
                         <span>{(team.followers || 0).toLocaleString()}</span>
                     </div>
                 </div>
             </div>
-            <div className="flex items-center gap-2">
-                <RankBadge rank={rank} isLivingIcon={isLivingIcon} />
-            </div>
+            <RankBadge rank={rank} isLivingIcon={isLivingIcon} />
         </motion.div>
     )
 }
@@ -174,7 +76,10 @@ export default function HQ() {
     const { teams, teamsMap, loading: teamsLoading } = useAllTeams()
     const { territories, loading: territoriesLoading } = useAllTerritories()
     const { worldTourGames, loading: worldTourLoading } = useAllWorldTourGames()
+    const { locations, locationsMap, loading: locationsLoading } = useAllLocations()
     const [config, setConfig] = useState(null)
+    const mapRef = useRef(null)
+    const [mapDimensions, setMapDimensions] = useState({ width: 0, height: 0 })
 
     // Fetch game rules config
     useEffect(() => {
@@ -185,13 +90,36 @@ export default function HQ() {
         fetchConfig()
     }, [])
 
+    // Track map image dimensions
+    useEffect(() => {
+        const updateDimensions = () => {
+            if (mapRef.current) {
+                setMapDimensions({
+                    width: mapRef.current.naturalWidth || mapRef.current.width,
+                    height: mapRef.current.naturalHeight || mapRef.current.height
+                })
+            }
+        }
+
+        const img = mapRef.current
+        if (img) {
+            if (img.complete) {
+                updateDimensions()
+            } else {
+                img.onload = updateDimensions
+            }
+        }
+
+        window.addEventListener('resize', updateDimensions)
+        return () => window.removeEventListener('resize', updateDimensions)
+    }, [])
+
     // Calculate leaderboard with ranks
     const leaderboard = useMemo(() => {
         if (!config || teams.length === 0) return []
 
         const RANK_ORDER = { [RANKS.LEGEND]: 3, [RANKS.RISING_STAR]: 2, [RANKS.ROOKIE]: 1, [RANKS.NONE]: 0 }
 
-        // Calculate rank info for each team
         const teamsWithRanks = teams.map(team => {
             const teamTerritories = territories.filter(t => t.owner_id === team.id)
             const rankInfo = getTeamRankInfo(team, teamTerritories, teams, territories, config)
@@ -203,7 +131,6 @@ export default function HQ() {
             }
         })
 
-        // Sort: Rank (desc) -> Score (desc)
         teamsWithRanks.sort((a, b) => {
             const rankDiff = (RANK_ORDER[b.rank] || 0) - (RANK_ORDER[a.rank] || 0)
             if (rankDiff !== 0) return rankDiff
@@ -213,7 +140,14 @@ export default function HQ() {
         return teamsWithRanks
     }, [teams, territories, config])
 
-    const loading = teamsLoading || territoriesLoading || worldTourLoading || !config
+    // Get fan favourite team for each World Tour game
+    const getFanFavTeam = (game) => {
+        if (!game.attempts || game.attempts.length === 0) return null
+        const sorted = [...game.attempts].sort((a, b) => b.score - a.score)
+        return teamsMap[sorted[0]?.team_id] || null
+    }
+
+    const loading = teamsLoading || territoriesLoading || worldTourLoading || locationsLoading || !config
 
     if (loading) {
         return (
@@ -224,66 +158,107 @@ export default function HQ() {
     }
 
     return (
-        <div className="min-h-screen bg-background p-4">
+        <div className="min-h-screen bg-background flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between p-4 border-b">
                 <div>
-                    <h1 className="text-3xl font-bold flex items-center gap-2">
+                    <h1 className="text-2xl font-bold flex items-center gap-2">
                         🎯 HQ War Room
                     </h1>
-                    <p className="text-muted-foreground">Real-time game monitoring</p>
+                    <p className="text-sm text-muted-foreground">Real-time game monitoring</p>
                 </div>
-                <Button variant="outline" onClick={logout}>
+                <Button variant="outline" size="sm" onClick={logout}>
                     <LogOut className="h-4 w-4 mr-2" /> Logout
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* War Room - Territories */}
-                <div className="lg:col-span-2 space-y-4">
-                    <div>
-                        <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                            <MapPin className="h-5 w-5" /> Territories
-                        </h2>
-                        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-                            {territories.map(territory => (
-                                <BattleCard key={territory.id} item={territory} teamsMap={teamsMap} type="territory" />
-                            ))}
-                        </div>
-                    </div>
+            {/* Main Content: Map + Leaderboard */}
+            <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4">
+                {/* Map Container */}
+                <div className="flex-1 relative bg-muted rounded-lg overflow-hidden">
+                    {/* Map Image */}
+                    <img
+                        ref={mapRef}
+                        src={mapImage}
+                        alt="Game Map"
+                        className="w-full h-auto"
+                    />
 
-                    {/* War Room - World Tour */}
-                    <div>
-                        <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                            <Globe className="h-5 w-5 text-blue-500" /> World Tour Games
-                        </h2>
-                        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-                            {worldTourGames.map(game => (
-                                <BattleCard key={game.id} item={game} teamsMap={teamsMap} type="worldtour" />
-                            ))}
+                    {/* SVG Overlay for Territories */}
+                    {mapDimensions.width > 0 && (
+                        <svg
+                            className="absolute top-0 left-0 w-full h-full pointer-events-none"
+                            viewBox={`0 0 ${mapDimensions.width} ${mapDimensions.height}`}
+                            preserveAspectRatio="xMidYMid meet"
+                        >
+                            {territories.map(territory => {
+                                const location = locationsMap[territory.location_id]
+                                if (!location?.map_coords) return null
+                                const ownerTeam = teamsMap[territory.owner_id]
+                                return (
+                                    <TerritoryRect
+                                        key={territory.id}
+                                        territory={territory}
+                                        location={location}
+                                        ownerTeam={ownerTeam}
+                                    />
+                                )
+                            })}
+                        </svg>
+                    )}
+
+                    {/* World Tour Flags Container */}
+                    {mapDimensions.width > 0 && (
+                        <div
+                            className="absolute top-0 left-0 w-full h-full"
+                            style={{
+                                transform: `scale(${mapRef.current?.clientWidth / mapDimensions.width || 1})`,
+                                transformOrigin: 'top left'
+                            }}
+                        >
+                            {worldTourGames.map(game => {
+                                const location = locationsMap[game.location_id]
+                                if (!location?.map_coords) return null
+                                const fanFavTeam = getFanFavTeam(game)
+                                return (
+                                    <WorldTourFlag
+                                        key={game.id}
+                                        game={game}
+                                        location={location}
+                                        fanFavTeam={fanFavTeam}
+                                        teamsMap={teamsMap}
+                                    />
+                                )
+                            })}
                         </div>
-                    </div>
+                    )}
                 </div>
 
-                {/* Leaderboard */}
-                <div>
-                    <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                {/* Leaderboard (Right Side) */}
+                <div className="lg:w-80 flex-shrink-0">
+                    <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
                         <Trophy className="h-5 w-5 text-amber-500" /> Leaderboard
                     </h2>
-                    <Card>
+                    <Card className="h-[calc(100vh-200px)] overflow-y-auto">
                         <CardContent className="p-2 space-y-1">
                             {leaderboard.map((team, index) => (
                                 <LeaderboardRow
                                     key={team.id}
                                     team={team}
                                     rank={team.rank}
-                                    score={team.score}
                                     isLivingIcon={team.isLivingIcon}
                                     index={index}
                                 />
                             ))}
                         </CardContent>
                     </Card>
+                </div>
+            </div>
+
+            {/* Message Panel (Placeholder) */}
+            <div className="border-t p-3 bg-muted/50">
+                <div className="text-center text-sm text-muted-foreground">
+                    📢 Message Panel - Coming Soon
                 </div>
             </div>
         </div>

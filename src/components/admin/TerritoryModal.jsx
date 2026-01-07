@@ -37,7 +37,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { RichTextEditor } from '@/components/ui/RichTextEditor'
-import { Trash2, Loader2, RotateCcw, ChevronsUpDown, Check } from 'lucide-react'
+import { Trash2, Loader2, RotateCcw, ChevronsUpDown, Check, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -218,49 +218,62 @@ export function TerritoryModal({
                         {/* Location */}
                         <div className="space-y-2">
                             <Label>Location *</Label>
-                            <Popover open={locationPopoverOpen} onOpenChange={setLocationPopoverOpen}>
-                                <PopoverTrigger asChild>
+                            <div className="flex gap-2">
+                                <Popover open={locationPopoverOpen} onOpenChange={setLocationPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={locationPopoverOpen}
+                                            className="flex-1 justify-between font-normal"
+                                        >
+                                            {locationId
+                                                ? availableLocations.find(loc => loc.id === locationId)?.name || 'Select location...'
+                                                : 'Select location...'}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-full p-0" align="start">
+                                        <Command>
+                                            <CommandInput placeholder="Search locations..." />
+                                            <CommandList>
+                                                <CommandEmpty>No location found.</CommandEmpty>
+                                                <CommandGroup>
+                                                    {availableLocations.map(loc => (
+                                                        <CommandItem
+                                                            key={loc.id}
+                                                            value={loc.name}
+                                                            onSelect={() => {
+                                                                setLocationId(loc.id)
+                                                                setLocationPopoverOpen(false)
+                                                            }}
+                                                        >
+                                                            <Check
+                                                                className={cn(
+                                                                    "mr-2 h-4 w-4",
+                                                                    locationId === loc.id ? "opacity-100" : "opacity-0"
+                                                                )}
+                                                            />
+                                                            {loc.name}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                                {locationId && (
                                     <Button
+                                        type="button"
                                         variant="outline"
-                                        role="combobox"
-                                        aria-expanded={locationPopoverOpen}
-                                        className="w-full justify-between font-normal"
+                                        size="icon"
+                                        onClick={() => setLocationId('')}
+                                        title="Clear location"
                                     >
-                                        {locationId
-                                            ? availableLocations.find(loc => loc.id === locationId)?.name || 'Select location...'
-                                            : 'Select location...'}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        <X className="h-4 w-4" />
                                     </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-full p-0" align="start">
-                                    <Command>
-                                        <CommandInput placeholder="Search locations..." />
-                                        <CommandList>
-                                            <CommandEmpty>No location found.</CommandEmpty>
-                                            <CommandGroup>
-                                                {availableLocations.map(loc => (
-                                                    <CommandItem
-                                                        key={loc.id}
-                                                        value={loc.name}
-                                                        onSelect={() => {
-                                                            setLocationId(loc.id)
-                                                            setLocationPopoverOpen(false)
-                                                        }}
-                                                    >
-                                                        <Check
-                                                            className={cn(
-                                                                "mr-2 h-4 w-4",
-                                                                locationId === loc.id ? "opacity-100" : "opacity-0"
-                                                            )}
-                                                        />
-                                                        {loc.name}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
+                                )}
+                            </div>
                             {availableLocations.length === 0 && (
                                 <p className="text-sm text-muted-foreground">
                                     No available territory locations. Create a new location first.

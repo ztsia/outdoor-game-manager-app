@@ -320,7 +320,7 @@ export default function TerritoryGamePage() {
     return (
         <div className="min-h-screen bg-background flex flex-col">
             {/* Rank Change Notification Banner */}
-            <RankNotification mode="banner" rank={rank} isLivingIcon={isLivingIcon} loading={rankLoading} />
+            <RankNotification mode="banner" rank={rank} isLivingIcon={isLivingIcon} loading={rankLoading} isGameActive={isBattleMode} />
 
             {/* Hero Header */}
             <div className="relative">
