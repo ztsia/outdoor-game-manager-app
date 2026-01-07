@@ -117,13 +117,13 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap, imageBound
     const scale = imageBounds?.scale || 1
     const scaledX = x * scale
     const scaledY = y * scale
-    const scaledPoleHeight = basePoleHeight * scale
+    const scaledPoleHeight = Math.max(basePoleHeight * scale, 25)
     const scaledPoleWidth = Math.max(basePoleWidth * scale, 2)
-    const scaledFlagSize = Math.max(20 * scale, 16)
+    const scaledFlagSize = Math.max(24 * scale, 18)
 
     return (
         <>
-            {/* Main flag container */}
+            {/* Main flag container - anchored at ground point */}
             <div
                 style={{
                     position: 'absolute',
@@ -131,13 +131,24 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap, imageBound
                     top: scaledY,
                     transform: 'translate(-50%, -100%)',
                     zIndex: 20,
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-end'  // Flag hangs from right side of pole
                 }}
                 onClick={() => setLeaderboardOpen(true)}
             >
                 {/* Team chip above flag */}
                 {fanFavTeam && (
-                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                    <div
+                        style={{
+                            position: 'absolute',
+                            top: -20,
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            whiteSpace: 'nowrap'
+                        }}
+                    >
                         <TeamChip
                             name={fanFavTeam.name}
                             color={fanFavTeam.color}
@@ -148,7 +159,15 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap, imageBound
 
                 {/* Status/cooldown badge */}
                 {(status.disabled || (hasCooldown && !isActive && countdown)) && (
-                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                    <div
+                        style={{
+                            position: 'absolute',
+                            top: -36,
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            whiteSpace: 'nowrap'
+                        }}
+                    >
                         {status.disabled && <TerritoryStatusBadge status={status} />}
                         {hasCooldown && !isActive && countdown && (
                             <div className="flex items-center gap-1 bg-white/90 rounded px-1.5 py-0.5 text-xs font-mono shadow">
@@ -159,39 +178,47 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap, imageBound
                     </div>
                 )}
 
-                {/* Flag image */}
-                <div
-                    className="rounded shadow-lg"
-                    style={{
-                        backgroundColor: `rgba(${r}, ${g}, ${b}, 0.3)`,
-                        border: `2px solid ${teamColor}`,
-                        padding: 2
-                    }}
-                >
-                    <FlagDisplay value={location?.emoji} size={scaledFlagSize} />
-                </div>
+                {/* Flag + Pole wrapper - flag hangs LEFT of pole */}
+                <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                    {/* Flag image with 2.5D effect */}
+                    <div style={{ perspective: '300px', marginRight: -1 }}>
+                        <div
+                            className="rounded shadow-lg"
+                            style={{
+                                backgroundColor: `rgba(${r}, ${g}, ${b}, 0.25)`,
+                                border: `2px solid ${teamColor}`,
+                                padding: 3,
+                                transform: 'rotateY(-20deg) rotateX(3deg)',
+                                transformOrigin: 'right center',
+                                transformStyle: 'preserve-3d'
+                            }}
+                        >
+                            <FlagDisplay value={location?.emoji} size={scaledFlagSize} />
+                        </div>
+                    </div>
 
-                {/* Flag pole */}
-                <div
-                    style={{
-                        width: scaledPoleWidth,
-                        height: scaledPoleHeight,
-                        backgroundColor: teamColor,
-                        margin: '0 auto',
-                        borderRadius: '0 0 2px 2px',
-                        boxShadow: '1px 1px 2px rgba(0,0,0,0.3)'
-                    }}
-                />
+                    {/* Flag pole */}
+                    <div
+                        style={{
+                            width: scaledPoleWidth,
+                            height: scaledPoleHeight,
+                            backgroundColor: teamColor,
+                            borderRadius: '2px 2px 0 0',
+                            boxShadow: '1px 1px 3px rgba(0,0,0,0.3)'
+                        }}
+                    />
+                </div>
 
                 {/* Ground marker */}
                 <div
                     style={{
-                        width: 8,
-                        height: 8,
+                        width: 10,
+                        height: 10,
                         backgroundColor: teamColor,
                         borderRadius: '50%',
-                        margin: '-4px auto 0',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                        marginTop: -2,
+                        marginRight: (scaledPoleWidth / 2) - 5,
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
                     }}
                 />
 
@@ -202,7 +229,7 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap, imageBound
                         style={{
                             border: '2px solid #ef4444',
                             backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            margin: -4
+                            margin: -6
                         }}
                     />
                 )}
