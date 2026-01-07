@@ -200,13 +200,13 @@ export function LocationModal({ open, onOpenChange, location, onSave, onDelete }
                                 onChange={(e) => setMapCoords(e.target.value)}
                                 placeholder={
                                     type === 'territory'
-                                        ? 'e.g., 110,679,197,678 (topLeftX,topLeftY,bottomRightX,bottomRightY)'
+                                        ? 'Rect: x1,y1,x2,y2 | Polygon: x1,y1,x2,y2,x3,y3,...'
                                         : 'e.g., 158,538 (x,y)'
                                 }
                             />
                             <p className="text-xs text-muted-foreground">
                                 {type === 'territory'
-                                    ? 'Four values for rectangle corners: topLeftX, topLeftY, bottomRightX, bottomRightY'
+                                    ? 'Rectangle: 4 values | Polygon: 6+ values (pairs of x,y)'
                                     : 'Two values for flag position: x, y'}
                             </p>
                         </div>

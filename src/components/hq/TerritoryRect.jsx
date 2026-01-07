@@ -3,20 +3,51 @@ import { hexToRgb } from '@/lib/utils'
 import { Swords, Clock } from 'lucide-react'
 
 /**
- * Parse rectangle coordinates from string format
- * @param {string} coords - Format: "topLeftX,topLeftY,bottomRightX,bottomRightY"
- * @returns {{ x: number, y: number, width: number, height: number } | null}
+ * Parse coordinates from string format - supports both rectangle and polygon
+ * @param {string} coords - Format: "x1,y1,x2,y2" (rect) or "x1,y1,x2,y2,x3,y3,..." (polygon)
+ * @returns {Object | null} Parsed coordinate object with type, dimensions, and center
  */
-function parseRectCoords(coords) {
+function parseCoords(coords) {
     if (!coords) return null
     const parts = coords.split(',').map(s => parseFloat(s.trim()))
-    if (parts.length !== 4 || parts.some(isNaN)) return null
-    const [x1, y1, x2, y2] = parts
-    return {
-        x: Math.min(x1, x2),
-        y: Math.min(y1, y2),
-        width: Math.abs(x2 - x1),
-        height: Math.abs(y2 - y1)
+    if (parts.some(isNaN) || parts.length < 4 || parts.length % 2 !== 0) return null
+
+    if (parts.length === 4) {
+        // Rectangle: x1,y1,x2,y2
+        const [x1, y1, x2, y2] = parts
+        const x = Math.min(x1, x2)
+        const y = Math.min(y1, y2)
+        const width = Math.abs(x2 - x1)
+        const height = Math.abs(y2 - y1)
+        return {
+            type: 'rect',
+            x, y, width, height,
+            centerX: x + width / 2,
+            centerY: y + height / 2
+        }
+    } else {
+        // Polygon: x1,y1,x2,y2,x3,y3,...
+        const points = []
+        for (let i = 0; i < parts.length; i += 2) {
+            points.push({ x: parts[i], y: parts[i + 1] })
+        }
+        const xs = points.map(p => p.x)
+        const ys = points.map(p => p.y)
+        const minX = Math.min(...xs)
+        const maxX = Math.max(...xs)
+        const minY = Math.min(...ys)
+        const maxY = Math.max(...ys)
+        return {
+            type: 'polygon',
+            points,
+            pointsString: points.map(p => `${p.x},${p.y}`).join(' '),
+            x: minX,
+            y: minY,
+            width: maxX - minX,
+            height: maxY - minY,
+            centerX: (minX + maxX) / 2,
+            centerY: (minY + maxY) / 2
+        }
     }
 }
 
@@ -35,7 +66,7 @@ function formatCountdown(endTime) {
 }
 
 /**
- * TerritoryRect - SVG overlay for territory on HQ map
+ * TerritoryRect - SVG overlay for territory on HQ map (supports rect and polygon)
  * 
  * @param {Object} props
  * @param {Object} props.territory - Territory data from Firestore
@@ -45,10 +76,10 @@ function formatCountdown(endTime) {
 export function TerritoryRect({ territory, location, ownerTeam }) {
     const [countdown, setCountdown] = useState(null)
 
-    const coords = parseRectCoords(location?.map_coords)
+    const coords = parseCoords(location?.map_coords)
     if (!coords) return null
 
-    const { x, y, width, height } = coords
+    const { x, y, width, height, centerX, centerY } = coords
     const minDimension = Math.min(width, height)
 
     // Team color processing
@@ -74,8 +105,6 @@ export function TerritoryRect({ territory, location, ownerTeam }) {
 
     // Determine text display mode
     const renderText = () => {
-        const centerX = x + width / 2
-        const centerY = y + height / 2
         const locationName = location?.name || territory?.name || 'Territory'
         const gameName = territory?.name || ''
         const ownerName = ownerTeam?.name || 'Unclaimed'
@@ -173,20 +202,35 @@ export function TerritoryRect({ territory, location, ownerTeam }) {
         )
     }
 
+    // Shared fill and stroke props
+    const fillColor = `rgba(${r}, ${g}, ${b}, 0.35)`
+    const strokeColor = isUnderAttack ? '#ef4444' : teamColor
+    const strokeWidth = isUnderAttack ? 3 : 1.5
+
     return (
         <g className="territory-rect">
-            {/* Base rectangle */}
-            <rect
-                x={x}
-                y={y}
-                width={width}
-                height={height}
-                fill={`rgba(${r}, ${g}, ${b}, 0.35)`}
-                stroke={isUnderAttack ? '#ef4444' : teamColor}
-                strokeWidth={isUnderAttack ? 3 : 1.5}
-                rx={2}
-                className={isUnderAttack ? 'animate-pulse' : ''}
-            />
+            {/* Base shape (rect or polygon) */}
+            {coords.type === 'rect' ? (
+                <rect
+                    x={x}
+                    y={y}
+                    width={width}
+                    height={height}
+                    fill={fillColor}
+                    stroke={strokeColor}
+                    strokeWidth={strokeWidth}
+                    rx={2}
+                    className={isUnderAttack ? 'animate-pulse' : ''}
+                />
+            ) : (
+                <polygon
+                    points={coords.pointsString}
+                    fill={fillColor}
+                    stroke={strokeColor}
+                    strokeWidth={strokeWidth}
+                    className={isUnderAttack ? 'animate-pulse' : ''}
+                />
+            )}
 
             {/* Text content */}
             {!hasCooldown && !isUnderAttack && renderText()}
@@ -194,17 +238,25 @@ export function TerritoryRect({ territory, location, ownerTeam }) {
             {/* Battle overlay */}
             {isUnderAttack && (
                 <g className="battle-overlay">
-                    <rect
-                        x={x}
-                        y={y}
-                        width={width}
-                        height={height}
-                        fill="rgba(239, 68, 68, 0.2)"
-                        className="animate-pulse"
-                    />
+                    {coords.type === 'rect' ? (
+                        <rect
+                            x={x}
+                            y={y}
+                            width={width}
+                            height={height}
+                            fill="rgba(239, 68, 68, 0.2)"
+                            className="animate-pulse"
+                        />
+                    ) : (
+                        <polygon
+                            points={coords.pointsString}
+                            fill="rgba(239, 68, 68, 0.2)"
+                            className="animate-pulse"
+                        />
+                    )}
                     <foreignObject
-                        x={x + width / 2 - 12}
-                        y={y + height / 2 - 12}
+                        x={centerX - 12}
+                        y={centerY - 12}
                         width={24}
                         height={24}
                     >
@@ -218,16 +270,23 @@ export function TerritoryRect({ territory, location, ownerTeam }) {
             {/* Cooldown overlay */}
             {hasCooldown && !isUnderAttack && (
                 <g className="cooldown-overlay">
-                    <rect
-                        x={x}
-                        y={y}
-                        width={width}
-                        height={height}
-                        fill="rgba(255, 255, 255, 0.7)"
-                    />
+                    {coords.type === 'rect' ? (
+                        <rect
+                            x={x}
+                            y={y}
+                            width={width}
+                            height={height}
+                            fill="rgba(255, 255, 255, 0.7)"
+                        />
+                    ) : (
+                        <polygon
+                            points={coords.pointsString}
+                            fill="rgba(255, 255, 255, 0.7)"
+                        />
+                    )}
                     <foreignObject
-                        x={x + width / 2 - 20}
-                        y={y + height / 2 - 20}
+                        x={centerX - 20}
+                        y={centerY - 20}
                         width={40}
                         height={40}
                     >
