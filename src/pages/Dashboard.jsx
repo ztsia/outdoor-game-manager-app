@@ -205,8 +205,8 @@ export default function Dashboard() {
                     </div>
                     <Button
                         size="lg"
-                        variant="outline"
-                        className="gap-2 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
+                        variant="secondary"
+                        className="gap-2"
                         onClick={() => setRedeemModalOpen(true)}
                     >
                         <Gift className="h-5 w-5" />

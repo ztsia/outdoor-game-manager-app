@@ -135,7 +135,7 @@ export function TerritoryModal({
             toast.error('Name is required')
             return
         }
-        if (!locationId) {
+        if (!locationId && !isEditMode) {
             toast.error('Location is required')
             return
         }
@@ -519,7 +519,7 @@ export function TerritoryModal({
                             </Button>
                             <Button
                                 onClick={handleSave}
-                                disabled={!name.trim() || !locationId || saving}
+                                disabled={!name.trim() || (!locationId && !isEditMode) || saving}
                             >
                                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {isEditMode ? 'Save' : 'Create'}
