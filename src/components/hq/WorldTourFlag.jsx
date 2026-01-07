@@ -120,8 +120,29 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap, imageBound
     const scaledPoleHeight = basePoleHeight * scale
     const scaledPoleWidth = basePoleWidth * scale
 
+    // Debug: log coordinates
+    console.log('WorldTourFlag:', { x, y, scale, scaledX, scaledY, location: location?.name })
+
     return (
         <>
+            {/* Simple debug marker - bright red circle at scaled coordinates */}
+            <div
+                style={{
+                    position: 'absolute',
+                    left: scaledX - 15,
+                    top: scaledY - 15,
+                    width: 30,
+                    height: 30,
+                    backgroundColor: 'red',
+                    borderRadius: '50%',
+                    border: '3px solid white',
+                    zIndex: 100,
+                    cursor: 'pointer'
+                }}
+                onClick={() => setLeaderboardOpen(true)}
+                title={location?.name}
+            />
+
             <div
                 className="absolute cursor-pointer transition-transform hover:scale-110"
                 style={{
