@@ -58,8 +58,8 @@ function LeaderboardRow({ team, rank, index, isLivingIcon }) {
                 <div className="w-6 h-6 rounded-full bg-background/80 flex items-center justify-center font-bold text-sm">
                     {index + 1}
                 </div>
-                <div>
-                    <p className="font-medium text-sm">{team.name}</p>
+                <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm truncate">{team.name}</p>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Users className="h-3 w-3" />
                         <span>{(team.followers || 0).toLocaleString()}</span>
@@ -80,6 +80,7 @@ export default function HQ() {
     const [config, setConfig] = useState(null)
     const mapRef = useRef(null)
     const [mapDimensions, setMapDimensions] = useState({ width: 0, height: 0 })
+    const [imageBounds, setImageBounds] = useState(null)
 
     // Message panel state
     const [messages, setMessages] = useState([])
@@ -94,28 +95,76 @@ export default function HQ() {
         fetchConfig()
     }, [])
 
-    // Track map image dimensions
+    // Track map image dimensions and calculate rendered bounds
     useEffect(() => {
         const updateDimensions = () => {
-            if (mapRef.current) {
-                setMapDimensions({
-                    width: mapRef.current.naturalWidth || mapRef.current.width,
-                    height: mapRef.current.naturalHeight || mapRef.current.height
-                })
+            const img = mapRef.current
+            if (!img) return
+
+            const naturalWidth = img.naturalWidth || img.width
+            const naturalHeight = img.naturalHeight || img.height
+            setMapDimensions({ width: naturalWidth, height: naturalHeight })
+
+            // Calculate actual rendered image bounds (accounting for object-contain)
+            const containerWidth = img.clientWidth
+            const containerHeight = img.clientHeight
+            if (!containerWidth || !containerHeight || !naturalWidth || !naturalHeight) return
+
+            const imgRatio = naturalWidth / naturalHeight
+            const containerRatio = containerWidth / containerHeight
+
+            let renderedWidth, renderedHeight, offsetX, offsetY
+
+            if (imgRatio > containerRatio) {
+                // Image is wider - letterbox top/bottom
+                renderedWidth = containerWidth
+                renderedHeight = containerWidth / imgRatio
+                offsetX = 0
+                offsetY = (containerHeight - renderedHeight) / 2
+            } else {
+                // Image is taller - letterbox left/right
+                renderedHeight = containerHeight
+                renderedWidth = containerHeight * imgRatio
+                offsetX = (containerWidth - renderedWidth) / 2
+                offsetY = 0
             }
+
+            setImageBounds({
+                renderedWidth,
+                renderedHeight,
+                offsetX,
+                offsetY,
+                scale: renderedWidth / naturalWidth
+            })
         }
 
         const img = mapRef.current
         if (img) {
             if (img.complete) {
-                updateDimensions()
+                // Delay to ensure CSS layout is complete
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(updateDimensions)
+                })
             } else {
-                img.onload = updateDimensions
+                img.onload = () => {
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(updateDimensions)
+                    })
+                }
             }
         }
 
+        // Use ResizeObserver for more reliable resize detection
+        const resizeObserver = new ResizeObserver(updateDimensions)
+        if (img) {
+            resizeObserver.observe(img)
+        }
+
         window.addEventListener('resize', updateDimensions)
-        return () => window.removeEventListener('resize', updateDimensions)
+        return () => {
+            window.removeEventListener('resize', updateDimensions)
+            resizeObserver.disconnect()
+        }
     }, [])
 
     // Calculate leaderboard with ranks
@@ -245,7 +294,7 @@ export default function HQ() {
             </Button>
 
             {/* Map Container (Full Screen) */}
-            <div className="h-full pb-10 relative">
+            <div className="h-full pb-12 relative">
                 {/* Map Image */}
                 <img
                     ref={mapRef}
@@ -255,11 +304,17 @@ export default function HQ() {
                 />
 
                 {/* SVG Overlay for Territories */}
-                {mapDimensions.width > 0 && (
+                {imageBounds && mapDimensions.width > 0 && (
                     <svg
-                        className="absolute top-0 left-0 w-full h-full pointer-events-none"
+                        className="absolute pointer-events-none"
+                        style={{
+                            left: imageBounds.offsetX,
+                            top: imageBounds.offsetY,
+                            width: imageBounds.renderedWidth,
+                            height: imageBounds.renderedHeight
+                        }}
                         viewBox={`0 0 ${mapDimensions.width} ${mapDimensions.height}`}
-                        preserveAspectRatio="xMidYMid meet"
+                        preserveAspectRatio="xMidYMid slice"
                     >
                         {territories.map(territory => {
                             const location = locationsMap[territory.location_id]
@@ -278,11 +333,15 @@ export default function HQ() {
                 )}
 
                 {/* World Tour Flags Container */}
-                {mapDimensions.width > 0 && (
+                {imageBounds && mapDimensions.width > 0 && (
                     <div
-                        className="absolute top-0 left-0 w-full h-full"
+                        className="absolute pointer-events-auto"
                         style={{
-                            transform: `scale(${mapRef.current?.clientWidth / mapDimensions.width || 1})`,
+                            left: imageBounds.offsetX,
+                            top: imageBounds.offsetY,
+                            width: imageBounds.renderedWidth,
+                            height: imageBounds.renderedHeight,
+                            transform: `scale(${imageBounds.scale})`,
                             transformOrigin: 'top left'
                         }}
                     >
@@ -304,7 +363,7 @@ export default function HQ() {
                 )}
 
                 {/* Floating Leaderboard */}
-                <div className="absolute top-3 right-3 w-64 max-h-[50vh] overflow-y-auto bg-background/80 backdrop-blur-sm rounded-lg shadow-lg p-3 z-20">
+                <div className="absolute top-3 right-3 w-auto min-w-56 max-w-80 max-h-[50vh] overflow-y-auto overflow-x-hidden bg-background/80 backdrop-blur-sm rounded-lg shadow-lg p-3 z-20">
                     <h2 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
                         <Trophy className="h-4 w-4 text-amber-500" /> Leaderboard
                     </h2>
@@ -323,7 +382,7 @@ export default function HQ() {
             </div>
 
             {/* Rolling Message Panel */}
-            <div className="absolute bottom-0 left-0 right-0 h-10 bg-background/90 backdrop-blur-sm border-t overflow-hidden z-20">
+            <div className="absolute bottom-0 left-0 right-0 h-12 bg-background/90 backdrop-blur-sm border-t overflow-hidden z-20">
                 {messages.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
                         📢 Waiting for game events...

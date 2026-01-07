@@ -34,8 +34,18 @@ export default function Login() {
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
-            await login(accessCode)
+            const roleHomeMap = {
+                'MANAGER': '/dashboard',
+                'HQ': '/hq',
+                'ADMIN': '/admin'
+            }
+            // Get the role from login to immediately navigate
+            const loginResult = await login(accessCode)
+            const storedRole = localStorage.getItem('outdoor_game_role')
+            const redirectTo = roleHomeMap[storedRole] || '/dashboard'
             toast.success('Login successful!')
+            // Force navigation after login
+            window.location.href = redirectTo
         } catch (error) {
             toast.error(error.message || 'Login failed')
         }
