@@ -117,9 +117,9 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap, imageBound
     const scale = imageBounds?.scale || 1
     const scaledX = x * scale
     const scaledY = y * scale
-    const scaledPoleHeight = Math.max(basePoleHeight * scale, 25)
-    const scaledPoleWidth = Math.max(basePoleWidth * scale, 2)
-    const scaledFlagSize = Math.max(24 * scale, 18)
+    const scaledPoleHeight = Math.max(basePoleHeight * scale, 40)
+    const scaledPoleWidth = Math.max(basePoleWidth * scale, 4)
+    const scaledFlagSize = Math.max(32 * scale, 28)
 
     return (
         <>
@@ -183,17 +183,18 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap, imageBound
                     {/* Flag image with 2.5D effect */}
                     <div style={{ perspective: '300px', marginRight: -1 }}>
                         <div
-                            className="rounded shadow-lg"
+                            className="rounded shadow-lg overflow-hidden flex items-center justify-center"
                             style={{
+                                width: scaledFlagSize * 1.5,  // 3:2 ratio (width)
+                                height: scaledFlagSize,       // 3:2 ratio (height)
                                 backgroundColor: `rgba(${r}, ${g}, ${b}, 0.25)`,
                                 border: `2px solid ${teamColor}`,
-                                padding: 3,
                                 transform: 'rotateY(-20deg) rotateX(3deg)',
                                 transformOrigin: 'right center',
                                 transformStyle: 'preserve-3d'
                             }}
                         >
-                            <FlagDisplay value={location?.emoji} size={scaledFlagSize} />
+                            <FlagDisplay value={location?.emoji} size={scaledFlagSize * 1.3} />
                         </div>
                     </div>
 
