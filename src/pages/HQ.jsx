@@ -360,7 +360,9 @@ export default function HQ() {
                             left: imageBounds.offsetX,
                             top: imageBounds.offsetY,
                             width: imageBounds.renderedWidth,
-                            height: imageBounds.renderedHeight
+                            height: imageBounds.renderedHeight,
+                            overflow: 'visible',
+                            zIndex: 15
                         }}
                     >
                         {worldTourGames.map(game => {
