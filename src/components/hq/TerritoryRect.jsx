@@ -37,6 +37,20 @@ function parseCoords(coords) {
         const maxX = Math.max(...xs)
         const minY = Math.min(...ys)
         const maxY = Math.max(...ys)
+
+        // Calculate polygon centroid (geometric center)
+        let cx = 0, cy = 0, signedArea = 0
+        for (let i = 0; i < points.length; i++) {
+            const j = (i + 1) % points.length
+            const cross = points[i].x * points[j].y - points[j].x * points[i].y
+            cx += (points[i].x + points[j].x) * cross
+            cy += (points[i].y + points[j].y) * cross
+            signedArea += cross
+        }
+        signedArea /= 2
+        const centroidX = signedArea !== 0 ? cx / (6 * signedArea) : (minX + maxX) / 2
+        const centroidY = signedArea !== 0 ? cy / (6 * signedArea) : (minY + maxY) / 2
+
         return {
             type: 'polygon',
             points,
@@ -45,8 +59,8 @@ function parseCoords(coords) {
             y: minY,
             width: maxX - minX,
             height: maxY - minY,
-            centerX: (minX + maxX) / 2,
-            centerY: (minY + maxY) / 2
+            centerX: centroidX,
+            centerY: centroidY
         }
     }
 }
@@ -103,15 +117,33 @@ export function TerritoryRect({ territory, location, ownerTeam }) {
         return () => clearInterval(interval)
     }, [territory?.cooldown_ends_at])
 
-    // Determine text display mode
+    // Determine text display mode with adaptive sizing
     const renderText = () => {
         const locationName = location?.name || territory?.name || 'Territory'
         const gameName = territory?.name || ''
         const ownerName = ownerTeam?.name || 'Unclaimed'
         const stars = territory?.stars || 0
 
+        // Helper to render star icons instead of numbers
+        const renderStars = (count, fontSize = 12) => {
+            const displayCount = Math.min(count, 5)
+            return '⭐'.repeat(displayCount) + (count > 5 ? '+' : '')
+        }
+
+        // Aspect ratio detection
+        const area = width * height
+        const isVertical = height > width * 1.5
+        const isHorizontal = width > height * 1.5
+        const isPolygon = coords.type === 'polygon'
+
+        // Size tiers based on area and dimensions
+        const isTiny = minDimension < 35 || area < 1500
+        const isSmall = minDimension < 55 || area < 3000
+        const isMedium = area < 8000
+        // else Large
+
         // TINY: External label
-        if (minDimension < 40) {
+        if (isTiny) {
             const labelY = y > 200 ? y - 12 : y + height + 14
             return (
                 <g className="external-label">
@@ -128,75 +160,125 @@ export function TerritoryRect({ territory, location, ownerTeam }) {
                         x={centerX}
                         y={labelY}
                         textAnchor="middle"
-                        fontSize="9"
+                        fontSize="10"
                         fontWeight="600"
                         fill={teamColor}
                     >
-                        {locationName} ({stars}⭐)
+                        {locationName.substring(0, 10)} {renderStars(stars, 10)}
                     </text>
                 </g>
             )
         }
 
-        // MINIMAL: Stars only
-        if (minDimension < 60) {
-            return (
-                <text
-                    x={centerX}
-                    y={centerY + 4}
-                    textAnchor="middle"
-                    fontSize="12"
-                    fontWeight="bold"
-                    fill="#000"
-                >
-                    {stars}⭐
-                </text>
-            )
-        }
-
-        // COMPACT: Territory name + Stars
-        if (minDimension < 100) {
+        // SMALL: Name + Stars row
+        if (isSmall) {
+            const fontSize = isPolygon ? 11 : 13
             return (
                 <g>
                     <text
                         x={centerX}
-                        y={centerY - 4}
+                        y={centerY - 2}
                         textAnchor="middle"
-                        fontSize="10"
+                        fontSize={fontSize}
                         fontWeight="600"
                         fill="#000"
                     >
-                        {locationName.substring(0, 12)}
+                        {locationName.substring(0, 14)}
                     </text>
                     <text
                         x={centerX}
-                        y={centerY + 10}
+                        y={centerY + fontSize + 2}
                         textAnchor="middle"
-                        fontSize="10"
+                        fontSize={fontSize}
                         fill="#000"
                     >
-                        {stars}⭐
+                        {renderStars(stars, fontSize)}
                     </text>
                 </g>
             )
         }
 
-        // FULL: All details
-        const lineHeight = 13
-        const startY = centerY - lineHeight * 1.5
+        // MEDIUM / LARGE with aspect-ratio awareness
+        if (isVertical) {
+            // VERTICAL LAYOUT - stacked with bigger fonts
+            const baseFontSize = isMedium ? 14 : 18
+            const lineHeight = isMedium ? 18 : 24
+            const startY = centerY - lineHeight * 1.5
+
+            return (
+                <g>
+                    <text x={centerX} y={startY} textAnchor="middle" fontSize={baseFontSize} fontWeight="700" fill="#000">
+                        {locationName.substring(0, 20)}
+                    </text>
+                    {gameName && (
+                        <text x={centerX} y={startY + lineHeight} textAnchor="middle" fontSize={baseFontSize - 3} fill="#555">
+                            {gameName.substring(0, 22)}
+                        </text>
+                    )}
+                    <text x={centerX} y={startY + lineHeight * 2} textAnchor="middle" fontSize={baseFontSize - 3} fill={teamColor} fontWeight="600">
+                        {ownerName}
+                    </text>
+                    <text x={centerX} y={startY + lineHeight * 3} textAnchor="middle" fontSize={baseFontSize} fill="#000">
+                        {renderStars(stars, baseFontSize)}
+                    </text>
+                </g>
+            )
+        }
+
+        if (isHorizontal) {
+            // HORIZONTAL LAYOUT - single/double line, compact
+            const baseFontSize = isMedium ? 12 : 14
+            const hasRoom = width > 180
+
+            if (hasRoom) {
+                // Two lines: name + game, then owner + stars
+                return (
+                    <g>
+                        <text x={centerX} y={centerY - 6} textAnchor="middle" fontSize={baseFontSize} fontWeight="700" fill="#000">
+                            {locationName.substring(0, 25)}{gameName ? ` · ${gameName.substring(0, 15)}` : ''}
+                        </text>
+                        <text x={centerX} y={centerY + baseFontSize} textAnchor="middle" fontSize={baseFontSize - 1} fill="#000">
+                            <tspan fill={teamColor} fontWeight="600">{ownerName}</tspan>
+                            <tspan fill="#000"> {renderStars(stars, baseFontSize)}</tspan>
+                        </text>
+                    </g>
+                )
+            } else {
+                // Single line: name + stars
+                return (
+                    <text x={centerX} y={centerY + 4} textAnchor="middle" fontSize={baseFontSize} fontWeight="600" fill="#000">
+                        {locationName.substring(0, 18)} {renderStars(stars, baseFontSize)}
+                    </text>
+                )
+            }
+        }
+
+        // SQUARE / DEFAULT - balanced layout
+        const baseFontSize = isMedium ? 12 : 15
+        const lineHeight = isMedium ? 15 : 19
+        const startY = centerY - lineHeight * 1.2
+
+        // For polygons, use smaller text to avoid overflow
+        const polyScale = isPolygon ? 0.85 : 1
+        const adjustedFontSize = Math.round(baseFontSize * polyScale)
+        const adjustedLineHeight = Math.round(lineHeight * polyScale)
+        const maxChars = isPolygon ? 12 : 18
+
         return (
             <g>
-                <text x={centerX} y={startY} textAnchor="middle" fontSize="11" fontWeight="700" fill="#000">
-                    {locationName.substring(0, 15)}
+                <text x={centerX} y={startY} textAnchor="middle" fontSize={adjustedFontSize + 1} fontWeight="700" fill="#000">
+                    {locationName.substring(0, maxChars)}
                 </text>
-                <text x={centerX} y={startY + lineHeight} textAnchor="middle" fontSize="9" fill="#333">
-                    {gameName.substring(0, 18)}
+                {gameName && (
+                    <text x={centerX} y={startY + adjustedLineHeight} textAnchor="middle" fontSize={adjustedFontSize - 1} fill="#555">
+                        {gameName.substring(0, maxChars + 2)}
+                    </text>
+                )}
+                <text x={centerX} y={startY + adjustedLineHeight * 2} textAnchor="middle" fontSize={adjustedFontSize - 1} fill={teamColor} fontWeight="600">
+                    {ownerName.substring(0, maxChars)}
                 </text>
-                <text x={centerX} y={startY + lineHeight * 2} textAnchor="middle" fontSize="9" fill={teamColor}>
-                    {ownerName}
-                </text>
-                <text x={centerX} y={startY + lineHeight * 3} textAnchor="middle" fontSize="10" fill="#000">
-                    {stars}⭐
+                <text x={centerX} y={startY + adjustedLineHeight * 3} textAnchor="middle" fontSize={adjustedFontSize} fill="#000">
+                    {renderStars(stars, adjustedFontSize)}
                 </text>
             </g>
         )

@@ -230,7 +230,7 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                         {team.fan_favourites && team.fan_favourites.length > 0 ? (
-                            <div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-2">
+                            <div className="flex gap-2 flex-wrap pb-2">
                                 {team.fan_favourites.map((gameId) => {
                                     const game = gamesMap[gameId]
                                     const locationEmoji = locationsMap[game?.location_id]?.emoji
