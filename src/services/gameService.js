@@ -258,7 +258,9 @@ export async function createTerritory(data) {
             timer_duration_seconds: data.timer_duration_seconds || 60,
             timer_mode: data.timer_mode || 'countdown',
             has_scoreboard: data.has_scoreboard || false,
-            score_unit: data.score_unit || 'Points'
+            score_unit: data.score_unit || 'Points',
+            has_qa: data.has_qa || false,
+            question_sets: data.question_sets || []
         },
         live_state: defaultLiveState
     })
@@ -287,6 +289,8 @@ export async function updateTerritory(territoryId, data) {
     if (data.timer_mode !== undefined) updateData['game_info.timer_mode'] = data.timer_mode
     if (data.has_scoreboard !== undefined) updateData['game_info.has_scoreboard'] = data.has_scoreboard
     if (data.score_unit !== undefined) updateData['game_info.score_unit'] = data.score_unit
+    if (data.has_qa !== undefined) updateData['game_info.has_qa'] = data.has_qa
+    if (data.question_sets !== undefined) updateData['game_info.question_sets'] = data.question_sets
 
     await updateDoc(doc(db, 'territories', territoryId), updateData)
 }
