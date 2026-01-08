@@ -150,7 +150,21 @@ export default function WorldTourGamePage() {
         setEndGameConfirmOpen(false)
 
         try {
-            const baseScore = liveState.score || 0
+            // Calculate elapsed time for timer-only games
+            const storedElapsed = liveState?.elapsed_seconds || 0
+            const timerStarted = liveState?.timer_started_at
+            let elapsedTime = storedElapsed
+            if (timerStarted) {
+                const startTime = timerStarted?.toDate?.() || new Date(timerStarted)
+                elapsedTime = storedElapsed + Math.floor((Date.now() - startTime.getTime()) / 1000)
+            }
+
+            // Use elapsed time as SCORE when only timer is enabled
+            const hasTimer = gameInfo.has_timer
+            const hasScoreboard = gameInfo.has_scoreboard
+            const isTimerOnly = hasTimer && !hasScoreboard
+            const baseScore = isTimerOnly ? elapsedTime : (liveState.score || 0)
+
             const difficulty = liveState.difficulty || 'normal'
             const multiplier = game?.multiplier_config?.[difficulty] || 1
 
@@ -186,6 +200,7 @@ export default function WorldTourGamePage() {
                 baseScore,
                 preprocessedScore,
                 hasFormula: !!formula.trim(),
+                isTimerOnly,
                 difficulty,
                 multiplier,
                 finalScore,

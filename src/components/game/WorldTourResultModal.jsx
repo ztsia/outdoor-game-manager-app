@@ -32,6 +32,7 @@ export function WorldTourResultModal({
         baseScore = 0,
         preprocessedScore = 0,
         hasFormula = false,
+        isTimerOnly = false,
         difficulty = 'normal',
         multiplier = 1,
         finalScore = 0,
@@ -98,7 +99,9 @@ export function WorldTourResultModal({
                     {/* Score Breakdown */}
                     <div className="space-y-3 text-left bg-muted rounded-lg p-4">
                         <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Raw Score</span>
+                            <span className="text-muted-foreground">
+                                {isTimerOnly ? 'Time (seconds)' : 'Raw Score'}
+                            </span>
                             <span className="font-mono font-bold">{baseScore}</span>
                         </div>
 
