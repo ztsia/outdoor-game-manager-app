@@ -308,7 +308,7 @@ export function TerritoryToolTab({
                                         onClick={() => onSelectQuestionSet?.(set.id)}
                                         disabled={role === 'spectator'}
                                     >
-                                        <span>Set {idx + 1}</span>
+                                        <span>{set.name || 'Unnamed Set'}</span>
                                         <span className="text-muted-foreground">{set.questions?.length || 0} questions</span>
                                     </Button>
                                 ))}

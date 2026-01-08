@@ -22,12 +22,14 @@ import { Plus, Trash2, Loader2 } from 'lucide-react'
  * @param {Function} props.onSave - Callback with { id, questions } object
  */
 export function QuestionSetEditModal({ open, onOpenChange, questionSet, onSave }) {
+    const [name, setName] = useState('')
     const [questions, setQuestions] = useState([])
     const [saving, setSaving] = useState(false)
 
-    // Initialize questions when modal opens
+    // Initialize when modal opens
     useEffect(() => {
         if (open) {
+            setName(questionSet?.name || '')
             if (questionSet?.questions?.length > 0) {
                 setQuestions([...questionSet.questions])
             } else {
@@ -57,7 +59,7 @@ export function QuestionSetEditModal({ open, onOpenChange, questionSet, onSave }
         // Filter out empty questions
         const validQuestions = questions.filter(q => q.question.trim() && q.answer.trim())
 
-        if (validQuestions.length === 0) {
+        if (validQuestions.length === 0 || !name.trim()) {
             return
         }
 
@@ -65,6 +67,7 @@ export function QuestionSetEditModal({ open, onOpenChange, questionSet, onSave }
         try {
             await onSave({
                 id: questionSet?.id || crypto.randomUUID(),
+                name: name.trim(),
                 questions: validQuestions
             })
             onOpenChange(false)
@@ -84,7 +87,21 @@ export function QuestionSetEditModal({ open, onOpenChange, questionSet, onSave }
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="space-y-3 py-4">
+                <div className="space-y-4 py-4">
+                    {/* Set Name */}
+                    <div className="space-y-2">
+                        <Label htmlFor="set-name">Set Name *</Label>
+                        <Input
+                            id="set-name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="e.g., Geography Quiz"
+                        />
+                    </div>
+
+                    <hr className="my-2" />
+
+                    {/* Questions */}
                     {questions.map((q, index) => (
                         <Card key={index} className="relative">
                             <CardContent className="pt-4 space-y-3">
@@ -143,7 +160,7 @@ export function QuestionSetEditModal({ open, onOpenChange, questionSet, onSave }
                     </Button>
                     <Button
                         onClick={handleSave}
-                        disabled={validCount === 0 || saving}
+                        disabled={validCount === 0 || !name.trim() || saving}
                     >
                         {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Save ({validCount} questions)

@@ -465,7 +465,7 @@ export function TerritoryModal({
                                                 className="flex items-center justify-between p-3 rounded-md border bg-muted/50"
                                             >
                                                 <span className="text-sm">
-                                                    Set {index + 1}: {set.questions?.length || 0} questions
+                                                    {set.name || 'Unnamed Set'}: {set.questions?.length || 0} questions
                                                 </span>
                                                 <div className="flex gap-1">
                                                     <Button
