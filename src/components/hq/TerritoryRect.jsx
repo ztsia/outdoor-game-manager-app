@@ -444,14 +444,14 @@ export function TerritoryRect({ territory, location, ownerTeam }) {
                             y={y}
                             width={width}
                             height={height}
-                            fill="rgba(255, 255, 255, 0.4)"
+                            fill="rgba(255, 255, 255, 0.6)"
                             rx={4}
                             className="animate-pulse-slow"
                         />
                     ) : (
                         <polygon
                             points={coords.pointsString}
-                            fill="rgba(255, 255, 255, 0.4)"
+                            fill="rgba(255, 255, 255, 0.6)"
                             className="animate-pulse-slow"
                         />
                     )}

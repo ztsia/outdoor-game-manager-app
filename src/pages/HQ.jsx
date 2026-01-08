@@ -193,9 +193,23 @@ export default function HQ() {
 
         const RANK_ORDER = { [RANKS.LEGEND]: 3, [RANKS.RISING_STAR]: 2, [RANKS.ROOKIE]: 1, [RANKS.NONE]: 0 }
 
+        // Track active bets - attackers have followers deducted, add back bet_amount for stable display
+        const activeBets = new Map()
+        territories.forEach(t => {
+            if (t.challenge_status !== 'idle' && t.current_attacker_id && t.bet_amount) {
+                activeBets.set(t.current_attacker_id, (activeBets.get(t.current_attacker_id) || 0) + t.bet_amount)
+            }
+        })
+
         const teamsWithRanks = teams.map(team => {
             const teamTerritories = territories.filter(t => t.owner_id === team.id)
-            const rankInfo = getTeamRankInfo(team, teamTerritories, teams, territories, config)
+
+            // For active attackers, add back bet amount to show pre-bet rank
+            const adjustedTeam = activeBets.has(team.id)
+                ? { ...team, followers: (team.followers || 0) + activeBets.get(team.id) }
+                : team
+
+            const rankInfo = getTeamRankInfo(adjustedTeam, teamTerritories, teams, territories, config)
             return {
                 ...team,
                 rank: rankInfo.rank,
@@ -385,7 +399,7 @@ export default function HQ() {
                 )}
 
                 {/* Floating Leaderboard */}
-                <div className="absolute top-3 right-3 w-auto min-w-64 max-w-[400px] max-h-[50vh] overflow-y-auto overflow-x-hidden bg-background/80 backdrop-blur-sm rounded-lg shadow-lg p-3 z-20">
+                <div className="absolute top-3 right-3 w-auto min-w-[360px] max-w-[450px] max-h-[50vh] overflow-y-auto overflow-x-hidden bg-background/80 backdrop-blur-sm rounded-lg shadow-lg p-4 z-20">
                     <h2 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
                         <Trophy className="h-4 w-4 text-amber-500" /> Leaderboard
                     </h2>
