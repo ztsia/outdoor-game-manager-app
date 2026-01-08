@@ -236,18 +236,6 @@ export function WorldTourFlag({ game, location, fanFavTeam, teamsMap, imageBound
                         boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
                     }}
                 />
-
-                {/* Active game pulsing border */}
-                {isActive && (
-                    <div
-                        className="absolute inset-0 animate-pulse rounded"
-                        style={{
-                            border: '2px solid #ef4444',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            margin: -6
-                        }}
-                    />
-                )}
             </div>
 
             {/* Leaderboard Modal */}
