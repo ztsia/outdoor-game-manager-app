@@ -76,8 +76,9 @@ const NOTIFICATION_CONFIG = {
  * @param {boolean} props.isLivingIcon - Living Icon status
  * @param {boolean} props.loading - Loading state
  * @param {boolean} props.isGameActive - Whether game is actively in progress (for banner mode)
+ * @param {boolean} props.deferShowModal - If true, queue notification but don't show modal yet (modal mode only)
  */
-export function RankNotification({ mode = 'modal', rank, isLivingIcon, loading, isGameActive }) {
+export function RankNotification({ mode = 'modal', rank, isLivingIcon, loading, isGameActive, deferShowModal = false }) {
     const [notification, setNotification] = useState(null)
     const [showBanner, setShowBanner] = useState(false)
     const [showModal, setShowModal] = useState(false)
@@ -109,12 +110,33 @@ export function RankNotification({ mode = 'modal', rank, isLivingIcon, loading, 
         // Skip if still loading
         if (loading) return
 
-        // Initialize refs on first load (don't trigger notification)
+        // Initialize refs on first load
         if (!isInitialized.current) {
-            prevRank.current = rank
-            prevIsLivingIcon.current = isLivingIcon
-            isInitialized.current = true
-            return
+            // Check for rank changes that occurred while away (cross-navigation detection)
+            const storedLastRank = sessionStorage.getItem('lastKnownRank')
+            const storedLastIcon = sessionStorage.getItem('lastKnownIsLivingIcon')
+
+            if (storedLastRank !== null && storedLastRank !== String(rank)) {
+                // Rank changed while user was away - trigger notification
+                const oldRankValue = storedLastRank === 'null' ? null : storedLastRank
+                const oldIconValue = storedLastIcon === 'true'
+
+                // Set prevRank to the stored value to detect the change
+                prevRank.current = oldRankValue
+                prevIsLivingIcon.current = oldIconValue
+                isInitialized.current = true
+                // Continue to check for notification below (don't return)
+            } else {
+                // First time or no change - just initialize
+                prevRank.current = rank
+                prevIsLivingIcon.current = isLivingIcon
+                isInitialized.current = true
+
+                // Store current rank for future detection
+                sessionStorage.setItem('lastKnownRank', String(rank))
+                sessionStorage.setItem('lastKnownIsLivingIcon', String(isLivingIcon))
+                return
+            }
         }
 
         const oldRank = prevRank.current
@@ -149,6 +171,10 @@ export function RankNotification({ mode = 'modal', rank, isLivingIcon, loading, 
         prevRank.current = newRank
         prevIsLivingIcon.current = newIcon
 
+        // Persist new rank to sessionStorage for cross-navigation detection
+        sessionStorage.setItem('lastKnownRank', String(newRank))
+        sessionStorage.setItem('lastKnownIsLivingIcon', String(newIcon))
+
         // Trigger notification if type was determined
         if (notificationType) {
             const notificationData = {
@@ -173,7 +199,11 @@ export function RankNotification({ mode = 'modal', rank, isLivingIcon, loading, 
                         setNotification(null)
                     }, 5000)
                 } else {
-                    setShowModal(true)
+                    // Modal mode - only show if not deferred
+                    if (!deferShowModal) {
+                        setShowModal(true)
+                    }
+                    // If deferred, notification is stored but modal not shown yet
                 }
             } else {
                 // Banner mode but game not active - queue for later (modal on Dashboard)
@@ -184,7 +214,14 @@ export function RankNotification({ mode = 'modal', rank, isLivingIcon, loading, 
         return () => {
             if (autoDismissTimer.current) clearTimeout(autoDismissTimer.current)
         }
-    }, [rank, isLivingIcon, loading, mode, isGameActive])
+    }, [rank, isLivingIcon, loading, mode, isGameActive, deferShowModal])
+
+    // Watch for deferShowModal changes - show queued notification when defer is lifted
+    useEffect(() => {
+        if (mode === 'modal' && notification && !deferShowModal && !showModal) {
+            setShowModal(true)
+        }
+    }, [deferShowModal, notification, mode, showModal])
 
     const handleClose = () => {
         setShowBanner(false)

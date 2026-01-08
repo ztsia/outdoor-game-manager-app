@@ -44,6 +44,7 @@ export default function Dashboard() {
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [newTeamName, setNewTeamName] = useState('')
     const [gameResult, setGameResult] = useState(null)
+    const [gameResultDismissed, setGameResultDismissed] = useState(false)
     const [leaderboardOpen, setLeaderboardOpen] = useState(false)
     const [selectedGameId, setSelectedGameId] = useState(null)
     const [selectedGameData, setSelectedGameData] = useState(null)
@@ -53,10 +54,18 @@ export default function Dashboard() {
     useEffect(() => {
         if (location.state?.gameResult) {
             setGameResult(location.state.gameResult)
+            setGameResultDismissed(false) // Reset dismissal flag
             // Clear the state to prevent showing again on refresh
             window.history.replaceState({}, document.title)
         }
     }, [location.state])
+
+    // Handle GameResultModal close - allow RankNotification to show next
+    const handleGameResultClose = () => {
+        setGameResultDismissed(true)
+        // Clear gameResult after short delay to allow rank notification to show
+        setTimeout(() => setGameResult(null), 100)
+    }
 
     // Subscribe to selected game for leaderboard
     useEffect(() => {
@@ -143,8 +152,14 @@ export default function Dashboard() {
 
     return (
         <div className="min-h-screen bg-background pb-24">
-            {/* Rank Change Notification Modal */}
-            <RankNotification mode="modal" rank={rank} isLivingIcon={isLivingIcon} loading={rankLoading} />
+            {/* Rank Change Notification Modal - deferred if game result is showing */}
+            <RankNotification
+                mode="modal"
+                rank={rank}
+                isLivingIcon={isLivingIcon}
+                loading={rankLoading}
+                deferShowModal={gameResult && !gameResultDismissed}
+            />
 
             {/* Team Card */}
             <div className="bg-primary p-6 text-primary-foreground">
@@ -302,10 +317,10 @@ export default function Dashboard() {
             <NavFooter />
 
             {/* Game Result Modal */}
-            {gameResult && (
+            {gameResult && !gameResultDismissed && (
                 <GameResultModal
                     result={gameResult}
-                    onClose={() => setGameResult(null)}
+                    onClose={handleGameResultClose}
                 />
             )}
 

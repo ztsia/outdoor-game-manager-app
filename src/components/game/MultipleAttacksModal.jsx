@@ -22,7 +22,7 @@ export function MultipleAttacksModal({ challenges, onSelect, open, onOpenChange 
     // Fetch game rules for timeout duration
     useEffect(() => {
         getGameRules().then(rules => {
-            setTimeoutSeconds(rules.challengeTimeoutSeconds || 120)
+            setTimeoutSeconds(rules.challenge_timeout_seconds || 120)
         })
     }, [])
 
