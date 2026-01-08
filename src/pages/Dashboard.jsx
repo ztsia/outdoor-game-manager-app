@@ -44,7 +44,6 @@ export default function Dashboard() {
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [newTeamName, setNewTeamName] = useState('')
     const [gameResult, setGameResult] = useState(null)
-    const [gameResultDismissed, setGameResultDismissed] = useState(false)
     const [leaderboardOpen, setLeaderboardOpen] = useState(false)
     const [selectedGameId, setSelectedGameId] = useState(null)
     const [selectedGameData, setSelectedGameData] = useState(null)
@@ -54,17 +53,14 @@ export default function Dashboard() {
     useEffect(() => {
         if (location.state?.gameResult) {
             setGameResult(location.state.gameResult)
-            setGameResultDismissed(false) // Reset dismissal flag
             // Clear the state to prevent showing again on refresh
             window.history.replaceState({}, document.title)
         }
     }, [location.state])
 
-    // Handle GameResultModal close - allow RankNotification to show next
+    // Handle GameResultModal close
     const handleGameResultClose = () => {
-        setGameResultDismissed(true)
-        // Clear gameResult after short delay to allow rank notification to show
-        setTimeout(() => setGameResult(null), 100)
+        setGameResult(null)
     }
 
     // Subscribe to selected game for leaderboard
@@ -158,7 +154,7 @@ export default function Dashboard() {
                 rank={rank}
                 isLivingIcon={isLivingIcon}
                 loading={rankLoading}
-                deferShowModal={gameResult && !gameResultDismissed}
+                deferShowModal={!!gameResult}
             />
 
             {/* Team Card */}
@@ -317,7 +313,7 @@ export default function Dashboard() {
             <NavFooter />
 
             {/* Game Result Modal */}
-            {gameResult && !gameResultDismissed && (
+            {gameResult && (
                 <GameResultModal
                     result={gameResult}
                     onClose={handleGameResultClose}

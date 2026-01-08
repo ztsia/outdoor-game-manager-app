@@ -141,13 +141,13 @@ export function TerritoryRect({ territory, location, ownerTeam }) {
         const availableWidth = width - padding * 2
         const availableHeight = height - padding * 2
 
-        // Dynamic font size calculation
+        // Dynamic font size calculation - bigger fonts while respecting borders
         const baseFontSize = Math.max(
-            10,  // Minimum readable
+            11,  // Minimum readable
             Math.min(
-                Math.floor(availableWidth / 8),   // Width constraint
-                Math.floor(availableHeight / 12), // Height constraint (for ~4 items)
-                22   // Maximum size
+                Math.floor(availableWidth / 6),   // Width constraint (was /8)
+                Math.floor(availableHeight / 10), // Height constraint (was /12)
+                28   // Maximum size (was 22)
             )
         )
 
@@ -188,9 +188,25 @@ export function TerritoryRect({ territory, location, ownerTeam }) {
         const contentX = x + padding
         const contentY = y + padding
 
-        // Determine what to show based on size
-        const showGame = !isSmall
-        const showOwner = !isSmall
+
+        // Detect 6-point polygon for special handling
+        const is6PointPolygon = isPolygon && coords.points?.length === 6
+
+        // Estimate content height to determine if we have enough space
+        const lineHeight = baseFontSize * 1.3
+        const fullContentHeight = lineHeight * 5 + 16 // 5 lines + gaps
+        const minimalContentHeight = lineHeight * 2 + 8 // Name + stars + gaps
+        const hasEnoughHeight = availableHeight >= fullContentHeight
+
+        // For horizontal territories: check if height is sufficient
+        const isShortHorizontal = isHorizontal && !hasEnoughHeight
+
+        // Determine what to show based on size and shape
+        const showGame = !isSmall && !is6PointPolygon && !isShortHorizontal
+        const showOwner = !isSmall && !is6PointPolygon && !isShortHorizontal
+
+        // Determine vertical alignment
+        const useTopAlign = is6PointPolygon || isShortHorizontal
 
         return (
             <foreignObject
@@ -205,12 +221,14 @@ export function TerritoryRect({ territory, location, ownerTeam }) {
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        justifyContent: 'center',
+                        justifyContent: useTopAlign ? 'flex-start' : 'center',
                         height: '100%',
                         textAlign: 'center',
                         fontSize: `${baseFontSize}px`,
                         lineHeight: 1.3,
-                        gap: isSmall ? '2px' : '4px'
+                        gap: isSmall ? '2px' : '4px',
+                        paddingTop: useTopAlign ? '4px' : '0',
+                        overflow: 'hidden'
                     }}
                 >
                     {/* Location Name */}
@@ -221,9 +239,10 @@ export function TerritoryRect({ territory, location, ownerTeam }) {
                             fontSize: `${baseFontSize + 1}px`,
                             overflow: 'hidden',
                             display: '-webkit-box',
-                            WebkitLineClamp: 2,
+                            WebkitLineClamp: isShortHorizontal ? 1 : 2,
                             WebkitBoxOrient: 'vertical',
-                            width: '100%'
+                            width: '100%',
+                            textShadow: '0 1px 2px rgba(255,255,255,0.8)'
                         }}
                     >
                         {locationName}
@@ -268,7 +287,9 @@ export function TerritoryRect({ territory, location, ownerTeam }) {
                     <div
                         style={{
                             fontSize: `${baseFontSize}px`,
-                            color: '#000'
+                            color: '#000',
+                            textShadow: '0 0 8px rgba(250, 204, 21, 0.8), 0 0 12px rgba(250, 204, 21, 0.5)',
+                            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))'
                         }}
                     >
                         {renderStars(stars)}
@@ -278,100 +299,195 @@ export function TerritoryRect({ territory, location, ownerTeam }) {
         )
     }
 
+    // Unique ID for gradients/filters
+    const uniqueId = `territory-${location?.id || 'unknown'}`
+
     // Shared fill and stroke props
-    const fillColor = `rgba(${r}, ${g}, ${b}, 0.35)`
     const strokeColor = isUnderAttack ? '#ef4444' : teamColor
-    const strokeWidth = isUnderAttack ? 3 : 1.5
+    const strokeWidth = isUnderAttack ? 3 : 2
 
     return (
         <g className="territory-rect">
-            {/* Base shape (rect or polygon) */}
+            {/* Gradient and filter definitions */}
+            <defs>
+                <linearGradient id={`grad-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor={`rgba(${r}, ${g}, ${b}, 0.5)`} />
+                    <stop offset="50%" stopColor={`rgba(${r}, ${g}, ${b}, 0.35)`} />
+                    <stop offset="100%" stopColor={`rgba(${r}, ${g}, ${b}, 0.2)`} />
+                </linearGradient>
+
+                {/* Outer glow filter */}
+                <filter id={`glow-${uniqueId}`} x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                    <feColorMatrix in="blur" type="matrix"
+                        values={`1 0 0 0 ${r / 255 * 0.3}
+                                 0 1 0 0 ${g / 255 * 0.3}
+                                 0 0 1 0 ${b / 255 * 0.3}
+                                 0 0 0 0.6 0`}
+                        result="coloredBlur"
+                    />
+                    <feMerge>
+                        <feMergeNode in="coloredBlur" />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
+            </defs>
+
+            {/* Base shape with gradient fill */}
             {coords.type === 'rect' ? (
-                <rect
-                    x={x}
-                    y={y}
-                    width={width}
-                    height={height}
-                    fill={fillColor}
-                    stroke={strokeColor}
-                    strokeWidth={strokeWidth}
-                    rx={2}
-                    className={isUnderAttack ? 'animate-pulse' : ''}
-                />
+                <>
+                    {/* Main fill with glow */}
+                    <rect
+                        x={x}
+                        y={y}
+                        width={width}
+                        height={height}
+                        fill={`url(#grad-${uniqueId})`}
+                        filter={`url(#glow-${uniqueId})`}
+                        rx={4}
+                    />
+                    {/* Outer border */}
+                    <rect
+                        x={x}
+                        y={y}
+                        width={width}
+                        height={height}
+                        fill="transparent"
+                        stroke={strokeColor}
+                        strokeWidth={strokeWidth}
+                        rx={4}
+                    />
+                    {/* Inner highlight */}
+                    <rect
+                        x={x + 2}
+                        y={y + 2}
+                        width={width - 4}
+                        height={height - 4}
+                        fill="transparent"
+                        stroke="rgba(255, 255, 255, 0.25)"
+                        strokeWidth={1}
+                        rx={3}
+                    />
+                </>
             ) : (
-                <polygon
-                    points={coords.pointsString}
-                    fill={fillColor}
-                    stroke={strokeColor}
-                    strokeWidth={strokeWidth}
-                    className={isUnderAttack ? 'animate-pulse' : ''}
-                />
+                <>
+                    {/* Main fill with glow */}
+                    <polygon
+                        points={coords.pointsString}
+                        fill={`url(#grad-${uniqueId})`}
+                        filter={`url(#glow-${uniqueId})`}
+                    />
+                    {/* Outer border */}
+                    <polygon
+                        points={coords.pointsString}
+                        fill="transparent"
+                        stroke={strokeColor}
+                        strokeWidth={strokeWidth}
+                    />
+                </>
             )}
 
-            {/* Text content */}
-            {!hasCooldown && !isUnderAttack && renderText()}
-
-            {/* Battle overlay */}
+            {/* Battle overlay - pulsing red tint with border glow */}
             {isUnderAttack && (
                 <g className="battle-overlay">
+                    {/* Pulsing fill overlay */}
                     {coords.type === 'rect' ? (
                         <rect
                             x={x}
                             y={y}
                             width={width}
                             height={height}
-                            fill="rgba(239, 68, 68, 0.2)"
+                            fill="rgba(239, 68, 68, 0.25)"
+                            rx={4}
+                            className="animate-pulse-opacity"
+                        />
+                    ) : (
+                        <polygon
+                            points={coords.pointsString}
+                            fill="rgba(239, 68, 68, 0.25)"
+                            className="animate-pulse-opacity"
+                        />
+                    )}
+
+                    {/* Animated border glow */}
+                    {coords.type === 'rect' ? (
+                        <rect
+                            x={x}
+                            y={y}
+                            width={width}
+                            height={height}
+                            fill="transparent"
+                            stroke="#ef4444"
+                            strokeWidth={3}
+                            rx={4}
                             className="animate-pulse"
                         />
                     ) : (
                         <polygon
                             points={coords.pointsString}
-                            fill="rgba(239, 68, 68, 0.2)"
+                            fill="transparent"
+                            stroke="#ef4444"
+                            strokeWidth={3}
                             className="animate-pulse"
                         />
                     )}
-                    <foreignObject
-                        x={centerX - 12}
-                        y={centerY - 12}
-                        width={24}
-                        height={24}
-                    >
-                        <div className="flex items-center justify-center animate-pulse">
-                            <Swords className="h-6 w-6 text-red-500" />
-                        </div>
-                    </foreignObject>
                 </g>
             )}
 
-            {/* Cooldown overlay */}
+            {/* Cooldown overlay - slow pulsing white with centered clock */}
             {hasCooldown && !isUnderAttack && (
                 <g className="cooldown-overlay">
+                    {/* Slow pulsing background */}
                     {coords.type === 'rect' ? (
                         <rect
                             x={x}
                             y={y}
                             width={width}
                             height={height}
-                            fill="rgba(255, 255, 255, 0.7)"
+                            fill="rgba(255, 255, 255, 0.4)"
+                            rx={4}
+                            className="animate-pulse-slow"
                         />
                     ) : (
                         <polygon
                             points={coords.pointsString}
-                            fill="rgba(255, 255, 255, 0.7)"
+                            fill="rgba(255, 255, 255, 0.4)"
+                            className="animate-pulse-slow"
                         />
                     )}
-                    <foreignObject
-                        x={centerX - 20}
-                        y={centerY - 20}
-                        width={40}
-                        height={40}
-                    >
-                        <div className="flex flex-col items-center justify-center text-gray-600">
-                            <Clock className="h-5 w-5" />
-                            <span className="text-xs font-mono font-bold">{countdown}</span>
-                        </div>
-                    </foreignObject>
                 </g>
+            )}
+
+            {/* Text content - ALWAYS rendered on top */}
+            {renderText()}
+
+            {/* Battle - Large centered swords icon (no circle) */}
+            {isUnderAttack && (
+                <foreignObject
+                    x={centerX - 24}
+                    y={centerY - 24}
+                    width={48}
+                    height={48}
+                >
+                    <div className="flex items-center justify-center w-full h-full animate-pulse-visible">
+                        <Swords className="h-10 w-10 text-red-600" style={{ filter: 'drop-shadow(0 2px 6px rgba(239,68,68,0.6))' }} />
+                    </div>
+                </foreignObject>
+            )}
+
+            {/* Cooldown - Large centered clock with timer (no circle) */}
+            {hasCooldown && !isUnderAttack && (
+                <foreignObject
+                    x={centerX - 30}
+                    y={centerY - 30}
+                    width={60}
+                    height={60}
+                >
+                    <div className="flex flex-col items-center justify-center w-full h-full gap-1 animate-scale-pulse">
+                        <Clock className="h-8 w-8 text-gray-600" style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.4))' }} />
+                        <span className="text-sm font-mono font-bold text-gray-700" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}>{countdown}</span>
+                    </div>
+                </foreignObject>
             )}
         </g>
     )

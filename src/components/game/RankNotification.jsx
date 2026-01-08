@@ -167,13 +167,24 @@ export function RankNotification({ mode = 'modal', rank, isLivingIcon, loading, 
             }
         }
 
-        // Update refs
-        prevRank.current = newRank
+        // Update refs with selective freeze during active games
+        // - Freeze prevRank during games (to ignore bet/refund fluctuations)
+        // - Always update prevIsLivingIcon (Living Icon changes from other teams should show)
+        const isGameInProgress = mode === 'banner' && isGameActive === true
+
+        if (!isGameInProgress) {
+            // Not in active game - update rank tracking normally
+            prevRank.current = newRank
+        }
+        // Always update Living Icon tracking (not affected by bet/refund)
         prevIsLivingIcon.current = newIcon
 
-        // Persist new rank to sessionStorage for cross-navigation detection
-        sessionStorage.setItem('lastKnownRank', String(newRank))
-        sessionStorage.setItem('lastKnownIsLivingIcon', String(newIcon))
+        // Only persist to sessionStorage in modal mode (Dashboard)
+        // Don't persist during games to avoid storing transient states
+        if (mode === 'modal') {
+            sessionStorage.setItem('lastKnownRank', String(newRank))
+            sessionStorage.setItem('lastKnownIsLivingIcon', String(newIcon))
+        }
 
         // Trigger notification if type was determined
         if (notificationType) {
