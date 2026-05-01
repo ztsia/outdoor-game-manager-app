@@ -1,245 +1,110 @@
-# 🎮 Outdoor Game Manager
+# Outdoor Game Manager
 
-A real-time Progressive Web App (PWA) for managing outdoor team-based games, territory battles, and world tour challenges. Built with React 19, Firebase, and Tailwind CSS.
+A real-time Progressive Web App for running outdoor team-based games — territory battles, world tour challenges, and live leaderboards — across multiple concurrent devices.
 
-## ✨ Features
-
-### Team Management
-- **Multi-team support** with customizable names, colors, and avatars
-- **Follower-based ranking system** with rank badges (Rookie → Rising Star → Legend)
-- **Live leaderboards** with real-time updates
-
-### 🎮 Real-Time Multiplayer Game Engine
-- **Live state synchronization** using Firestore real-time subscriptions across unlimited concurrent players
-- **Server-authoritative timers** with timestamp-based synchronization to prevent clock drift between devices
-- **Consensus-based game resolution** with dual-voting system and mismatch handling
-- **Custom React hooks** (`useGameHost`, `useWorldTourHost`) encapsulating 800+ lines of game state management logic
-- **Optimistic UI updates** with immediate visual feedback
-
-### ⚔️ Territory Battle System
-- **Transaction-based attacks** using Firestore `runTransaction()` to prevent race conditions
-- **Mutual exclusion logic** preventing teams from being attacked while in active battles
-- **Follower betting economy** with dynamic cost calculations (based on territory stars) and automatic refunds
-- **Configurable cooldown periods** with live countdown displays on the HQ map
-- **Home advantage mechanics** for defending teams (defender-specific rules per game)
-
-### 🏆 Dynamic Ranking Algorithm
-- **Multi-factor rank calculation**: Followers + Stars (territories owned) + Fan Favourites (world tour wins)
-- **Weighted scoring formula**: `score = (followers × w1) + (stars × w2) + (fan_favourites × w3)`
-- **Tiered progression system**: Rookie → Rising Star → Legend → Living Icon (top Legend)
-- **Configurable thresholds** stored in database for runtime adjustments
-- **Real-time rank updates** triggered automatically by game events
-
-### 🌍 World Tour Challenge System
-- **Formula-based scoring** with custom mathematical expressions using `hot-formula-parser`
-- **Difficulty multipliers** (Normal 1x, Hard 2x, Extreme 3x) affecting final scores
-- **Persistent leaderboards** with score history tracking per team
-- **Fan Favourite achievements** automatically awarded to high score holders
-- **Timer configurations** supporting both countdown and stopwatch modes
-
-### 🗺️ Interactive SVG Territory Map
-- **Custom coordinate parsing** supporting both rectangles and polygon shapes
-- **Responsive bounds calculation** adapting to any screen size
-- **Real-time status overlays** showing owner colors, battle indicators, and cooldown timers
-- **Animated state transitions** with Framer Motion for visual feedback
-- **Star rating display** with dynamic icon rendering
-
-### ❓ Q&A Battle Mode
-- **Question set management** with admin CRUD operations
-- **Real-time question synchronization** between competing devices
-- **Skip/next functionality** with index tracking to prevent repeats
-- **Point-based scoring** tied to correct answer responses
-
-### 🔐 Role-Based Access Control
-- **Access code authentication** with Firebase Anonymous Auth
-- **Protected route guards** with role-based permissions (Manager/HQ/Admin)
-- **Dynamic team theming** with CSS custom properties applied at document root
-- **Session persistence** with localStorage backup for page refreshes
-- **Multi-team support** handling 6+ concurrent teams with unique color schemes
-| Role | Access |
-|------|--------|
-| **Manager** | Team dashboard, attack territories, play games |
-| **HQ** | Live game monitoring, leaderboard oversight |
-| **Admin** | Full system configuration, team management |
-
-### ⚙️ Comprehensive Admin Panel
-- **Full CRUD operations** for Teams, Territories, World Tour Games, Locations, Question Sets
-- **System configuration editor** for game rules, rank thresholds, and point weights
-- **Blind box/gacha system** management for random rewards
-- **Badge showcase** for rank badge visualization
-- **Modal-based forms** with validation and real-time preview
-
-### 📱 Progressive Web App
-- **Offline-capable** with Vite PWA plugin and service worker caching
-- **Installable** on iOS and Android devices via Add to Home Screen
-- **Mobile-optimized viewport** with disabled zoom and touch gesture prevention
-- **Apple touch icon** and web app manifest configuration
+**[Live Demo](https://outdoor-game-manager-app.vercel.app/)**&nbsp; · &nbsp;Built with React 19, Firebase Firestore, Tailwind CSS 4
 
 ---
 
-## 🛠️ Technical Highlights
+## Key Engineering Challenges
 
-| Category | Implementation |
-|----------|----------------|
-| **State Management** | React Hooks + Context API with Firestore real-time listeners |
-| **Database Operations** | Firestore transactions for atomic updates and race condition prevention |
-| **Authentication** | Firebase Anonymous Auth with code-based role assignment |
-| **Real-Time Sync** | `onSnapshot()` subscriptions with optimistic UI updates |
-| **Animations** | Framer Motion for page transitions and state changes |
-| **Form Handling** | Controlled components with modal-based CRUD workflows |
-| **Styling** | Tailwind CSS 4 with shadcn/ui component library |
-| **Build Optimization** | Vite 7 with PWA plugin for service worker generation |
+### Preventing race conditions in concurrent territory attacks
 
----
+When multiple teams attack simultaneously, naive read-then-write causes double-spends and corrupted state. Every attack flows through a Firestore `runTransaction()` in `challengeService.js` that atomically verifies preconditions (territory is idle, attacker has sufficient followers, cooldown expired) and writes the state transition in a single round-trip. A pre-check outside the transaction short-circuits the obvious error cases before incurring the transaction overhead — but the transaction's own read still validates that nothing changed in the window between the two checks.
 
-## 🚀 Getting Started
+### Server-authoritative timer sync without polling
 
-### Prerequisites
+Shared game timers must stay in sync across arbitrarily many devices without constant server writes. The approach: on start, write a single `timer_started_at: Timestamp.now()` to Firestore. Every client independently computes `elapsed = (client.now - timer_started_at) / 1000` on each render — no polling, no drift accumulation. Pause stores the elapsed snapshot in `shared_elapsed_seconds` and nulls `timer_started_at`; resume restores the baseline and writes a fresh timestamp. Clients that join mid-game reconstruct the correct state from the two fields alone.
 
-- [Node.js](https://nodejs.org/) (v18 or higher)
-- [npm](https://www.npmjs.com/) or [pnpm](https://pnpm.io/)
-- A [Firebase](https://firebase.google.com/) project with Firestore enabled
+### Cooperative game resolution with race-safe consensus
 
-### Installation
+Neither player can unilaterally declare victory. Resolution is a two-phase commit: both players independently submit a vote (attacker won / defender won), and a Firestore effect watcher detects consensus. On match → `resolveGame()` runs a transaction that checks `challenge_status === 'accepted'` before writing — if another client already resolved, it returns false and the local client detects the completed state via a passive watcher on the territory document. Vote mismatch (both players disagree on the outcome) triggers a dispute modal and resets votes for re-submission.
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/outdoor-game-manager-app.git
-   cd outdoor-game-manager-app
-   ```
+### Adaptive SVG territory labels
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+Territory shapes are defined as raw coordinate strings (rectangles or polygon point lists). At render time, `parseCoords()` normalises both formats to a centroid + bounding box. For polygons, the centroid uses the Shoelace formula to handle concave shapes correctly. Labels are rendered via `foreignObject` (enabling native CSS overflow and `-webkit-line-clamp`) and sized through a four-tier algorithm — TINY shapes get an external leader-line label; larger shapes fit progressively more detail. Font size is clamped: `Math.max(11, Math.min(width/6, height/10, 28))`.
 
-3. **Configure environment variables**
-   
-   Create a `.env` file in the project root:
-   ```env
-   VITE_FIREBASE_API_KEY=your_api_key
-   VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-   VITE_FIREBASE_PROJECT_ID=your_project_id
-   VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   VITE_FIREBASE_APP_ID=your_app_id
-   ```
+### Stateless role-based routing with per-team theming
 
-4. **Initialize Firestore**
-   
-   Set up your Firestore database with the collections defined in [dbSchema.md](dbSchema.md):
-   - `system_config` - Global game rules and rank thresholds
-   - `teams` - Team profiles, followers, and statistics
-   - `territories` - Territory data, game info, and live battle state
-   - `world_tour_games` - World tour challenge definitions and leaderboards
-   - `locations` - Physical location mappings with map coordinates
-
-5. **Start the development server**
-   ```bash
-   npm run dev
-   ```
-
-   The app will be available at `http://localhost:5173`
-
-### Available Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server with HMR |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build locally |
-| `npm run lint` | Run ESLint checks |
+There's no user account system. Each physical device enters an access code that maps to a role (Manager / HQ / Admin) and, for team devices, a team ID and CSS theme class. On valid code entry, `signInAnonymously()` fires (for Firestore security rule compatibility), and the role + team + theme are persisted to `localStorage`. The theme class is applied to `document.documentElement`, scoping all CSS custom properties for that device's colour scheme without any UI branching. Protected routes redirect to each role's home page if the stored role doesn't match.
 
 ---
 
-## 🏗️ Project Structure
+## Features
+
+| Area | Details |
+|------|---------|
+| **Territory Battles** | Transaction-based attacks · mutual exclusion · bet-based economy with automatic refunds · configurable cooldowns |
+| **World Tour Challenges** | Custom formula scoring (`hot-formula-parser`) · difficulty multipliers (1×/2×/3×) · Fan Favourite title transfers on new high score |
+| **Ranking System** | `score = followers + (stars × 20k) + (fan_favourites × 100k)` · tiered thresholds (Rookie → Rising Star → Legend) · singleton "Living Icon" title for top Legend |
+| **HQ Map** | SVG territory map with real-time owner colours, battle indicators, and mm:ss cooldown countdowns |
+| **Admin Panel** | CRUD for teams, territories, world tour games, locations, question sets · system config editor · blind box / promo code management |
+| **PWA** | Service worker caching · installable on iOS and Android · mobile-optimised viewport |
+
+---
+
+## Tech Stack
+
+| | |
+|---|---|
+| **Frontend** | React 19, Tailwind CSS 4, shadcn/ui, Framer Motion |
+| **Backend** | Firebase Firestore (real-time), Firebase Anonymous Auth |
+| **Build** | Vite 7, Vite PWA Plugin |
+| **Libraries** | `hot-formula-parser` for dynamic scoring formulas |
+
+---
+
+## Project Structure
 
 ```
 src/
-├── components/          # Reusable UI components
-│   ├── admin/          # Admin panel (13 components, CRUD modals)
-│   ├── game/           # Game UI (15 components, scoreboards, modals)
-│   ├── hq/             # HQ dashboard (territory map, leaderboards)
-│   └── ui/             # Shared primitives (shadcn/ui, 23 components)
-├── contexts/           # React context providers (AuthProvider)
-├── hooks/              # Custom React hooks (16 hooks)
-│   ├── useGameHost.js  # Territory game hosting (411 lines)
-│   ├── useWorldTourHost.js  # World tour game logic
-│   ├── useRank.js      # Team ranking calculations
-│   └── useTeamData.js  # Team data subscriptions
-├── lib/                # Utility functions
-├── pages/              # Route page components (9 pages)
-│   ├── Dashboard.jsx   # Manager's team dashboard
-│   ├── Attack.jsx      # Territory attack selection
-│   ├── HQ.jsx          # Live monitoring with SVG map
-│   └── Admin.jsx       # System administration
-└── services/           # Firebase service layer (5 services)
-    ├── gameService.js  # Game state CRUD (478 lines)
-    ├── challengeService.js  # Attack transaction logic
-    ├── teamService.js  # Team operations
-    └── rankService.js  # Ranking algorithm
+├── services/
+│   ├── challengeService.js     # Attack transactions and state machine
+│   ├── gameService.js          # Territory / World Tour CRUD + subscriptions
+│   ├── rankService.js          # Weighted scoring and tier calculation
+│   └── blindBoxService.js      # Promo code atomic redemption
+├── hooks/
+│   ├── useGameHost.js          # Territory battle state + voting logic (~400 lines)
+│   ├── useWorldTourHost.js     # World Tour game state and score submission
+│   └── useAttackTransaction.js # Tiered attack cost calculation
+├── components/
+│   ├── hq/TerritoryRect.jsx    # SVG territory rendering with adaptive labels
+│   └── game/                   # Scoreboard, timer, vote modal components
+├── contexts/AuthProvider.jsx   # Access code → role/theme mapping
+├── pages/
+│   ├── TerritoryGamePage.jsx   # PvP battle host with consensus resolution
+│   ├── HQ.jsx                  # Live command-centre map view
+│   └── Admin.jsx               # Game administration
+└── lib/formulaEvaluator.js     # Excel-formula parsing for dynamic scoring
 ```
 
 ---
 
-## 🔥 Firebase Setup
+## Local Setup
 
-### Firestore Security Rules
-
-Ensure your Firestore rules allow appropriate read/write access based on user roles. See the Firebase documentation for [security rules best practices](https://firebase.google.com/docs/firestore/security/get-started).
-
-### Indexes
-
-Import the required indexes from `firestore.indexes.json`:
-```bash
-firebase deploy --only firestore:indexes
-```
-
----
-
-## 📱 Deployment
-
-### Firebase Hosting
+**Prerequisites:** Node.js v18+, a Firebase project with Firestore enabled.
 
 ```bash
-npm run build
-firebase deploy --only hosting
+git clone https://github.com/your-username/outdoor-game-manager-app.git
+cd outdoor-game-manager-app
+npm install
 ```
 
-### Other Platforms
+Create `.env` in the project root:
 
-The production build (`dist/` folder) can be deployed to any static hosting service:
-- Vercel
-- Netlify
-- GitHub Pages
-- Cloudflare Pages
+```env
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+```
 
----
+```bash
+npm run dev        # http://localhost:5173
+npm run build      # production build → dist/
+npm run preview    # preview production build
+```
 
-## 📖 Documentation
-
-- [Database Schema](dbSchema.md) - Firestore collection structures and field definitions
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is private. All rights reserved.
-
----
-
-<p align="center">
-  Built with ❤️ for outdoor gaming enthusiasts
-</p>
+Firestore collection schemas are documented in [dbSchema.md](dbSchema.md).
