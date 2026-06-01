@@ -84,6 +84,8 @@ export default function HQ() {
     const [mapDimensions, setMapDimensions] = useState({ width: 0, height: 0 })
     const [imageBounds, setImageBounds] = useState(null)
 
+    const loading = teamsLoading || territoriesLoading || worldTourLoading || locationsLoading || !config
+
     // Message panel state
     const [messages, setMessages] = useState([])
     const prevDataRef = useRef({ territories: {}, worldTourGames: {}, livingIconTeam: null })
@@ -185,7 +187,7 @@ export default function HQ() {
             window.removeEventListener('resize', calculateBounds)
             resizeObserver.disconnect()
         }
-    }, [])
+    }, [loading])
 
     // Calculate leaderboard with ranks
     const leaderboard = useMemo(() => {
@@ -304,8 +306,6 @@ export default function HQ() {
         }, 60000)
         return () => clearInterval(interval)
     }, [])
-
-    const loading = teamsLoading || territoriesLoading || worldTourLoading || locationsLoading || !config
 
     if (loading) {
         return (

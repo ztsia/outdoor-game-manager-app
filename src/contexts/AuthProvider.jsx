@@ -32,15 +32,15 @@ export function AuthProvider({ children }) {
     const [theme, setTheme] = useState(null)
     const [loading, setLoading] = useState(true)
 
-    // Restore session from localStorage on mount
+    // Restore session from sessionStorage on mount
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
             if (firebaseUser) {
                 setUser(firebaseUser)
-                // Restore role/teamId/theme from localStorage
-                const storedRole = localStorage.getItem('outdoor_game_role')
-                const storedTeamId = localStorage.getItem('outdoor_game_teamId')
-                const storedTheme = localStorage.getItem('outdoor_game_theme')
+                // Restore role/teamId/theme from sessionStorage
+                const storedRole = sessionStorage.getItem('outdoor_game_role')
+                const storedTeamId = sessionStorage.getItem('outdoor_game_teamId')
+                const storedTheme = sessionStorage.getItem('outdoor_game_theme')
                 if (storedRole) {
                     setRole(storedRole)
                     setTeamId(storedTeamId)
@@ -78,17 +78,17 @@ export function AuthProvider({ children }) {
         try {
             const userCredential = await signInAnonymously(auth)
 
-            // Persist role/teamId/theme to localStorage
-            localStorage.setItem('outdoor_game_role', authData.role)
+            // Persist role/teamId/theme to sessionStorage
+            sessionStorage.setItem('outdoor_game_role', authData.role)
             if (authData.teamId) {
-                localStorage.setItem('outdoor_game_teamId', authData.teamId)
+                sessionStorage.setItem('outdoor_game_teamId', authData.teamId)
             } else {
-                localStorage.removeItem('outdoor_game_teamId')
+                sessionStorage.removeItem('outdoor_game_teamId')
             }
             if (authData.theme) {
-                localStorage.setItem('outdoor_game_theme', authData.theme)
+                sessionStorage.setItem('outdoor_game_theme', authData.theme)
             } else {
-                localStorage.removeItem('outdoor_game_theme')
+                sessionStorage.removeItem('outdoor_game_theme')
             }
 
             setRole(authData.role)
@@ -107,9 +107,9 @@ export function AuthProvider({ children }) {
     const logout = async () => {
         try {
             await signOut(auth)
-            localStorage.removeItem('outdoor_game_role')
-            localStorage.removeItem('outdoor_game_teamId')
-            localStorage.removeItem('outdoor_game_theme')
+            sessionStorage.removeItem('outdoor_game_role')
+            sessionStorage.removeItem('outdoor_game_teamId')
+            sessionStorage.removeItem('outdoor_game_theme')
             setUser(null)
             setRole(null)
             setTeamId(null)
